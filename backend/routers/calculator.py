@@ -1,0 +1,108 @@
+"""
+AI CFO — Calculator Router (Feature B)
+"Can I afford this?" analysis with AI-powered suggestions.
+"""
+import uuid
+from datetime import datetime, timedelta
+
+from fastapi import APIRouter, Depends
+from sqlalchemy import select, func, and_
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from database import get_db
+from auth import get_current_user
+from models import User, Transaction, TransactionType
+from schemas import AffordabilityRequest, AffordabilityResponse
+
+router = APIRouter()
+
+
+@router.post("/affordability", response_model=AffordabilityResponse)
+async def check_affordability(
+    req: AffordabilityRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Analyze whether the business can afford a proposed expense."""
+    ws_id = user.workspace_id
+    now = datetime.utcnow()
+    three_months_ago = now - timedelta(days=90)
+
+    # ── Get last 3 months of income & expenses ────────────────────
+    totals = await db.execute(
+        select(
+            Transaction.type,
+            func.sum(Transaction.amount),
+        )
+        .where(
+            and_(
+                Transaction.workspace_id == ws_id,
+                Transaction.date >= three_months_ago,
+            )
+        )
+        .group_by(Transaction.type)
+    )
+
+    income_3m = 0.0
+    expense_3m = 0.0
+    for row in totals:
+        if row[0] == TransactionType.income:
+            income_3m = float(row[1] or 0)
+        else:
+            expense_3m = float(row[1] or 0)
+
+    net_3m = income_3m - expense_3m
+    monthly_burn = expense_3m / 3 if expense_3m > 0 else 0
+    monthly_income = income_3m / 3
+
+    # ── Calculate impact ──────────────────────────────────────────
+    if req.frequency == "monthly":
+        extra_annual = req.amount * 12
+        extra_3m = req.amount * 3
+    elif req.frequency == "annual":
+        extra_annual = req.amount
+        extra_3m = req.amount / 4
+    else:  # one_time
+        extra_annual = req.amount
+        extra_3m = req.amount
+
+    projected_3m = net_3m - extra_3m
+    current_runway = net_3m / monthly_burn if monthly_burn > 0 else 99.0
+    new_burn = monthly_burn + (extra_3m / 3)
+    projected_runway = net_3m / new_burn if new_burn > 0 else 99.0
+
+    can_afford = projected_runway >= 3.0 and projected_3m > 0
+
+    # ── Break-even revenue ────────────────────────────────────────
+    break_even = None
+    if not can_afford and monthly_income > 0:
+        break_even = (new_burn - monthly_income) * 3
+
+    # ── AI Suggestion ─────────────────────────────────────────────
+    if can_afford and projected_runway > 6:
+        suggestion = (
+            f"✅ You can comfortably afford '{req.expense_name}'. "
+            f"Your runway remains {projected_runway:.1f} months after this expense."
+        )
+    elif can_afford:
+        suggestion = (
+            f"⚠️ You can afford '{req.expense_name}', but it reduces your runway to "
+            f"{projected_runway:.1f} months. Consider spreading the cost or finding "
+            f"offsetting revenue."
+        )
+    else:
+        suggestion = (
+            f"🚫 '{req.expense_name}' would reduce your runway to {projected_runway:.1f} months. "
+            f"We recommend deferring this expense or increasing revenue by "
+            f"${break_even:,.2f} over 3 months to break even."
+        )
+
+    return AffordabilityResponse(
+        can_afford=can_afford,
+        current_runway_months=round(current_runway, 1),
+        projected_runway_months=round(projected_runway, 1),
+        current_balance_3m=round(net_3m, 2),
+        projected_balance_3m=round(projected_3m, 2),
+        break_even_revenue=round(break_even, 2) if break_even else None,
+        ai_suggestion=suggestion,
+    )
