@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CFO.ai - Sovereign Intelligence Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-bright": "#373940",
+              "surface-container": "#1e1f26",
+              "surface": "#111319",
+              "tertiary-fixed-dim": "#ffb695",
+              "error": "#ffb4ab",
+              "on-tertiary-container": "#ffd2be",
+              "on-tertiary": "#571f00",
+              "error-container": "#93000a",
+              "inverse-on-surface": "#2e3037",
+              "surface-container-low": "#191b22",
+              "on-background": "#e2e2eb",
+              "tertiary-container": "#a44100",
+              "on-primary": "#1d00a5",
+              "tertiary": "#ffb695",
+              "on-secondary-container": "#b0aef9",
+              "surface-dim": "#111319",
+              "on-tertiary-fixed": "#351000",
+              "on-surface-variant": "#c7c4d8",
+              "on-tertiary-fixed-variant": "#7b2f00",
+              "background": "#111319",
+              "primary-fixed": "#e2dfff",
+              "outline": "#918fa1",
+              "on-secondary-fixed-variant": "#413f82",
+              "on-surface": "#e2e2eb",
+              "secondary": "#c3c0ff",
+              "on-primary-container": "#dad7ff",
+              "surface-tint": "#c3c0ff",
+              "on-secondary": "#2a276a",
+              "secondary-container": "#413f82",
+              "surface-variant": "#33343b",
+              "on-secondary-fixed": "#140f54",
+              "inverse-surface": "#e2e2eb",
+              "on-primary-fixed-variant": "#3323cc",
+              "secondary-fixed": "#e2dfff",
+              "surface-container-highest": "#33343b",
+              "surface-container-lowest": "#0c0e14",
+              "primary-fixed-dim": "#c3c0ff",
+              "secondary-fixed-dim": "#c3c0ff",
+              "inverse-primary": "#4d44e3",
+              "primary-container": "#4f46e5",
+              "surface-container-high": "#282a30",
+              "on-primary-fixed": "#0f0069",
+              "primary": "#c3c0ff",
+              "on-error-container": "#ffdad6",
+              "tertiary-fixed": "#ffdbcc",
+              "outline-variant": "#464555",
+              "on-error": "#690005"
+            },
+            fontFamily: {
+              "headline": ["Inter"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .glass-card {
+            background: rgba(51, 52, 59, 0.6);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(195, 192, 255, 0.15);
+        }
+        .text-emerald { color: #10b981; }
+        .bg-emerald-10 { background-color: rgba(16, 185, 129, 0.1); }
+        .text-coral { color: #fb7185; }
+        .bg-coral-10 { background-color: rgba(251, 113, 133, 0.1); }
+        .text-amber { color: #f59e0b; }
+        .bg-amber-10 { background-color: rgba(245, 158, 11, 0.1); }
+    </style>
+</head>
+<body class="bg-surface text-on-surface selection:bg-primary selection:text-on-primary">
+<!-- SideNavBar -->
+<aside class="hidden md:flex flex-col h-screen w-64 fixed left-0 top-0 bg-[#191b22] border-r border-[#282a30]/20 py-8 gap-2 z-50 shadow-[20px_0_40px_rgba(0,0,0,0.4)]">
+<div class="px-6 mb-8">
+<h1 class="text-xl font-bold text-white tracking-tighter">CFO.ai</h1>
+<p class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-semibold">Sovereign Intelligence</p>
+</div>
+<nav class="flex-1 px-3 space-y-1">
+<a class="bg-gradient-to-br from-[#c3c0ff] to-[#4f46e5] text-white rounded-md px-4 py-3 shadow-lg flex items-center gap-3 transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span class="font-medium text-sm">Dashboard</span>
+</a>
+<a class="text-[#c7c4d8] px-4 py-3 hover:text-white hover:bg-[#282a30]/50 rounded-md flex items-center gap-3 transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-[20px]">smart_toy</span>
+<span class="font-medium text-sm">Chat Assistant</span>
+</a>
+<a class="text-[#c7c4d8] px-4 py-3 hover:text-white hover:bg-[#282a30]/50 rounded-md flex items-center gap-3 transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-[20px]">query_stats</span>
+<span class="font-medium text-sm">Forecasting</span>
+</a>
+<a class="text-[#c7c4d8] px-4 py-3 hover:text-white hover:bg-[#282a30]/50 rounded-md flex items-center gap-3 transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-[20px]">account_balance_wallet</span>
+<span class="font-medium text-sm">Budgets</span>
+</a>
+<a class="text-[#c7c4d8] px-4 py-3 hover:text-white hover:bg-[#282a30]/50 rounded-md flex items-center gap-3 transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-[20px]">notifications_active</span>
+<span class="font-medium text-sm">Alerts</span>
+</a>
+<a class="text-[#c7c4d8] px-4 py-3 hover:text-white hover:bg-[#282a30]/50 rounded-md flex items-center gap-3 transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-[20px]">description</span>
+<span class="font-medium text-sm">Reports</span>
+</a>
+<a class="text-[#c7c4d8] px-4 py-3 hover:text-white hover:bg-[#282a30]/50 rounded-md flex items-center gap-3 transition-all duration-300 mt-auto" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span class="font-medium text-sm">Settings</span>
+</a>
+</nav>
+<div class="px-6 mt-6 pt-6 border-t border-outline-variant/10">
+<div class="flex items-center gap-3">
+<img alt="User Avatar" class="w-8 h-8 rounded-full bg-surface-container-highest" data-alt="minimalist user profile avatar with dark aesthetic and subtle glow" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDPLCl6DkzoujHDZUIQaOOLDenCtP49i60QSFMeoLI8L1FSFTkb4EM0L-9j1ABV45Q-nwcemVb07N_1LazUBJk0JKO5rz6W58y1hgV5bUWWlIPgqfkE7z2XUujCP0W0AX2ArDIPPrlzlmbixKlDx8CbLQzbPz_pqFgE0V8IFA4KuC7CL1PcdwtoQmq_zkZC8n9GV_DPySC9XOR4zWU5dUP2m4m6xuamoMXdsWO4AUW6dCPHPg0Z6LJHmrGvK-ipllTHoypFSz34yFW2"/>
+<div class="overflow-hidden">
+<p class="text-xs font-bold text-white truncate">Alex Sterling</p>
+<p class="text-[10px] text-on-surface-variant truncate">Premium Account</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="md:ml-64 min-h-screen">
+<!-- TopNavBar -->
+<header class="flex justify-between items-center w-full px-6 h-16 sticky top-0 z-40 bg-[#111319] font-['Inter'] antialiased tracking-tight">
+<div class="flex items-center gap-4">
+<span class="md:hidden material-symbols-outlined text-on-surface">menu</span>
+<div class="hidden md:flex items-center bg-surface-container-low px-4 py-2 rounded-full border border-outline-variant/10 w-96">
+<span class="material-symbols-outlined text-on-surface-variant text-sm mr-2">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-xs text-on-surface w-full" placeholder="Search analytics, reports, or ask AI..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<button class="relative p-2 text-[#c7c4d8] hover:bg-[#282a30] transition-colors duration-200 rounded-full">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full"></span>
+</button>
+<div class="h-8 w-[1px] bg-outline-variant/20"></div>
+<div class="flex items-center gap-3">
+<div class="text-right hidden sm:block">
+<p class="text-xs font-bold text-white tracking-tight">Acme Corp</p>
+<p class="text-[10px] text-primary font-medium tracking-wider">LIVE DATA</p>
+</div>
+<div class="w-8 h-8 rounded-md bg-gradient-to-br from-primary to-primary-container flex items-center justify-center text-on-primary font-bold text-xs">
+                        AC
+                    </div>
+</div>
+</div>
+</header>
+<!-- Dashboard Content -->
+<div class="p-6 md:p-8 space-y-8">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<h2 class="text-3xl font-extrabold text-white tracking-tighter leading-none mb-2">Executive Summary</h2>
+<p class="text-on-surface-variant text-sm max-w-md">Real-time intelligence and fiscal narrative for Q3 performance cycles.</p>
+</div>
+<div class="flex gap-2">
+<button class="px-4 py-2 text-xs font-semibold bg-surface-container-high text-on-surface rounded-md border border-outline-variant/20 hover:bg-surface-bright transition-colors">Export PDF</button>
+<button class="px-4 py-2 text-xs font-semibold bg-gradient-to-r from-primary to-primary-container text-on-primary-fixed rounded-md shadow-lg shadow-primary/10">Custom Report</button>
+</div>
+</div>
+<!-- TOP ROW: KPI CARDS -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+<!-- Card 1 -->
+<div class="bg-surface-container-high rounded-xl p-6 transition-all duration-300 hover:translate-y-[-4px] hover:shadow-2xl">
+<div class="flex justify-between items-start mb-4">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Cash Balance</span>
+<div class="p-2 bg-emerald-10 rounded-lg">
+<span class="material-symbols-outlined text-emerald text-sm">account_balance</span>
+</div>
+</div>
+<h3 class="text-2xl font-bold text-white mb-1">₹18,50,000</h3>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-emerald text-xs">trending_up</span>
+<span class="text-emerald text-[11px] font-bold">+12% vs last month</span>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-high rounded-xl p-6 transition-all duration-300 hover:translate-y-[-4px]">
+<div class="flex justify-between items-start mb-4">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Monthly Burn Rate</span>
+<div class="p-2 bg-coral-10 rounded-lg">
+<span class="material-symbols-outlined text-coral text-sm">local_fire_department</span>
+</div>
+</div>
+<h3 class="text-2xl font-bold text-white mb-1">₹4,20,000</h3>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-coral text-xs">trending_down</span>
+<span class="text-coral text-[11px] font-bold">-4% efficiency gain</span>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-container-high rounded-xl p-6 transition-all duration-300 hover:translate-y-[-4px]">
+<div class="flex justify-between items-start mb-4">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Runway</span>
+<div class="p-2 bg-amber-10 rounded-lg">
+<span class="material-symbols-outlined text-amber text-sm">warning</span>
+</div>
+</div>
+<h3 class="text-2xl font-bold text-white mb-1">8.2 months</h3>
+<div class="flex items-center gap-1">
+<span class="text-on-surface-variant text-[11px] font-medium">Critical focus required</span>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="bg-surface-container-high rounded-xl p-6 transition-all duration-300 hover:translate-y-[-4px]">
+<div class="flex justify-between items-start mb-4">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Revenue This Month</span>
+<div class="p-2 bg-emerald-10 rounded-lg">
+<span class="material-symbols-outlined text-emerald text-sm">payments</span>
+</div>
+</div>
+<h3 class="text-2xl font-bold text-white mb-1">₹6,80,000</h3>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-emerald text-xs">trending_up</span>
+<span class="text-emerald text-[11px] font-bold">+8% growth rate</span>
+</div>
+</div>
+</div>
+<!-- MIDDLE ROW: Charts -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Cash Flow Line Chart -->
+<div class="lg:col-span-2 bg-surface-container-high rounded-xl p-6">
+<div class="flex items-center justify-between mb-8">
+<div>
+<h4 class="text-white font-bold tracking-tight">Cash Flow Analysis</h4>
+<p class="text-[11px] text-on-surface-variant">Income vs Expenses (12 Month Trend)</p>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-emerald"></span>
+<span class="text-[10px] font-bold text-on-surface-variant">Income</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-coral"></span>
+<span class="text-[10px] font-bold text-on-surface-variant">Expenses</span>
+</div>
+</div>
+</div>
+<!-- Simulated Line Chart -->
+<div class="relative h-64 w-full mt-4 flex items-end justify-between">
+<!-- Grid Lines -->
+<div class="absolute inset-0 flex flex-col justify-between py-2">
+<div class="w-full border-t border-outline-variant/10"></div>
+<div class="w-full border-t border-outline-variant/10"></div>
+<div class="w-full border-t border-outline-variant/10"></div>
+<div class="w-full border-t border-outline-variant/10"></div>
+</div>
+<!-- Chart Lines (Stylized SVG) -->
+<svg class="absolute inset-0 w-full h-full overflow-visible" preserveaspectratio="none">
+<path d="M0 180 Q 50 140, 100 160 T 200 120 T 300 90 T 400 110 T 500 70 T 600 80 T 700 40 T 800 60" fill="none" stroke="#10b981" stroke-width="3"></path>
+<path d="M0 220 Q 50 200, 100 210 T 200 190 T 300 180 T 400 200 T 500 170 T 600 185 T 700 160 T 800 175" fill="none" stroke="#fb7185" stroke-dasharray="4" stroke-width="3"></path>
+</svg>
+<!-- X-Axis Labels -->
+<div class="absolute bottom-[-24px] left-0 right-0 flex justify-between text-[10px] font-bold text-on-surface-variant tracking-tighter">
+<span>JAN</span><span>FEB</span><span>MAR</span><span>APR</span><span>MAY</span><span>JUN</span><span>JUL</span><span>AUG</span><span>SEP</span><span>OCT</span><span>NOV</span><span>DEC</span>
+</div>
+</div>
+</div>
+<!-- Revenue Breakdown Donut -->
+<div class="bg-surface-container-high rounded-xl p-6 flex flex-col">
+<h4 class="text-white font-bold tracking-tight mb-1">Revenue Breakdown</h4>
+<p class="text-[11px] text-on-surface-variant mb-8">Quarterly attribution</p>
+<div class="relative flex-1 flex flex-col items-center justify-center">
+<!-- Simulated Donut -->
+<div class="relative w-40 h-40">
+<svg class="w-full h-full transform -rotate-90">
+<circle cx="80" cy="80" fill="transparent" r="70" stroke="#282a30" stroke-width="12"></circle>
+<circle cx="80" cy="80" fill="transparent" r="70" stroke="#c3c0ff" stroke-dasharray="440" stroke-dashoffset="198" stroke-width="12"></circle>
+<circle cx="80" cy="80" fill="transparent" r="70" stroke="#4f46e5" stroke-dasharray="440" stroke-dashoffset="330" stroke-width="12"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="text-3xl font-black text-white">45%</span>
+<span class="text-[9px] font-bold text-on-surface-variant">SUBSCRIPTIONS</span>
+</div>
+</div>
+<div class="mt-8 w-full space-y-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-primary"></span>
+<span class="text-xs font-medium text-on-surface-variant">Subscriptions</span>
+</div>
+<span class="text-xs font-bold text-white">45%</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-primary-container"></span>
+<span class="text-xs font-medium text-on-surface-variant">Services</span>
+</div>
+<span class="text-xs font-bold text-white">30%</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-surface-bright"></span>
+<span class="text-xs font-medium text-on-surface-variant">Products</span>
+</div>
+<span class="text-xs font-bold text-white">25%</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- BOTTOM ROW: P&L and Health Score -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+<!-- P&L Bar Chart -->
+<div class="bg-surface-container-high rounded-xl p-6">
+<div class="flex items-center justify-between mb-8">
+<div>
+<h4 class="text-white font-bold tracking-tight">P&amp;L Summary</h4>
+<p class="text-[11px] text-on-surface-variant">Revenue vs Expenses by Quarter</p>
+</div>
+</div>
+<div class="h-64 w-full flex items-end justify-around pb-6 relative">
+<!-- Q1 -->
+<div class="flex items-end gap-1.5 h-full">
+<div class="w-8 bg-primary rounded-t-sm" style="height: 60%"></div>
+<div class="w-8 bg-surface-container-highest rounded-t-sm" style="height: 45%"></div>
+</div>
+<!-- Q2 -->
+<div class="flex items-end gap-1.5 h-full">
+<div class="w-8 bg-primary rounded-t-sm" style="height: 75%"></div>
+<div class="w-8 bg-surface-container-highest rounded-t-sm" style="height: 50%"></div>
+</div>
+<!-- Q3 -->
+<div class="flex items-end gap-1.5 h-full">
+<div class="w-8 bg-primary rounded-t-sm" style="height: 85%"></div>
+<div class="w-8 bg-surface-container-highest rounded-t-sm" style="height: 55%"></div>
+</div>
+<!-- Q4 -->
+<div class="flex items-end gap-1.5 h-full">
+<div class="w-8 bg-primary rounded-t-sm" style="height: 95%"></div>
+<div class="w-8 bg-surface-container-highest rounded-t-sm" style="height: 65%"></div>
+</div>
+<div class="absolute bottom-0 left-0 right-0 flex justify-around text-[10px] font-bold text-on-surface-variant">
+<span class="w-16 text-center">Q1</span>
+<span class="w-16 text-center">Q2</span>
+<span class="w-16 text-center">Q3</span>
+<span class="w-16 text-center">Q4</span>
+</div>
+</div>
+</div>
+<!-- Financial Health Circular Gauge -->
+<div class="glass-card rounded-xl p-6 relative overflow-hidden flex flex-col items-center justify-center">
+<div class="absolute top-6 left-6">
+<h4 class="text-white font-bold tracking-tight">Financial Health Score</h4>
+<p class="text-[11px] text-on-surface-variant">AI Sovereign Rating</p>
+</div>
+<div class="mt-12 relative">
+<!-- Gauge Structure -->
+<svg class="w-48 h-48 transform -rotate-225">
+<circle cx="96" cy="96" fill="transparent" r="80" stroke="#282a30" stroke-dasharray="377" stroke-dashoffset="0" stroke-width="12"></circle>
+<circle cx="96" cy="96" fill="transparent" r="80" stroke="#f59e0b" stroke-dasharray="377" stroke-dashoffset="105" stroke-linecap="round" stroke-width="14"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="text-5xl font-black text-white leading-none">72</span>
+<div class="px-3 py-1 bg-amber-10 text-amber text-[10px] font-black uppercase tracking-widest rounded-full mt-2">Good</div>
+</div>
+</div>
+<p class="text-center text-on-surface-variant text-[11px] max-w-[240px] mt-6 italic">
+                        "Optimizing payroll efficiency could boost your health score to 85 within 60 days."
+                    </p>
+</div>
+</div>
+</div>
+<!-- Footer -->
+<footer class="p-8 border-t border-outline-variant/10 text-[10px] text-on-surface-variant flex flex-col sm:flex-row justify-between gap-4 uppercase tracking-[0.2em] font-medium">
+<span>© 2024 CFO.AI Sovereign Intelligence Unit</span>
+<div class="flex gap-6">
+<a class="hover:text-primary transition-colors" href="#">Privacy</a>
+<a class="hover:text-primary transition-colors" href="#">Security Audit</a>
+<a class="hover:text-primary transition-colors" href="#">System Status</a>
+</div>
+</footer>
+</main>
+<!-- Floating Action Button -->
+<button class="fixed bottom-8 right-8 z-[100] group flex items-center gap-3 bg-gradient-to-br from-[#c3c0ff] to-[#4f46e5] hover:scale-105 active:scale-95 text-on-primary-fixed p-4 md:px-6 md:py-4 rounded-full shadow-[0_20px_40px_rgba(79,70,229,0.3)] transition-all duration-300">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+<span class="font-bold text-sm hidden md:block">Ask CFO</span>
+</button>
+</body></html>

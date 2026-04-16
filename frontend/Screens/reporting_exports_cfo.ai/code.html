@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Reports &amp; Exports | CFO.ai</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-secondary-fixed": "#140f54",
+              "surface-container-high": "#282a30",
+              "inverse-surface": "#e2e2eb",
+              "primary-fixed-dim": "#c3c0ff",
+              "secondary-container": "#413f82",
+              "on-secondary": "#2a276a",
+              "error-container": "#93000a",
+              "tertiary-container": "#a44100",
+              "on-tertiary-fixed-variant": "#7b2f00",
+              "inverse-primary": "#4d44e3",
+              "secondary": "#c3c0ff",
+              "surface-bright": "#373940",
+              "on-surface-variant": "#c7c4d8",
+              "on-primary-fixed": "#0f0069",
+              "on-error-container": "#ffdad6",
+              "surface-container-lowest": "#0c0e14",
+              "on-secondary-container": "#b0aef9",
+              "on-background": "#e2e2eb",
+              "secondary-fixed-dim": "#c3c0ff",
+              "primary": "#c3c0ff",
+              "inverse-on-surface": "#2e3037",
+              "surface-dim": "#111319",
+              "primary-fixed": "#e2dfff",
+              "surface-container-highest": "#33343b",
+              "surface-container": "#1e1f26",
+              "on-tertiary-fixed": "#351000",
+              "tertiary": "#ffb695",
+              "on-tertiary": "#571f00",
+              "tertiary-fixed": "#ffdbcc",
+              "primary-container": "#4f46e5",
+              "on-error": "#690005",
+              "surface-variant": "#33343b",
+              "surface-container-low": "#191b22",
+              "tertiary-fixed-dim": "#ffb695",
+              "surface-tint": "#c3c0ff",
+              "on-primary-container": "#dad7ff",
+              "on-surface": "#e2e2eb",
+              "on-primary": "#1d00a5",
+              "error": "#ffb4ab",
+              "on-primary-fixed-variant": "#3323cc",
+              "on-secondary-fixed-variant": "#413f82",
+              "background": "#111319",
+              "secondary-fixed": "#e2dfff",
+              "outline-variant": "#464555",
+              "on-tertiary-container": "#ffd2be",
+              "outline": "#918fa1",
+              "surface": "#111319",
+              "emerald-glow": "#10b981"
+            },
+            fontFamily: {
+              "headline": ["Inter"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        body { background-color: #111319; color: #e2e2eb; font-family: 'Inter', sans-serif; }
+        .glass-panel {
+            background: rgba(51, 52, 59, 0.6);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(195, 192, 255, 0.1);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="antialiased overflow-hidden">
+<div class="flex h-screen overflow-hidden">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-screen flex flex-col py-6 border-r-0 bg-[#191b22] dark:bg-[#191b22] w-64 shadow-[20px_0_40px_rgba(0,0,0,0.4)] z-50">
+<div class="px-6 mb-8 flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">psychology</span>
+</div>
+<div>
+<h1 class="text-lg font-bold text-white tracking-tighter">The Sovereign</h1>
+<p class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant">Intelligence</p>
+</div>
+</div>
+<nav class="flex-1 px-3 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-[#c7c4d8] hover:bg-[#282a30]/30 hover:text-white transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors" data-icon="dashboard">dashboard</span>
+<span class="font-['Inter'] text-sm antialiased">Overview</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-[#282a30] text-white rounded-lg border-r-4 border-[#4F46E5]" href="#">
+<span class="material-symbols-outlined" data-icon="analytics" style="font-variation-settings: 'FILL' 1;">analytics</span>
+<span class="font-['Inter'] text-sm antialiased font-medium">Reports</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#c7c4d8] hover:bg-[#282a30]/30 hover:text-white transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors" data-icon="query_stats">query_stats</span>
+<span class="font-['Inter'] text-sm antialiased">Forecasting</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#c7c4d8] hover:bg-[#282a30]/30 hover:text-white transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors" data-icon="account_balance_wallet">account_balance_wallet</span>
+<span class="font-['Inter'] text-sm antialiased">Ledger</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#c7c4d8] hover:bg-[#282a30]/30 hover:text-white transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors" data-icon="psychology">psychology</span>
+<span class="font-['Inter'] text-sm antialiased">AI Insights</span>
+</a>
+</nav>
+<div class="px-3 mt-auto space-y-1">
+<button class="w-full mb-4 py-3 px-4 bg-primary-container text-on-primary-container rounded-lg font-medium text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-sm">add</span>
+                    New Analysis
+                </button>
+<a class="flex items-center gap-3 px-4 py-3 text-[#c7c4d8] hover:bg-[#282a30]/30 hover:text-white transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span class="font-['Inter'] text-sm antialiased">Help Center</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#c7c4d8] hover:bg-[#282a30]/30 hover:text-white transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-['Inter'] text-sm antialiased">Account</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 ml-64 overflow-y-auto bg-[#111319] p-8 pb-20">
+<!-- Page Header -->
+<header class="flex justify-between items-end mb-12">
+<div>
+<h2 class="text-4xl font-extrabold tracking-tight text-white mb-2">Reports &amp; Exports</h2>
+<p class="text-on-surface-variant max-w-lg">Access your strategic financial documentation, generated with Sovereign intelligence and real-time ledger data.</p>
+</div>
+<button class="px-6 py-3 bg-[#10b981] hover:bg-[#059669] text-white font-bold rounded-xl transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
+<span class="material-symbols-outlined">add_chart</span>
+                    Generate New Report
+                </button>
+</header>
+<!-- Report Templates Grid -->
+<section class="mb-16">
+<div class="flex items-center justify-between mb-6">
+<h3 class="text-sm font-semibold uppercase tracking-widest text-on-surface-variant">Report Templates</h3>
+<div class="h-px flex-1 mx-6 bg-outline-variant/20"></div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Template Card 1 -->
+<div class="group surface-container-high rounded-xl p-6 transition-all hover:bg-surface-container-highest border border-transparent hover:border-outline-variant/20">
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary text-3xl">payments</span>
+</div>
+<h4 class="text-lg font-bold text-white mb-2">Cash Flow Statement</h4>
+<p class="text-sm text-on-surface-variant mb-6 leading-relaxed">Monthly cash inflows and outflows summary with variance tracking.</p>
+<button class="w-full py-2.5 rounded-lg border border-outline-variant hover:bg-white hover:text-background transition-all text-sm font-semibold">Generate</button>
+</div>
+<!-- Template Card 2 -->
+<div class="group surface-container-high rounded-xl p-6 transition-all hover:bg-surface-container-highest border border-transparent hover:border-outline-variant/20">
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary text-3xl">article</span>
+</div>
+<h4 class="text-lg font-bold text-white mb-2">1-Page Business Summary</h4>
+<p class="text-sm text-on-surface-variant mb-6 leading-relaxed">Executive snapshot with KPIs, trends, and AI-driven growth insights.</p>
+<button class="w-full py-2.5 rounded-lg border border-outline-variant hover:bg-white hover:text-background transition-all text-sm font-semibold">Generate</button>
+</div>
+<!-- Template Card 3 -->
+<div class="group surface-container-high rounded-xl p-6 transition-all hover:bg-surface-container-highest border border-transparent hover:border-outline-variant/20">
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary text-3xl">handshake</span>
+</div>
+<h4 class="text-lg font-bold text-white mb-2">Investor Update</h4>
+<p class="text-sm text-on-surface-variant mb-6 leading-relaxed">Formatted update for investors with key metrics and runway status.</p>
+<button class="w-full py-2.5 rounded-lg border border-outline-variant hover:bg-white hover:text-background transition-all text-sm font-semibold">Generate</button>
+</div>
+<!-- Template Card 4 -->
+<div class="group surface-container-high rounded-xl p-6 transition-all hover:bg-surface-container-highest border border-transparent hover:border-outline-variant/20">
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary text-3xl">analytics</span>
+</div>
+<h4 class="text-lg font-bold text-white mb-2">Budget vs Actuals</h4>
+<p class="text-sm text-on-surface-variant mb-6 leading-relaxed">Compare planned vs actual spending by department and category.</p>
+<button class="w-full py-2.5 rounded-lg border border-outline-variant hover:bg-white hover:text-background transition-all text-sm font-semibold">Generate</button>
+</div>
+<!-- Template Card 5 -->
+<div class="group surface-container-high rounded-xl p-6 transition-all hover:bg-surface-container-highest border border-transparent hover:border-outline-variant/20">
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary text-3xl">account_balance</span>
+</div>
+<h4 class="text-lg font-bold text-white mb-2">P&amp;L Statement</h4>
+<p class="text-sm text-on-surface-variant mb-6 leading-relaxed">Profit and Loss report for selected period with automated reconciliation.</p>
+<button class="w-full py-2.5 rounded-lg border border-outline-variant hover:bg-white hover:text-background transition-all text-sm font-semibold">Generate</button>
+</div>
+<!-- Template Card 6 -->
+<div class="group surface-container-high rounded-xl p-6 transition-all hover:bg-surface-container-highest border border-transparent hover:border-outline-variant/20">
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-primary text-3xl">trending_down</span>
+</div>
+<h4 class="text-lg font-bold text-white mb-2">Runway Analysis</h4>
+<p class="text-sm text-on-surface-variant mb-6 leading-relaxed">Detailed runway projection with multi-variable burn scenarios.</p>
+<button class="w-full py-2.5 rounded-lg border border-outline-variant hover:bg-white hover:text-background transition-all text-sm font-semibold">Generate</button>
+</div>
+</div>
+</section>
+<!-- Recent Reports Table -->
+<section>
+<div class="flex items-center justify-between mb-6">
+<h3 class="text-sm font-semibold uppercase tracking-widest text-on-surface-variant">Recent Reports</h3>
+<div class="h-px flex-1 mx-6 bg-outline-variant/20"></div>
+</div>
+<div class="surface-container-high rounded-xl overflow-hidden">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-highest/30 border-b border-outline-variant/10">
+<th class="px-6 py-4 text-xs font-bold uppercase tracking-tighter text-on-surface-variant">Report Name</th>
+<th class="px-6 py-4 text-xs font-bold uppercase tracking-tighter text-on-surface-variant">Type</th>
+<th class="px-6 py-4 text-xs font-bold uppercase tracking-tighter text-on-surface-variant">Generated On</th>
+<th class="px-6 py-4 text-xs font-bold uppercase tracking-tighter text-on-surface-variant">Generated By</th>
+<th class="px-6 py-4 text-xs font-bold uppercase tracking-tighter text-on-surface-variant text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-bright/5 transition-colors group">
+<td class="px-6 py-5 font-medium text-white">Q3 Executive Summary Final</td>
+<td class="px-6 py-5 text-sm text-on-surface-variant">Business Summary</td>
+<td class="px-6 py-5 text-sm text-on-surface-variant">Oct 12, 2023</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-[10px] text-primary font-bold">JD</div>
+<span class="text-sm text-on-surface-variant">Jane Doe</span>
+</div>
+</td>
+<td class="px-6 py-5 text-right">
+<div class="flex justify-end gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
+<button class="p-2 hover:bg-surface-container-highest rounded-lg text-primary transition-colors">
+<span class="material-symbols-outlined text-xl">picture_as_pdf</span>
+</button>
+<button class="p-2 hover:bg-surface-container-highest rounded-lg text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined text-xl">mail</span>
+</button>
+<button class="p-2 hover:bg-error/10 hover:text-error rounded-lg text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined text-xl">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-bright/5 transition-colors group">
+<td class="px-6 py-5 font-medium text-white">Series B Investor Deck Supplement</td>
+<td class="px-6 py-5 text-sm text-on-surface-variant">Investor Update</td>
+<td class="px-6 py-5 text-sm text-on-surface-variant">Oct 10, 2023</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px] text-emerald-400 font-bold">AI</div>
+<span class="text-sm text-on-surface-variant">Sovereign AI</span>
+</div>
+</td>
+<td class="px-6 py-5 text-right">
+<div class="flex justify-end gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
+<button class="p-2 hover:bg-surface-container-highest rounded-lg text-primary transition-colors">
+<span class="material-symbols-outlined text-xl">picture_as_pdf</span>
+</button>
+<button class="p-2 hover:bg-surface-container-highest rounded-lg text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined text-xl">mail</span>
+</button>
+<button class="p-2 hover:bg-error/10 hover:text-error rounded-lg text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined text-xl">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-bright/5 transition-colors group">
+<td class="px-6 py-5 font-medium text-white">August Burn Analysis</td>
+<td class="px-6 py-5 text-sm text-on-surface-variant">Runway Analysis</td>
+<td class="px-6 py-5 text-sm text-on-surface-variant">Sep 05, 2023</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-[10px] text-primary font-bold">JD</div>
+<span class="text-sm text-on-surface-variant">Jane Doe</span>
+</div>
+</td>
+<td class="px-6 py-5 text-right">
+<div class="flex justify-end gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
+<button class="p-2 hover:bg-surface-container-highest rounded-lg text-primary transition-colors">
+<span class="material-symbols-outlined text-xl">picture_as_pdf</span>
+</button>
+<button class="p-2 hover:bg-surface-container-highest rounded-lg text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined text-xl">mail</span>
+</button>
+<button class="p-2 hover:bg-error/10 hover:text-error rounded-lg text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined text-xl">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-bright/5 transition-colors group">
+<td class="px-6 py-5 font-medium text-white">Full Year 2022 P&amp;L Audited</td>
+<td class="px-6 py-5 text-sm text-on-surface-variant">P&amp;L Statement</td>
+<td class="px-6 py-5 text-sm text-on-surface-variant">Jan 15, 2023</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-tertiary/20 flex items-center justify-center text-[10px] text-tertiary font-bold">MK</div>
+<span class="text-sm text-on-surface-variant">Marcus King</span>
+</div>
+</td>
+<td class="px-6 py-5 text-right">
+<div class="flex justify-end gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
+<button class="p-2 hover:bg-surface-container-highest rounded-lg text-primary transition-colors">
+<span class="material-symbols-outlined text-xl">picture_as_pdf</span>
+</button>
+<button class="p-2 hover:bg-surface-container-highest rounded-lg text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined text-xl">mail</span>
+</button>
+<button class="p-2 hover:bg-error/10 hover:text-error rounded-lg text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined text-xl">delete</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="px-6 py-4 bg-surface-container-highest/20 flex justify-center">
+<button class="text-xs font-bold uppercase tracking-widest text-primary hover:text-white transition-colors">View All Archive</button>
+</div>
+</div>
+</section>
+</main>
+<!-- Export Options Panel (Right Side Panel) -->
+<aside class="w-80 h-screen glass-panel fixed right-0 top-0 border-l border-outline-variant/10 p-8 flex flex-col z-40">
+<h3 class="text-xl font-bold text-white mb-8">Export Settings</h3>
+<div class="space-y-8 flex-1 overflow-y-auto pr-2">
+<!-- Format Selector -->
+<div>
+<label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant block mb-4">Output Format</label>
+<div class="grid grid-cols-3 gap-2">
+<button class="py-3 rounded-lg bg-primary-container text-on-primary-container font-bold text-xs">PDF</button>
+<button class="py-3 rounded-lg bg-surface-container-low text-on-surface-variant font-medium text-xs border border-outline-variant/20 hover:border-primary/50 transition-colors">CSV</button>
+<button class="py-3 rounded-lg bg-surface-container-low text-on-surface-variant font-medium text-xs border border-outline-variant/20 hover:border-primary/50 transition-colors">EXCEL</button>
+</div>
+</div>
+<!-- Date Range Picker (Static Representation) -->
+<div>
+<label class="text-xs font-bold uppercase tracking-widest text-on-surface-variant block mb-4">Date Range</label>
+<div class="relative">
+<div class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-4 py-3 text-sm flex items-center justify-between">
+<span class="text-white">Oct 01 - Oct 31, 2023</span>
+<span class="material-symbols-outlined text-on-surface-variant text-lg">calendar_today</span>
+</div>
+</div>
+</div>
+<!-- Toggles -->
+<div class="space-y-6">
+<div class="flex items-center justify-between">
+<div>
+<p class="text-sm font-medium text-white">Include AI Commentary</p>
+<p class="text-xs text-on-surface-variant">Narrative insights automatically added.</p>
+</div>
+<div class="w-10 h-5 rounded-full bg-surface-container-highest relative flex items-center px-1">
+<div class="w-3.5 h-3.5 rounded-full bg-outline-variant"></div>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<div>
+<p class="text-sm font-medium text-white">Add Disclaimer</p>
+<p class="text-xs text-on-surface-variant">Legal and fiscal compliance footer.</p>
+</div>
+<div class="w-10 h-5 rounded-full bg-[#10b981] relative flex items-center justify-end px-1">
+<div class="w-3.5 h-3.5 rounded-full bg-white"></div>
+</div>
+</div>
+</div>
+<!-- Preview Area -->
+<div class="p-4 rounded-lg bg-surface-container-lowest/50 border border-dashed border-outline-variant/30 text-center">
+<div class="w-16 h-20 mx-auto bg-surface-container-high rounded-sm mb-3 flex flex-col gap-1 p-2">
+<div class="h-1 w-full bg-outline-variant/30"></div>
+<div class="h-1 w-3/4 bg-outline-variant/30"></div>
+<div class="mt-auto h-2 w-full bg-primary/20"></div>
+</div>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-widest">Live Preview Unavailable</p>
+</div>
+</div>
+<div class="mt-8 pt-8 border-t border-outline-variant/10">
+<button class="w-full py-4 bg-[#10b981] hover:bg-[#059669] text-white font-black uppercase tracking-widest rounded-xl transition-all shadow-[0_10px_30px_rgba(16,185,129,0.2)]">
+                    Export Report
+                </button>
+</div>
+</aside>
+</div>
+<!-- Background Decoration -->
+<div class="fixed top-0 right-0 -z-10 w-[800px] h-[800px] bg-primary/5 blur-[120px] rounded-full pointer-events-none"></div>
+<div class="fixed bottom-0 left-0 -z-10 w-[600px] h-[600px] bg-emerald-500/5 blur-[120px] rounded-full pointer-events-none"></div>
+</body></html>

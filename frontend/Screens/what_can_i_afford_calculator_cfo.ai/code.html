@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CFO.ai | What Can I Afford?</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-surface": "#e2e2eb",
+                        "on-primary-fixed": "#0f0069",
+                        "surface-bright": "#373940",
+                        "error": "#ffb4ab",
+                        "surface-container-high": "#282a30",
+                        "inverse-on-surface": "#2e3037",
+                        "secondary-fixed": "#e2dfff",
+                        "secondary-container": "#413f82",
+                        "on-tertiary-container": "#ffd2be",
+                        "secondary": "#c3c0ff",
+                        "on-error": "#690005",
+                        "surface-container-highest": "#33343b",
+                        "inverse-surface": "#e2e2eb",
+                        "on-secondary-fixed-variant": "#413f82",
+                        "tertiary-fixed": "#ffdbcc",
+                        "on-secondary-fixed": "#140f54",
+                        "on-tertiary-fixed": "#351000",
+                        "on-background": "#e2e2eb",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "tertiary-container": "#a44100",
+                        "surface-variant": "#33343b",
+                        "surface-dim": "#111319",
+                        "on-primary-container": "#dad7ff",
+                        "surface-container-lowest": "#0c0e14",
+                        "background": "#111319",
+                        "tertiary-fixed-dim": "#ffb695",
+                        "on-tertiary": "#571f00",
+                        "surface-container-low": "#191b22",
+                        "outline-variant": "#464555",
+                        "secondary-fixed-dim": "#c3c0ff",
+                        "inverse-primary": "#4d44e3",
+                        "outline": "#918fa1",
+                        "error-container": "#93000a",
+                        "surface-tint": "#c3c0ff",
+                        "on-primary": "#1d00a5",
+                        "on-secondary": "#2a276a",
+                        "primary": "#c3c0ff",
+                        "surface": "#111319",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "primary-fixed": "#e2dfff",
+                        "on-tertiary-fixed-variant": "#7b2f00",
+                        "on-error-container": "#ffdad6",
+                        "tertiary": "#ffb695",
+                        "on-surface-variant": "#c7c4d8",
+                        "surface-container": "#1e1f26",
+                        "primary-container": "#4f46e5",
+                        "on-secondary-container": "#b0aef9"
+                    },
+                    fontFamily: {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #0f1117; }
+        .glass-card {
+            background: rgba(51, 52, 59, 0.4);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(195, 192, 255, 0.1);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="text-on-surface antialiased selection:bg-primary/30">
+<!-- SideNavBar (Shared Component) -->
+<aside class="fixed left-0 top-0 h-screen w-64 bg-[#191b22] flex flex-col py-8 px-4 gap-y-2 font-['Inter'] text-sm hidden md:flex z-40">
+<div class="mb-8 px-2">
+<h2 class="text-lg font-bold text-white tracking-tighter">Sovereign Intel</h2>
+<p class="text-[#c7c4d8] text-xs opacity-70">CFO.ai Premium</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-[#c7c4d8] hover:text-white hover:bg-white/5 transition-all rounded-lg active:scale-95 group" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-[#c7c4d8] hover:text-white hover:bg-white/5 transition-all rounded-lg active:scale-95 group" href="#">
+<span class="material-symbols-outlined" data-icon="insights">insights</span>
+<span>Strategy</span>
+</a>
+<!-- Active Tab: Tools -->
+<a class="flex items-center gap-3 px-3 py-2 text-[#c3c0ff] font-semibold border-r-2 border-[#4f46e5] bg-white/5 transition-all rounded-l-lg active:scale-95 group" href="#">
+<span class="material-symbols-outlined" data-icon="build">build</span>
+<span>Tools</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-[#c7c4d8] hover:text-white hover:bg-white/5 transition-all rounded-lg active:scale-95 group" href="#">
+<span class="material-symbols-outlined" data-icon="assessment">assessment</span>
+<span>Reports</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-[#c7c4d8] hover:text-white hover:bg-white/5 transition-all rounded-lg active:scale-95 group" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+</nav>
+<button class="mt-4 mx-2 bg-gradient-to-br from-[#c3c0ff] to-[#4f46e5] text-[#0f0069] font-bold py-2.5 rounded-xl shadow-lg active:scale-95 transition-transform">
+            New Analysis
+        </button>
+<div class="mt-auto space-y-1 pt-4 border-t border-white/5">
+<a class="flex items-center gap-3 px-3 py-2 text-[#c7c4d8] hover:text-white hover:bg-white/5 transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span>Support</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-[#c7c4d8] hover:text-white hover:bg-white/5 transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span>Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="md:ml-64 min-h-screen p-8 lg:p-12">
+<!-- Header Section -->
+<header class="mb-12">
+<h1 class="text-4xl lg:text-5xl font-extrabold text-white tracking-tighter mb-3">
+                What Can I Afford?
+            </h1>
+<p class="text-on-surface-variant text-lg max-w-2xl font-light">
+                Simulate the financial impact of any new expense before committing to growth. Powered by Sovereign Intel.
+            </p>
+</header>
+<!-- Tool Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+<!-- Input Form (Left 40%) -->
+<section class="lg:col-span-5 space-y-6">
+<div class="glass-card rounded-2xl p-8 shadow-2xl">
+<div class="flex items-center gap-2 mb-8">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<h3 class="text-xs font-bold uppercase tracking-widest text-primary/80">Scenario Parameters</h3>
+</div>
+<form class="space-y-6">
+<div>
+<label class="block text-xs font-medium text-on-surface-variant mb-2 uppercase tracking-tight">Expense Name</label>
+<input class="w-full bg-surface-container-lowest border-outline-variant/20 rounded-xl px-4 py-3 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all" type="text" value="New Developer Hire"/>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="block text-xs font-medium text-on-surface-variant mb-2 uppercase tracking-tight">Monthly Cost</label>
+<div class="relative">
+<input class="w-full bg-surface-container-lowest border-outline-variant/20 rounded-xl px-4 py-3 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all" type="text" value="₹1,20,000"/>
+</div>
+</div>
+<div>
+<label class="block text-xs font-medium text-on-surface-variant mb-2 uppercase tracking-tight">Frequency</label>
+<select class="w-full bg-surface-container-lowest border-outline-variant/20 rounded-xl px-4 py-3 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none">
+<option>Monthly</option>
+<option>One-time</option>
+<option>Quarterly</option>
+</select>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="block text-xs font-medium text-on-surface-variant mb-2 uppercase tracking-tight">Start Date</label>
+<input class="w-full bg-surface-container-lowest border-outline-variant/20 rounded-xl px-4 py-3 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all" type="text" value="Jan 1, 2024"/>
+</div>
+<div>
+<label class="block text-xs font-medium text-on-surface-variant mb-2 uppercase tracking-tight">Duration</label>
+<input class="w-full bg-surface-container-lowest border-outline-variant/20 rounded-xl px-4 py-3 text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all" type="text" value="12 months"/>
+</div>
+</div>
+<button class="w-full mt-4 py-4 rounded-xl bg-gradient-to-r from-emerald-500/90 to-emerald-600 text-on-primary-fixed font-bold text-lg shadow-[0_10px_30px_rgba(16,185,129,0.2)] hover:shadow-[0_15px_40px_rgba(16,185,129,0.3)] transition-all active:scale-95" type="button">
+                            Calculate Impact
+                        </button>
+</form>
+</div>
+<div class="px-4 py-6 rounded-2xl bg-surface-container-low border border-outline-variant/10">
+<p class="text-xs text-on-surface-variant leading-relaxed italic">
+                        "Financial sovereignty is achieved through the elimination of uncertainty." — CFO.ai Insights
+                    </p>
+</div>
+</section>
+<!-- Results Section (Right 60%) -->
+<section class="lg:col-span-7 space-y-8">
+<!-- Runway Impact Card -->
+<div class="glass-card rounded-2xl p-8">
+<div class="flex justify-between items-start mb-8">
+<div>
+<h3 class="text-xl font-bold text-white tracking-tight">Runway Impact</h3>
+<p class="text-on-surface-variant text-sm">Days until cash depletion</p>
+</div>
+<div class="flex items-center gap-2 bg-red-500/10 text-red-400 px-3 py-1.5 rounded-full border border-red-500/20">
+<span class="material-symbols-outlined text-sm" data-icon="arrow_downward">arrow_downward</span>
+<span class="text-xs font-bold uppercase tracking-wider">-2.4 Months</span>
+</div>
+</div>
+<div class="space-y-6">
+<div class="space-y-2">
+<div class="flex justify-between text-xs font-medium text-on-surface-variant px-1">
+<span>CURRENT STATUS (BEFORE)</span>
+<span class="text-white font-bold">8.2 months</span>
+</div>
+<div class="h-3 w-full bg-surface-container-lowest rounded-full overflow-hidden">
+<div class="h-full bg-emerald-500/60 rounded-full" style="width: 68%"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between text-xs font-medium text-on-surface-variant px-1">
+<span>SIMULATED (AFTER)</span>
+<span class="text-coral-400 font-bold" style="color: #ffb4ab;">5.8 months</span>
+</div>
+<div class="h-3 w-full bg-surface-container-lowest rounded-full overflow-hidden">
+<div class="h-full bg-red-500/60 rounded-full" style="width: 48%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Forecast and AI Recommendation (Split row) -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<!-- Cash Flow Chart Mock -->
+<div class="glass-card rounded-2xl p-6 flex flex-col">
+<h4 class="text-sm font-bold text-on-surface-variant mb-4 uppercase tracking-widest">3-Month Cash Flow Forecast</h4>
+<div class="flex-1 min-h-[140px] relative flex items-end justify-between px-2 pb-4">
+<!-- Simple Visual Lines (Mock) -->
+<div class="absolute bottom-10 left-0 w-full h-[2px] bg-emerald-500/20 rotate-[-10deg]"></div>
+<div class="absolute bottom-16 left-0 w-full h-[2px] border-t-2 border-dashed border-amber-400/50 rotate-[-22deg]"></div>
+<div class="w-1/4 h-2/3 bg-white/5 rounded-t-lg"></div>
+<div class="w-1/4 h-1/2 bg-white/5 rounded-t-lg"></div>
+<div class="w-1/4 h-1/3 bg-white/5 rounded-t-lg"></div>
+<div class="w-1/4 h-1/4 bg-white/5 rounded-t-lg"></div>
+</div>
+<div class="mt-4 pt-4 border-t border-white/5 flex flex-col gap-1">
+<span class="text-[10px] text-on-surface-variant uppercase font-medium">Net difference</span>
+<span class="text-lg font-bold text-white tracking-tight">-₹3,60,000</span>
+</div>
+</div>
+<!-- AI Recommendation -->
+<div class="glass-card rounded-2xl p-6 border-l-4 border-amber-400">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-amber-400" data-icon="warning">warning</span>
+<h4 class="text-sm font-bold text-amber-400 uppercase tracking-widest">AI Recommendation</h4>
+</div>
+<p class="text-sm text-on-surface leading-relaxed mb-4">
+                            This expense would reduce your runway below the safe <span class="font-bold">6-month threshold.</span>
+</p>
+<div class="space-y-3">
+<div class="bg-amber-400/5 p-3 rounded-xl border border-amber-400/10">
+<p class="text-xs text-amber-200/80 mb-1">Suggestion</p>
+<p class="text-xs font-semibold">Part-time contractor at ₹60,000/month.</p>
+</div>
+<div class="bg-emerald-400/5 p-3 rounded-xl border border-emerald-400/10">
+<p class="text-xs text-emerald-200/80 mb-1">Break-even</p>
+<p class="text-xs font-semibold">Increase monthly revenue by ₹1,20,000.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Actions -->
+<div class="flex items-center justify-between pt-6">
+<button class="bg-surface-container-highest hover:bg-surface-bright text-white px-8 py-3 rounded-xl font-bold transition-all active:scale-95 shadow-xl">
+                        Save Scenario
+                    </button>
+<a class="group flex items-center gap-2 text-primary font-medium hover:text-white transition-colors" href="#">
+<span>Compare Scenarios</span>
+<span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform" data-icon="chevron_right">chevron_right</span>
+</a>
+</div>
+</section>
+</div>
+<!-- Decorative Ethereal Element -->
+<div class="fixed bottom-0 right-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full -z-10 pointer-events-none"></div>
+<div class="fixed top-20 left-1/2 w-[300px] h-[300px] bg-secondary-container/10 blur-[100px] rounded-full -z-10 pointer-events-none"></div>
+</main>
+</body></html>

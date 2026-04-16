@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Audit Trail | CFO.ai</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "secondary-container": "#413f82",
+              "on-secondary": "#2a276a",
+              "error-container": "#93000a",
+              "surface-container-high": "#282a30",
+              "inverse-surface": "#e2e2eb",
+              "primary-fixed-dim": "#c3c0ff",
+              "on-secondary-fixed": "#140f54",
+              "secondary": "#c3c0ff",
+              "surface-bright": "#373940",
+              "tertiary-container": "#a44100",
+              "on-tertiary-fixed-variant": "#7b2f00",
+              "inverse-primary": "#4d44e3",
+              "on-background": "#e2e2eb",
+              "secondary-fixed-dim": "#c3c0ff",
+              "surface-container-lowest": "#0c0e14",
+              "on-secondary-container": "#b0aef9",
+              "on-surface-variant": "#c7c4d8",
+              "on-primary-fixed": "#0f0069",
+              "on-error-container": "#ffdad6",
+              "surface-container-highest": "#33343b",
+              "surface-dim": "#111319",
+              "primary-fixed": "#e2dfff",
+              "inverse-on-surface": "#2e3037",
+              "primary": "#c3c0ff",
+              "surface-container-low": "#191b22",
+              "tertiary-fixed-dim": "#ffb695",
+              "on-error": "#690005",
+              "surface-variant": "#33343b",
+              "tertiary-fixed": "#ffdbcc",
+              "primary-container": "#4f46e5",
+              "surface-container": "#1e1f26",
+              "on-tertiary-fixed": "#351000",
+              "tertiary": "#ffb695",
+              "on-tertiary": "#571f00",
+              "on-primary": "#1d00a5",
+              "error": "#ffb4ab",
+              "on-surface": "#e2e2eb",
+              "surface-tint": "#c3c0ff",
+              "on-primary-container": "#dad7ff",
+              "on-secondary-fixed-variant": "#413f82",
+              "background": "#111319",
+              "secondary-fixed": "#e2dfff",
+              "on-primary-fixed-variant": "#3323cc",
+              "surface": "#111319",
+              "on-tertiary-container": "#ffd2be",
+              "outline": "#918fa1",
+              "outline-variant": "#464555"
+            },
+            fontFamily: {
+              "headline": ["Inter"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+      body { background-color: #111319; color: #e2e2eb; font-family: 'Inter', sans-serif; }
+      .glass { background: rgba(40, 42, 48, 0.6); backdrop-filter: blur(12px); border-top: 1px solid rgba(195, 192, 255, 0.1); }
+      .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+      .timeline-line::before { content: ''; position: absolute; left: 11px; top: 0; bottom: 0; width: 2px; background: #282a30; }
+    </style>
+</head>
+<body class="antialiased">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full w-64 border-r border-[#282a30] bg-[#111319] flex flex-col z-50 font-['Inter'] antialiased tracking-tight">
+<div class="p-8">
+<h1 class="text-xl font-bold tracking-tighter text-white">CFO.ai</h1>
+<p class="text-xs text-on-surface-variant/60 uppercase tracking-widest mt-1">Sovereign Intel</p>
+</div>
+<nav class="flex-1 px-4 space-y-2">
+<a class="flex items-center gap-4 px-4 py-3 rounded text-[#c7c4d8] hover:text-white hover:bg-[#191b22] transition-colors" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-sm font-medium">Dashboard</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded text-[#c7c4d8] hover:text-white hover:bg-[#191b22] transition-colors" href="#">
+<span class="material-symbols-outlined">account_balance</span>
+<span class="text-sm font-medium">Financials</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded text-[#c3c0ff] bg-[#282a30] font-medium border-r-2 border-[#4f46e5]" href="#">
+<span class="material-symbols-outlined">history_edu</span>
+<span class="text-sm font-medium">Audit Trail</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded text-[#c7c4d8] hover:text-white hover:bg-[#191b22] transition-colors" href="#">
+<span class="material-symbols-outlined">assessment</span>
+<span class="text-sm font-medium">Reports</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded text-[#c7c4d8] hover:text-white hover:bg-[#191b22] transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-sm font-medium">Settings</span>
+</a>
+</nav>
+<div class="p-6 mt-auto">
+<div class="flex items-center gap-3 p-3 rounded-lg bg-surface-container-low border border-outline-variant/10">
+<img alt="User Profile" class="w-8 h-8 rounded-full bg-primary-container/20 p-1" data-alt="minimalist avatar of a corporate executive in a sharp suit with a neutral professional background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCgZk1G30fS-zXmNU5rTL-pE7xpfRy0LOPWSWmqdzDX41iqPOCdNUDzFYLnV8ExvpYulRhISOPpPDEaiVLKoOBa8vd8henJKZkw4OmGxxHnB9x8nhaRZmicvHhRZkcbzZMfXMrsM7aAwW0b07oKD6BjmeLn65-QkFK5x1xi7xtRmk7Ppx3kJJzHsEypITxaN2hIEtn_FJbP2STRuYPadP_PWe0hpbQ46tc6mzD-g3kheOAPjiYiR6AKsUuVNL-vaHZeJsEEjAHb9Py-"/>
+<div class="overflow-hidden">
+<p class="text-sm font-semibold text-white truncate">Ananya S.</p>
+<p class="text-xs text-on-surface-variant truncate">Chief Accountant</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- TopNavBar -->
+<header class="sticky top-0 z-40 flex justify-between items-center px-8 h-16 w-[calc(100%-16rem)] ml-64 bg-[#111319]/60 backdrop-blur-xl border-b border-[#282a30]/50 shadow-2xl shadow-black/40">
+<div class="flex items-center gap-2">
+<span class="text-[#c3c0ff] font-['Inter'] font-medium text-sm">Audit Trail</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative hidden lg:block">
+<input class="bg-surface-container-lowest border border-outline-variant/20 rounded-full px-10 py-1.5 text-xs focus:ring-1 focus:ring-primary focus:border-primary w-64 text-on-surface" placeholder="Search actions..." type="text"/>
+<span class="material-symbols-outlined absolute left-3 top-1.5 text-on-surface-variant text-sm">search</span>
+</div>
+<div class="flex gap-4">
+<button class="text-[#c7c4d8] hover:text-white transition-opacity scale-95 active:scale-100">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-[#c7c4d8] hover:text-white transition-opacity scale-95 active:scale-100">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="ml-64 p-8 min-h-screen">
+<div class="max-w-7xl mx-auto flex gap-8">
+<!-- Left Column: Content & Timeline -->
+<div class="flex-1">
+<!-- Header -->
+<div class="mb-10">
+<h2 class="text-4xl font-extrabold tracking-tight text-white mb-2">Audit Trail</h2>
+<p class="text-on-surface-variant text-lg font-light italic">Complete log of all actions and changes within your sovereign financial ecosystem.</p>
+</div>
+<!-- Filters -->
+<div class="flex flex-wrap gap-4 mb-12 p-1 border-b border-outline-variant/10 pb-6">
+<div class="flex flex-col gap-1.5 min-w-[160px]">
+<label class="text-[10px] uppercase tracking-widest text-on-surface-variant font-semibold">User</label>
+<select class="bg-surface-container border-none text-sm rounded-lg px-4 py-2 text-on-surface focus:ring-2 focus:ring-primary-container">
+<option>All Users</option>
+<option>Admin</option>
+<option>CEO</option>
+<option>Accountant</option>
+</select>
+</div>
+<div class="flex flex-col gap-1.5 min-w-[180px]">
+<label class="text-[10px] uppercase tracking-widest text-on-surface-variant font-semibold">Action Type</label>
+<select class="bg-surface-container border-none text-sm rounded-lg px-4 py-2 text-on-surface focus:ring-2 focus:ring-primary-container">
+<option>All Actions</option>
+<option>Forecasts</option>
+<option>Budget Changes</option>
+<option>Uploads</option>
+<option>Exports</option>
+<option>Alert Dismissals</option>
+</select>
+</div>
+<div class="flex flex-col gap-1.5 min-w-[200px]">
+<label class="text-[10px] uppercase tracking-widest text-on-surface-variant font-semibold">Date Range</label>
+<button class="bg-surface-container text-sm rounded-lg px-4 py-2 text-left text-on-surface flex justify-between items-center">
+<span>Last 30 Days</span>
+<span class="material-symbols-outlined text-sm">calendar_today</span>
+</button>
+</div>
+<div class="ml-auto self-end">
+<button class="bg-surface-container-high hover:bg-surface-container-highest px-6 py-2 rounded-lg text-sm font-medium transition-all text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">filter_list</span>
+                            Advanced Filters
+                        </button>
+</div>
+</div>
+<!-- Timeline -->
+<div class="relative space-y-12 pl-12 timeline-line">
+<!-- Today Group -->
+<div class="relative">
+<div class="absolute -left-[54px] top-0 bg-background py-1 px-3 text-[10px] font-bold text-primary-fixed uppercase tracking-widest border border-outline-variant/30 rounded">Today</div>
+<!-- Entry 1 -->
+<div class="relative group">
+<div class="absolute -left-[45px] top-1 w-6 h-6 rounded-full bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center z-10 shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+<span class="material-symbols-outlined text-[14px] text-emerald-400 font-bold">upload_file</span>
+</div>
+<div class="glass p-6 rounded-xl hover:bg-surface-container-highest transition-all duration-300">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-3">
+<img alt="Admin" class="w-8 h-8 rounded bg-emerald-500/10 border border-emerald-500/20" data-alt="portrait of a focused system administrator in a high-tech server room with soft cyan and green lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAx4BiVjma_NOGu3FXsCdbJ_6VQ5V_eZVbPil9BhuhJvWgtUdyoQBNTe7MgH50fhBIELvT5TegFHAnWKxtpEA9Q6FJ-ufou8Ghnz11x6-VNV7T0NqeL2dNI1M-Zwn_2Zm6c26gQHsh7Fl3Aa8Om4PfX-pn0Klf-Bg7egJuFoiP8KtSg7-C4Q-dXciFQvo9D_xM2Fjw5huNTXfT6iPW3sTzhtSj4DfP5DLm-OhL-tfv0cXwpdey-hZzS5_XcjbyoiJ9J7AkZCyGuiwta"/>
+<div>
+<p class="text-sm font-semibold text-white">Admin <span class="text-on-surface-variant font-normal italic">uploaded</span> march_transactions.csv</p>
+<p class="text-xs text-on-surface-variant">247 records processed into Main Ledger</p>
+</div>
+</div>
+<span class="text-xs text-on-surface-variant/60 font-medium">2:30 PM</span>
+</div>
+<div class="flex items-center gap-2 mt-2 bg-emerald-500/5 px-3 py-2 rounded-lg border border-emerald-500/10 w-fit">
+<span class="material-symbols-outlined text-sm text-emerald-400">check_circle</span>
+<span class="text-[11px] text-emerald-400 uppercase tracking-tighter font-bold">Data Validation Passed</span>
+</div>
+</div>
+</div>
+<!-- Entry 2 -->
+<div class="relative group mt-8">
+<div class="absolute -left-[45px] top-1 w-6 h-6 rounded-full bg-blue-500/20 border-2 border-blue-500 flex items-center justify-center z-10 shadow-[0_0_15px_rgba(59,130,246,0.3)]">
+<span class="material-symbols-outlined text-[14px] text-blue-400 font-bold">description</span>
+</div>
+<div class="glass p-6 rounded-xl hover:bg-surface-container-highest transition-all duration-300">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-3">
+<img alt="CEO" class="w-8 h-8 rounded bg-blue-500/10 border border-blue-500/20" data-alt="professional portrait of a confident female CEO in an airy modern office during morning light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD0-TtTMWOPQsf1YvSZU1A2VDbByhpfFInqsDXX_1_ZmE6YO6-elsFQ_vFWxvgQ_cxv6BpDjxAunXiLR0zmYmK-QzLuMk-CV9N5xDrP-djAZczBgqwIwZu9PQtKz4tlDOC_qIQCBiWveRE1s4P5Yp2AKWptKXcw6It0xG1vShMWXTy1J1Bpx8IjuiAwrCERqnZqy0skBO4tCLmsT2_b2YJrH3_hnhSIp133M50Tr1AWNaaSOrdUwTIFMn8WxW327rK7W3KfDKxU584D"/>
+<div>
+<p class="text-sm font-semibold text-white">CEO <span class="text-on-surface-variant font-normal italic">generated</span> 1-Page Business Summary</p>
+<p class="text-xs text-on-surface-variant">Report exported as PDF for Board Meeting</p>
+</div>
+</div>
+<span class="text-xs text-on-surface-variant/60 font-medium">11:00 AM</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Yesterday Group -->
+<div class="relative pt-4">
+<div class="absolute -left-[54px] top-4 bg-background py-1 px-3 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest border border-outline-variant/30 rounded">Yesterday</div>
+<!-- Entry 3 -->
+<div class="relative group mt-12">
+<div class="absolute -left-[45px] top-1 w-6 h-6 rounded-full bg-amber-500/20 border-2 border-amber-500 flex items-center justify-center z-10 shadow-[0_0_15px_rgba(245,158,11,0.3)]">
+<span class="material-symbols-outlined text-[14px] text-amber-400 font-bold">edit_calendar</span>
+</div>
+<div class="glass p-6 rounded-xl hover:bg-surface-container-highest transition-all duration-300">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-3">
+<img alt="Admin" class="w-8 h-8 rounded bg-amber-500/10 border border-amber-500/20" data-alt="system administrator working on a sleek workstation with multiple monitors showing financial code" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDuV_0xLNph1IJYTWSYBumwGyomrvDU_Pl9OnZmjRuqtE3QIDd5qvOrLLdFmppWbibxlFQumVmIv1FedsfrAsb8856i_qc0-SK-rCIjt7NSbveAxiM_XaYfIXeN3KMpjUkjAgioIKHuVhxLpIkrKXKsEUD-sdeglWQbwcrR7d4q5ka2hHzuSwCM-mH4H1e0FKbF4BvY7RlP4Mt9E_pn3Zb5jTZqpVUMYRjZIiMpEpMFhr3aKDBaVzQ0s_TZp3O8I6WFTCJu62tpe4lQ"/>
+<div>
+<p class="text-sm font-semibold text-white">Admin <span class="text-on-surface-variant font-normal italic">changed</span> Marketing Budget</p>
+<p class="text-xs text-on-surface-variant">Policy Override: Q2 Adjustment</p>
+</div>
+</div>
+<span class="text-xs text-on-surface-variant/60 font-medium">4:15 PM</span>
+</div>
+<div class="flex items-center gap-6 mt-2">
+<div class="bg-surface-container-low px-4 py-2 rounded border border-outline-variant/10">
+<p class="text-[9px] uppercase text-on-surface-variant mb-1">Before</p>
+<p class="text-sm font-mono text-on-surface">₹1,50,000</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">trending_flat</span>
+<div class="bg-surface-container-high px-4 py-2 rounded border border-primary/20">
+<p class="text-[9px] uppercase text-primary mb-1">After</p>
+<p class="text-sm font-mono text-white">₹1,80,000</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Entry 4 -->
+<div class="relative group mt-8">
+<div class="absolute -left-[45px] top-1 w-6 h-6 rounded-full bg-purple-500/20 border-2 border-purple-500 flex items-center justify-center z-10 shadow-[0_0_15px_rgba(168,85,247,0.3)]">
+<span class="material-symbols-outlined text-[14px] text-purple-400 font-bold">psychology</span>
+</div>
+<div class="glass p-6 rounded-xl hover:bg-surface-container-highest transition-all duration-300">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-purple-400 text-sm">settings_suggest</span>
+</div>
+<div>
+<p class="text-sm font-semibold text-white">System <span class="text-on-surface-variant font-normal italic">ran</span> cash flow forecast</p>
+<p class="text-xs text-on-surface-variant">3-month horizon, Baseline scenario initiated</p>
+</div>
+</div>
+<span class="text-xs text-on-surface-variant/60 font-medium">2:00 PM</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Older Group -->
+<div class="relative pt-4">
+<div class="absolute -left-[54px] top-4 bg-background py-1 px-3 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest border border-outline-variant/30 rounded">Mar 23</div>
+<!-- Entry 5 -->
+<div class="relative group mt-12">
+<div class="absolute -left-[45px] top-1 w-6 h-6 rounded-full bg-red-500/20 border-2 border-red-500 flex items-center justify-center z-10 shadow-[0_0_15px_rgba(239,68,68,0.3)]">
+<span class="material-symbols-outlined text-[14px] text-red-400 font-bold">notifications_off</span>
+</div>
+<div class="glass p-6 rounded-xl hover:bg-surface-container-highest transition-all duration-300">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-3">
+<img alt="CEO" class="w-8 h-8 rounded bg-red-500/10 border border-red-500/20" data-alt="CEO in a sleek conference room overlooking a night city skyline with magenta and blue ambient lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQYFqHp6iBrn_-pfku3ZuEfQikyDOm04ksc9N-MgBp2rj3xhVPTbfrUvJtoa8hTuE8k6AlBP52LfRB92dG_7f1oP_mnLimb2Ly8rxexnBvnCAXpERnXsFUJGN9EdnS3e6gqGKGhlEh6j_SA2XeFrEf00fOR1I1AVx6EM1IF_7UMk5CYsZFBjdCzWjJWa5X8_rtdeCDDLgGRfJz3mabyrr7qTUy12siznZrouJ4jHg42IWMadBGJ1OGWKKLNFKJcLtqO5E-jG6vM-Y6"/>
+<div>
+<p class="text-sm font-semibold text-white">CEO <span class="text-on-surface-variant font-normal italic">dismissed</span> Low Cash Warning</p>
+<p class="text-xs text-on-surface-variant">Action recorded for risk compliance auditing</p>
+</div>
+</div>
+<span class="text-xs text-on-surface-variant/60 font-medium">9:30 AM</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Sidebar: Stats & Actions -->
+<aside class="w-80 space-y-6">
+<!-- Activity Summary Card -->
+<div class="glass p-6 rounded-xl border border-outline-variant/20 shadow-2xl">
+<h3 class="text-sm font-bold text-white mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-lg">analytics</span>
+                        Activity Summary
+                    </h3>
+<div class="space-y-4">
+<div class="flex items-end justify-between h-32 gap-1 px-2">
+<div class="w-full bg-emerald-500/20 rounded-t h-[45%] relative group">
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 text-[10px] bg-white text-black px-1 rounded transition-opacity">12</div>
+</div>
+<div class="w-full bg-blue-500/20 rounded-t h-[85%] relative group">
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 text-[10px] bg-white text-black px-1 rounded transition-opacity">24</div>
+</div>
+<div class="w-full bg-amber-500/20 rounded-t h-[25%] relative group">
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 text-[10px] bg-white text-black px-1 rounded transition-opacity">8</div>
+</div>
+<div class="w-full bg-purple-500/20 rounded-t h-[60%] relative group">
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 text-[10px] bg-white text-black px-1 rounded transition-opacity">18</div>
+</div>
+<div class="w-full bg-red-500/20 rounded-t h-[15%] relative group">
+<div class="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 text-[10px] bg-white text-black px-1 rounded transition-opacity">4</div>
+</div>
+</div>
+<div class="flex justify-between text-[8px] uppercase tracking-tighter text-on-surface-variant font-bold px-1">
+<span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span>
+</div>
+</div>
+<div class="mt-8 space-y-3">
+<div class="flex justify-between items-center text-xs">
+<span class="text-on-surface-variant flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-emerald-500"></span> Uploads
+                            </span>
+<span class="text-white font-medium">32</span>
+</div>
+<div class="flex justify-between items-center text-xs">
+<span class="text-on-surface-variant flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-amber-500"></span> Modif.
+                            </span>
+<span class="text-white font-medium">14</span>
+</div>
+<div class="flex justify-between items-center text-xs">
+<span class="text-on-surface-variant flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-red-500"></span> Alerts
+                            </span>
+<span class="text-white font-medium">06</span>
+</div>
+</div>
+</div>
+<!-- Export Actions -->
+<div class="glass p-6 rounded-xl border border-outline-variant/20">
+<h3 class="text-sm font-bold text-white mb-4">Actions</h3>
+<div class="space-y-3">
+<button class="w-full flex items-center justify-between p-3 rounded-lg bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-all group">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">download</span>
+<span class="text-sm font-medium text-white">Export as CSV</span>
+</div>
+<span class="material-symbols-outlined text-primary-fixed/40 group-hover:translate-x-1 transition-transform">chevron_right</span>
+</button>
+<button class="w-full flex items-center justify-between p-3 rounded-lg bg-surface-container hover:bg-surface-container-high transition-all group">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant">picture_as_pdf</span>
+<span class="text-sm font-medium text-on-surface">Generate PDF Log</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant/40 group-hover:translate-x-1 transition-transform">chevron_right</span>
+</button>
+</div>
+<p class="mt-4 text-[10px] text-on-surface-variant text-center leading-relaxed">
+                        Audit logs are retained for 7 years as per financial compliance sovereignty protocols.
+                    </p>
+</div>
+<!-- AI Insight Mini Card -->
+<div class="relative overflow-hidden p-6 rounded-xl bg-gradient-to-br from-[#4f46e5]/20 to-transparent border border-[#4f46e5]/30">
+<div class="absolute top-0 right-0 p-2">
+<span class="material-symbols-outlined text-[#c3c0ff]/20 text-4xl">auto_awesome</span>
+</div>
+<h4 class="text-xs font-bold text-primary uppercase tracking-widest mb-2">AI Pulse</h4>
+<p class="text-sm text-on-primary-container leading-relaxed">
+                        Unusual frequency of <span class="font-bold text-white">Budget Changes</span> detected in Marketing over last 48h. Recommended for review.
+                    </p>
+<button class="mt-4 text-[11px] font-bold text-white underline underline-offset-4 hover:text-primary transition-colors">
+                        ANALYZE ANOMALY
+                    </button>
+</div>
+</aside>
+</div>
+</main>
+</body></html>

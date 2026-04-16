@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CFO.ai | Anomaly Detection</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "error": "#ffb4ab",
+                        "surface": "#111319",
+                        "on-tertiary": "#571f00",
+                        "on-secondary-fixed": "#140f54",
+                        "on-tertiary-fixed": "#351000",
+                        "surface-variant": "#33343b",
+                        "surface-container-high": "#282a30",
+                        "secondary-container": "#413f82",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "surface-dim": "#111319",
+                        "surface-container-low": "#191b22",
+                        "surface-container-highest": "#33343b",
+                        "primary": "#c3c0ff",
+                        "on-primary-fixed": "#0f0069",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "inverse-primary": "#4d44e3",
+                        "inverse-on-surface": "#2e3037",
+                        "primary-fixed": "#e2dfff",
+                        "tertiary-fixed-dim": "#ffb695",
+                        "outline-variant": "#464555",
+                        "on-secondary": "#2a276a",
+                        "on-primary": "#1d00a5",
+                        "secondary-fixed-dim": "#c3c0ff",
+                        "secondary-fixed": "#e2dfff",
+                        "secondary": "#c3c0ff",
+                        "surface-bright": "#373940",
+                        "on-surface": "#e2e2eb",
+                        "on-error-container": "#ffdad6",
+                        "error-container": "#93000a",
+                        "surface-container": "#1e1f26",
+                        "on-surface-variant": "#c7c4d8",
+                        "surface-container-lowest": "#0c0e14",
+                        "primary-container": "#4f46e5",
+                        "background": "#111319",
+                        "on-tertiary-container": "#ffd2be",
+                        "on-secondary-container": "#b0aef9",
+                        "tertiary-fixed": "#ffdbcc",
+                        "outline": "#918fa1",
+                        "on-error": "#690005",
+                        "on-background": "#e2e2eb",
+                        "surface-tint": "#c3c0ff",
+                        "on-primary-container": "#dad7ff",
+                        "on-tertiary-fixed-variant": "#7b2f00",
+                        "on-secondary-fixed-variant": "#413f82",
+                        "inverse-surface": "#e2e2eb",
+                        "tertiary": "#ffb695",
+                        "tertiary-container": "#a44100"
+                    },
+                    fontFamily: {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .glass-card {
+            background: rgba(51, 52, 59, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111319;
+            color: #e2e2eb;
+            letter-spacing: -0.01em;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(195, 192, 255, 0.1);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="flex min-h-screen">
+<!-- SideNavBar (Shared Component) -->
+<aside class="h-screen w-64 bg-[#191b22] dark:bg-slate-900 border-r border-white/5 flex flex-col py-6 sticky top-0 shrink-0 shadow-[20px_0_40px_rgba(0,0,0,0.4)]">
+<div class="px-6 mb-10">
+<h1 class="text-lg font-black text-white tracking-tighter">CFO.ai</h1>
+<p class="text-[10px] uppercase tracking-[0.2em] text-indigo-400 font-bold mt-1">Predictive Finance</p>
+</div>
+<nav class="flex-1 space-y-1 px-3">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span class="font-['Inter'] text-sm font-medium tracking-tight">Dashboard</span>
+</a>
+<!-- Active State Logic: Alerts > Anomalies -->
+<a class="flex items-center gap-3 px-4 py-3 text-[#c3c0ff] border-r-2 border-[#c3c0ff] bg-gradient-to-r from-indigo-500/10 to-transparent translate-x-1 duration-200 group" href="#">
+<span class="material-symbols-outlined text-[20px]">notification_important</span>
+<span class="font-['Inter'] text-sm font-medium tracking-tight">Alerts</span>
+</a>
+<div class="ml-9 py-1 space-y-1 border-l border-white/5">
+<a class="block px-4 py-2 text-[#c3c0ff] text-xs font-semibold" href="#">Anomalies</a>
+<a class="block px-4 py-2 text-slate-500 hover:text-slate-300 text-xs font-medium" href="#">Risk Reports</a>
+</div>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined text-[20px]">warning</span>
+<span class="font-['Inter'] text-sm font-medium tracking-tight">Anomalies</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined text-[20px]">assessment</span>
+<span class="font-['Inter'] text-sm font-medium tracking-tight">Reports</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined text-[20px]">account_balance</span>
+<span class="font-['Inter'] text-sm font-medium tracking-tight">Treasury</span>
+</a>
+</nav>
+<div class="mt-auto px-3 pt-6 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined text-[20px]">help</span>
+<span class="font-['Inter'] text-sm font-medium tracking-tight">Support</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined text-[20px]">logout</span>
+<span class="font-['Inter'] text-sm font-medium tracking-tight">Sign Out</span>
+</a>
+</div>
+</aside>
+<main class="flex-1 flex flex-col bg-[#111319] min-w-0">
+<!-- TopNavBar (Shared Component style) -->
+<header class="flex justify-between items-center px-8 py-4 w-full bg-[#111319] border-b border-white/5 sticky top-0 z-10">
+<div class="flex items-center gap-4 bg-surface-container-lowest px-4 py-2 rounded-xl border border-white/5 w-96">
+<span class="material-symbols-outlined text-outline text-[20px]">search</span>
+<input class="bg-transparent border-none text-sm focus:ring-0 text-on-surface w-full placeholder:text-outline/50" placeholder="Search transactions or vendors..." type="text"/>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex gap-4">
+<button class="relative hover:bg-white/5 p-2 rounded-lg transition-colors group">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full border-2 border-[#111319]"></span>
+</button>
+<button class="hover:bg-white/5 p-2 rounded-lg transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">settings</span>
+</button>
+</div>
+<div class="h-8 w-px bg-white/5"></div>
+<div class="flex items-center gap-3">
+<img alt="User Profile" class="w-9 h-9 rounded-full object-cover ring-2 ring-primary/20" data-alt="Close-up professional portrait of a modern finance executive in a dark suit with soft office lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCP9SpnqJtNS3I4_SK6b_E1esSA9FC1ggsjrNVEuyHRtOJIt6ZACRo7VM7To4MaKX0eKCWKzHaYDZ0JN3eMUJGt3JpvlfoE7uxQU4pF251u2gUXbbRQJGb6VDYUE95eWE7XRKhQiAr9icnEtpsC2MGQRFQBzzT67S-4geuxRWxFIehDqkOiR-eVcwGdNhzS8qmJKRa2Ukaf_-BlREYthBW-4jiuk7y5jYtpRWB8a-cy_Q6JflWajIVyieCjVugigDB6NuKpQ45THo1i"/>
+<div class="hidden lg:block text-right">
+<p class="text-sm font-semibold text-white leading-none">Marcus Thorne</p>
+<p class="text-[10px] text-on-surface-variant leading-tight mt-1">Global CFO</p>
+</div>
+</div>
+</div>
+</header>
+<!-- Content Canvas -->
+<div class="p-8 space-y-8 custom-scrollbar overflow-y-auto max-h-[calc(100vh-73px)]">
+<!-- Page Header -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+<div>
+<h2 class="text-3xl font-black text-on-surface tracking-tighter leading-tight">Anomaly Detection</h2>
+<p class="text-on-surface-variant font-medium mt-1">AI-powered unusual transaction detection</p>
+</div>
+<button class="bg-gradient-to-br from-primary to-primary-container text-on-primary-fixed px-6 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-primary/10">
+<span class="material-symbols-outlined text-[20px]">bolt</span>
+                    Scan Now
+                </button>
+</div>
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+<!-- Left Column: Summary & List -->
+<div class="xl:col-span-8 space-y-8">
+<!-- Anomaly Summary Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+<!-- Card 1 -->
+<div class="surface-container-high rounded-2xl p-6 border-t border-white/5 flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Anomalies This Month</p>
+<span class="material-symbols-outlined text-error" data-weight="fill">warning</span>
+</div>
+<div class="flex items-baseline gap-2">
+<h3 class="text-4xl font-black text-on-surface tracking-tighter">7</h3>
+<span class="text-xs text-error font-bold">+2 from last mo.</span>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="surface-container-high rounded-2xl p-6 border-t border-white/5 flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Average Anomaly Score</p>
+<span class="material-symbols-outlined text-tertiary" data-weight="fill">analytics</span>
+</div>
+<div class="flex items-baseline gap-2">
+<h3 class="text-4xl font-black text-on-surface tracking-tighter">0.82</h3>
+<span class="text-xs text-tertiary font-bold">High Risk</span>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="surface-container-high rounded-2xl p-6 border-t border-white/5 flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Resolved</p>
+<span class="material-symbols-outlined text-emerald-400" data-weight="fill">check_circle</span>
+</div>
+<div class="flex items-baseline gap-2">
+<h3 class="text-4xl font-black text-on-surface tracking-tighter">3 <span class="text-lg text-on-surface-variant font-medium">/ 7</span></h3>
+<span class="text-xs text-emerald-400 font-bold">42% Success</span>
+</div>
+</div>
+</div>
+<!-- Anomaly List Section -->
+<div class="space-y-4">
+<div class="flex items-center justify-between px-2">
+<h4 class="text-sm font-bold uppercase tracking-widest text-on-surface-variant">Active Intelligence Alerts</h4>
+<div class="flex items-center gap-4 text-xs font-bold text-primary">
+<button class="hover:underline">View All</button>
+<button class="hover:underline">Export CSV</button>
+</div>
+</div>
+<!-- Anomaly Entry 1 (High Severity) -->
+<div class="glass-card rounded-2xl p-6 border-l-4 border-error overflow-hidden transition-all hover:bg-white/[0.08] cursor-pointer">
+<div class="flex flex-wrap items-start justify-between gap-4 mb-4">
+<div class="flex items-center gap-4">
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-error tracking-tighter uppercase mb-1">CRITICAL ANOMALY</span>
+<h5 class="text-lg font-bold text-on-surface">TechSupply Co</h5>
+</div>
+<div class="px-3 py-1 bg-error/10 text-error rounded-full text-[10px] font-bold">SCORE: 0.94</div>
+</div>
+<div class="text-right">
+<p class="text-lg font-black text-on-surface">₹2,50,000</p>
+<p class="text-[10px] text-on-surface-variant font-medium uppercase">Date: 14 Oct 2023 | Category: IT Spend</p>
+</div>
+</div>
+<div class="flex flex-col md:flex-row gap-6 items-center">
+<div class="w-full md:w-48 h-2 bg-surface-container-highest rounded-full overflow-hidden relative">
+<div class="absolute inset-y-0 left-0 bg-error rounded-full" style="width: 94%;"></div>
+</div>
+<p class="flex-1 text-sm text-on-surface/80 italic border-l border-white/10 pl-4">
+                                    "First-time vendor with amount 4x your typical IT spend"
+                                </p>
+</div>
+<div class="flex gap-3 mt-6">
+<button class="bg-surface-container-highest px-4 py-2 rounded-lg text-xs font-bold hover:bg-surface-bright transition-colors">Mark as Normal</button>
+<button class="bg-primary-container text-on-primary-container px-4 py-2 rounded-lg text-xs font-bold hover:opacity-90 transition-all">Investigate</button>
+<button class="ml-auto text-error text-xs font-bold flex items-center gap-1 hover:underline">
+<span class="material-symbols-outlined text-sm">flag</span> Flag for Review
+                                </button>
+</div>
+</div>
+<!-- Anomaly Entry 2 (High Severity) -->
+<div class="glass-card rounded-2xl p-6 border-l-4 border-error overflow-hidden transition-all hover:bg-white/[0.08] cursor-pointer">
+<div class="flex flex-wrap items-start justify-between gap-4 mb-4">
+<div class="flex items-center gap-4">
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-error tracking-tighter uppercase mb-1">UNUSUAL ACTIVITY</span>
+<h5 class="text-lg font-bold text-on-surface">Cash Withdrawal</h5>
+</div>
+<div class="px-3 py-1 bg-error/10 text-error rounded-full text-[10px] font-bold">SCORE: 0.87</div>
+</div>
+<div class="text-right">
+<p class="text-lg font-black text-on-surface">₹85,000</p>
+<p class="text-[10px] text-on-surface-variant font-medium uppercase">Date: 12 Oct 2023 | Category: Petty Cash</p>
+</div>
+</div>
+<div class="flex flex-col md:flex-row gap-6 items-center">
+<div class="w-full md:w-48 h-2 bg-surface-container-highest rounded-full overflow-hidden relative">
+<div class="absolute inset-y-0 left-0 bg-error rounded-full" style="width: 87%;"></div>
+</div>
+<p class="flex-1 text-sm text-on-surface/80 italic border-l border-white/10 pl-4">
+                                    "Unusual cash transaction; no prior cash withdrawals above ₹10,000"
+                                </p>
+</div>
+<div class="flex gap-3 mt-6">
+<button class="bg-surface-container-highest px-4 py-2 rounded-lg text-xs font-bold hover:bg-surface-bright transition-colors">Mark as Normal</button>
+<button class="bg-primary-container text-on-primary-container px-4 py-2 rounded-lg text-xs font-bold hover:opacity-90 transition-all">Investigate</button>
+<button class="ml-auto text-error text-xs font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">flag</span> Flag for Review
+                                </button>
+</div>
+</div>
+<!-- Anomaly Entry 3 (Medium Severity) -->
+<div class="glass-card rounded-2xl p-6 border-l-4 border-tertiary overflow-hidden transition-all hover:bg-white/[0.08] cursor-pointer">
+<div class="flex flex-wrap items-start justify-between gap-4 mb-4">
+<div class="flex items-center gap-4">
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-tertiary tracking-tighter uppercase mb-1">TREND VARIATION</span>
+<h5 class="text-lg font-bold text-on-surface">CloudHost Premium</h5>
+</div>
+<div class="px-3 py-1 bg-tertiary/10 text-tertiary rounded-full text-[10px] font-bold">SCORE: 0.82</div>
+</div>
+<div class="text-right">
+<p class="text-lg font-black text-on-surface">₹1,20,000</p>
+<p class="text-[10px] text-on-surface-variant font-medium uppercase">Date: 10 Oct 2023 | Category: Infrastructure</p>
+</div>
+</div>
+<div class="flex flex-col md:flex-row gap-6 items-center">
+<div class="w-full md:w-48 h-2 bg-surface-container-highest rounded-full overflow-hidden relative">
+<div class="absolute inset-y-0 left-0 bg-tertiary rounded-full" style="width: 82%;"></div>
+</div>
+<p class="flex-1 text-sm text-on-surface/80 italic border-l border-white/10 pl-4">
+                                    "150% increase from usual monthly cloud billing"
+                                </p>
+</div>
+<div class="flex gap-3 mt-6">
+<button class="bg-surface-container-highest px-4 py-2 rounded-lg text-xs font-bold">Mark as Normal</button>
+<button class="bg-primary-container text-on-primary-container px-4 py-2 rounded-lg text-xs font-bold">Investigate</button>
+</div>
+</div>
+<!-- Anomaly Entry 4 (Medium Severity) -->
+<div class="glass-card rounded-2xl p-6 border-l-4 border-tertiary overflow-hidden transition-all hover:bg-white/[0.08] cursor-pointer">
+<div class="flex flex-wrap items-start justify-between gap-4 mb-4">
+<div class="flex items-center gap-4">
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-tertiary tracking-tighter uppercase mb-1">METADATA MISMATCH</span>
+<h5 class="text-lg font-bold text-on-surface">'Misc Vendor'</h5>
+</div>
+<div class="px-3 py-1 bg-tertiary/10 text-tertiary rounded-full text-[10px] font-bold">SCORE: 0.76</div>
+</div>
+<div class="text-right">
+<p class="text-lg font-black text-on-surface">₹45,000</p>
+<p class="text-[10px] text-on-surface-variant font-medium uppercase">Date: 08 Oct 2023 | Category: Miscellaneous</p>
+</div>
+</div>
+<div class="flex flex-col md:flex-row gap-6 items-center">
+<div class="w-full md:w-48 h-2 bg-surface-container-highest rounded-full overflow-hidden relative">
+<div class="absolute inset-y-0 left-0 bg-tertiary rounded-full" style="width: 76%;"></div>
+</div>
+<p class="flex-1 text-sm text-on-surface/80 italic border-l border-white/10 pl-4">
+                                    "Vague vendor name, weekend transaction"
+                                </p>
+</div>
+<div class="flex gap-3 mt-6">
+<button class="bg-surface-container-highest px-4 py-2 rounded-lg text-xs font-bold">Mark as Normal</button>
+<button class="bg-primary-container text-on-primary-container px-4 py-2 rounded-lg text-xs font-bold">Investigate</button>
+</div>
+</div>
+<!-- Anomaly Entry 5 (Low/Medium) -->
+<div class="glass-card rounded-2xl p-6 border-l-4 border-slate-500 overflow-hidden transition-all hover:bg-white/[0.08] cursor-pointer">
+<div class="flex flex-wrap items-start justify-between gap-4 mb-4">
+<div class="flex items-center gap-4">
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-on-surface-variant tracking-tighter uppercase mb-1">POTENTIAL DUPLICATE</span>
+<h5 class="text-lg font-bold text-on-surface">Recurring Payment Vendor</h5>
+</div>
+<div class="px-3 py-1 bg-white/5 text-on-surface-variant rounded-full text-[10px] font-bold">SCORE: 0.71</div>
+</div>
+<div class="text-right">
+<p class="text-lg font-black text-on-surface">₹38,000</p>
+<p class="text-[10px] text-on-surface-variant font-medium uppercase">Date: 05 Oct 2023 | Category: Subscription</p>
+</div>
+</div>
+<div class="flex flex-col md:flex-row gap-6 items-center">
+<div class="w-full md:w-48 h-2 bg-surface-container-highest rounded-full overflow-hidden relative">
+<div class="absolute inset-y-0 left-0 bg-slate-400 rounded-full" style="width: 71%;"></div>
+</div>
+<p class="flex-1 text-sm text-on-surface/80 italic border-l border-white/10 pl-4">
+                                    "Same amount paid twice to the same vendor within 48 hours"
+                                </p>
+</div>
+<div class="flex gap-3 mt-6">
+<button class="bg-surface-container-highest px-4 py-2 rounded-lg text-xs font-bold">Mark as Normal</button>
+<button class="bg-primary-container text-on-primary-container px-4 py-2 rounded-lg text-xs font-bold">Investigate</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Visualization Panel -->
+<div class="xl:col-span-4 space-y-8">
+<div class="surface-container-high rounded-2xl border-t border-white/5 p-6 h-full flex flex-col">
+<div class="flex flex-col mb-8">
+<h4 class="text-sm font-bold uppercase tracking-widest text-on-surface mb-1">Global Anomaly Scatter</h4>
+<p class="text-[10px] text-on-surface-variant font-medium">Transaction Amount vs. Date (Last 30 Days)</p>
+</div>
+<!-- Scatter Plot Representation -->
+<div class="flex-1 relative min-h-[400px] border-l border-b border-white/5 mt-4 ml-6 mb-6">
+<!-- Grid Lines -->
+<div class="absolute inset-0 flex flex-col justify-between opacity-10">
+<div class="border-t border-white w-full"></div>
+<div class="border-t border-white w-full"></div>
+<div class="border-t border-white w-full"></div>
+<div class="border-t border-white w-full"></div>
+</div>
+<!-- Transactions (Normal) -->
+<div class="absolute bottom-[20%] left-[10%] w-2 h-2 rounded-full bg-slate-700"></div>
+<div class="absolute bottom-[15%] left-[15%] w-2 h-2 rounded-full bg-slate-700"></div>
+<div class="absolute bottom-[25%] left-[25%] w-2 h-2 rounded-full bg-slate-700"></div>
+<div class="absolute bottom-[30%] left-[35%] w-2 h-2 rounded-full bg-slate-700"></div>
+<div class="absolute bottom-[10%] left-[45%] w-2 h-2 rounded-full bg-slate-700"></div>
+<div class="absolute bottom-[20%] left-[55%] w-2 h-2 rounded-full bg-slate-700"></div>
+<div class="absolute bottom-[28%] left-[65%] w-2 h-2 rounded-full bg-slate-700"></div>
+<div class="absolute bottom-[15%] left-[75%] w-2 h-2 rounded-full bg-slate-700"></div>
+<div class="absolute bottom-[22%] left-[85%] w-2 h-2 rounded-full bg-slate-700"></div>
+<div class="absolute bottom-[18%] left-[92%] w-2 h-2 rounded-full bg-slate-700"></div>
+<!-- Anomalies (Highlights) -->
+<div class="absolute bottom-[85%] left-[70%] w-3 h-3 rounded-full bg-error shadow-[0_0_15px_rgba(255,180,171,0.6)] animate-pulse"></div>
+<div class="absolute bottom-[65%] left-[40%] w-3 h-3 rounded-full bg-error shadow-[0_0_15px_rgba(255,180,171,0.4)]"></div>
+<div class="absolute bottom-[55%] left-[20%] w-3 h-3 rounded-full bg-tertiary shadow-[0_0_15px_rgba(255,182,149,0.4)]"></div>
+<div class="absolute bottom-[45%] left-[80%] w-3 h-3 rounded-full bg-tertiary shadow-[0_0_15px_rgba(255,182,149,0.4)]"></div>
+<!-- Labels -->
+<div class="absolute -left-8 top-0 text-[10px] text-on-surface-variant -rotate-90 origin-right">AMOUNT</div>
+<div class="absolute left-1/2 -bottom-6 text-[10px] text-on-surface-variant -translate-x-1/2">TIMELINE (30D)</div>
+</div>
+<div class="space-y-4 pt-6 border-t border-white/5">
+<div class="flex items-center gap-3">
+<div class="w-3 h-3 rounded-full bg-error"></div>
+<span class="text-xs font-medium text-on-surface-variant">High Risk (Score &gt; 0.85)</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-3 h-3 rounded-full bg-tertiary"></div>
+<span class="text-xs font-medium text-on-surface-variant">Medium Risk (Score 0.7 - 0.85)</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-3 h-3 rounded-full bg-slate-700"></div>
+<span class="text-xs font-medium text-on-surface-variant">Nominal Patterns</span>
+</div>
+</div>
+<!-- AI Insight Card in Right Panel -->
+<div class="mt-8 bg-primary/10 rounded-xl p-4 border border-primary/20">
+<div class="flex items-center gap-2 mb-2 text-primary">
+<span class="material-symbols-outlined text-[18px]">psychology</span>
+<p class="text-xs font-bold uppercase tracking-widest">AI Strategy</p>
+</div>
+<p class="text-xs leading-relaxed text-on-surface-variant italic">
+                                "Observed cluster of weekend transactions in 'Miscellaneous' suggests a potential leakage in department expense policy. Recommend tightening approval workflow for non-recurring vendors."
+                            </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

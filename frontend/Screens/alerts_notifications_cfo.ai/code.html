@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Alerts &amp; Notifications | CFO.ai</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-container-high": "#282a30",
+                        "primary": "#c3c0ff",
+                        "surface-dim": "#111319",
+                        "secondary-fixed-dim": "#c3c0ff",
+                        "surface-container-low": "#191b22",
+                        "on-tertiary-fixed-variant": "#7b2f00",
+                        "on-surface-variant": "#c7c4d8",
+                        "surface-tint": "#c3c0ff",
+                        "on-error-container": "#ffdad6",
+                        "primary-fixed": "#e2dfff",
+                        "on-surface": "#e2e2eb",
+                        "on-tertiary-container": "#ffd2be",
+                        "tertiary-fixed": "#ffdbcc",
+                        "surface": "#111319",
+                        "error-container": "#93000a",
+                        "on-secondary-fixed": "#140f54",
+                        "outline": "#918fa1",
+                        "on-tertiary-fixed": "#351000",
+                        "inverse-primary": "#4d44e3",
+                        "secondary-fixed": "#e2dfff",
+                        "surface-container": "#1e1f26",
+                        "on-error": "#690005",
+                        "tertiary-fixed-dim": "#ffb695",
+                        "surface-container-lowest": "#0c0e14",
+                        "on-primary-fixed": "#0f0069",
+                        "on-tertiary": "#571f00",
+                        "tertiary": "#ffb695",
+                        "secondary": "#c3c0ff",
+                        "primary-fixed-dim": "#c3c0ff",
+                        "surface-variant": "#33343b",
+                        "on-primary-fixed-variant": "#3323cc",
+                        "on-primary-container": "#dad7ff",
+                        "background": "#111319",
+                        "primary-container": "#4f46e5",
+                        "inverse-surface": "#e2e2eb",
+                        "on-secondary-container": "#b0aef9",
+                        "on-secondary-fixed-variant": "#413f82",
+                        "on-primary": "#1d00a5",
+                        "on-background": "#e2e2eb",
+                        "inverse-on-surface": "#2e3037",
+                        "tertiary-container": "#a44100",
+                        "surface-container-highest": "#33343b",
+                        "surface-bright": "#373940",
+                        "secondary-container": "#413f82",
+                        "outline-variant": "#464555",
+                        "error": "#ffb4ab",
+                        "on-secondary": "#2a276a"
+                    },
+                    fontFamily: {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-card {
+            background: rgba(51, 52, 59, 0.6);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(199, 196, 216, 0.15);
+        }
+        body {
+            background-color: #111319;
+            color: #e2e2eb;
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="antialiased overflow-x-hidden">
+<!-- SideNavBar Implementation -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-[#191b22] no-shadow border-r border-[#c7c4d8]/10 flex flex-col py-8 px-4 gap-y-2 z-[60]">
+<div class="flex items-center gap-3 px-2 mb-10">
+<div class="w-10 h-10 rounded-lg bg-gradient-to-br from-[#c3c0ff] to-[#4f46e5] flex items-center justify-center text-white shadow-lg">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">insights</span>
+</div>
+<div>
+<h1 class="font-bold tracking-tighter text-white text-lg leading-tight">Sovereign</h1>
+<p class="text-[10px] uppercase tracking-[0.2em] text-[#c3c0ff] font-medium opacity-80">Intelligence</p>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-[#c7c4d8] hover:text-white hover:bg-[#282a30]/30 transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-xl">dashboard</span>
+<span class="font-medium text-sm">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-[#c3c0ff] bg-[#282a30] border-r-2 border-[#4f46e5] transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">notifications_active</span>
+<span class="font-medium text-sm">Alerts</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-[#c7c4d8] hover:text-white hover:bg-[#282a30]/30 transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-xl">payments</span>
+<span class="font-medium text-sm">Financials</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-[#c7c4d8] hover:text-white hover:bg-[#282a30]/30 transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-xl">insights</span>
+<span class="font-medium text-sm">Strategy</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-[#c7c4d8] hover:text-white hover:bg-[#282a30]/30 transition-all duration-300" href="#">
+<span class="material-symbols-outlined text-xl">description</span>
+<span class="font-medium text-sm">Reports</span>
+</a>
+</nav>
+<div class="mt-auto pt-6 space-y-1 border-t border-[#c7c4d8]/10">
+<button class="w-full mb-4 py-2.5 px-4 rounded-lg bg-gradient-to-r from-[#c3c0ff] to-[#4f46e5] text-[#0f0069] font-semibold text-sm shadow-md active:scale-95 transition-transform">
+                New Analysis
+            </button>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg text-[#c7c4d8] hover:text-white hover:bg-[#282a30]/30 transition-all text-sm" href="#">
+<span class="material-symbols-outlined text-lg">help</span>
+<span>Support</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg text-[#c7c4d8] hover:text-white hover:bg-[#282a30]/30 transition-all text-sm" href="#">
+<span class="material-symbols-outlined text-lg">manage_accounts</span>
+<span>Account</span>
+</a>
+</div>
+</aside>
+<!-- TopNavBar Implementation -->
+<header class="fixed top-0 left-64 right-0 z-50 bg-[#111319]/60 backdrop-blur-xl border-b border-[#c7c4d8]/15 h-16 flex items-center justify-between px-8 shadow-[0_20px_40px_rgba(0,0,0,0.4)]">
+<div class="flex items-center flex-1 max-w-xl">
+<div class="relative w-full group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#c7c4d8] text-xl group-focus-within:text-[#c3c0ff] transition-colors">search</span>
+<input class="w-full bg-[#0c0e14] border-none rounded-full py-2 pl-11 pr-4 text-sm text-[#e2e2eb] placeholder-[#c7c4d8]/50 focus:ring-1 focus:ring-[#c3c0ff]/30 transition-all" placeholder="Search analytics, alerts, or reports..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6 ml-8">
+<button class="text-[#c7c4d8] hover:text-[#c3c0ff] transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-[#ffb4ab] rounded-full border-2 border-[#111319]"></span>
+</button>
+<button class="text-[#c7c4d8] hover:text-[#c3c0ff] transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="h-8 w-[1px] bg-[#c7c4d8]/15 mx-2"></div>
+<div class="flex items-center gap-3 group cursor-pointer">
+<div class="text-right hidden sm:block">
+<p class="text-xs font-semibold text-white leading-none">Alex Sterling</p>
+<p class="text-[10px] text-[#c7c4d8] leading-tight">Chief Financial Officer</p>
+</div>
+<img alt="User Profile" class="w-9 h-9 rounded-full object-cover ring-2 ring-[#c3c0ff]/20 group-hover:ring-[#c3c0ff]/50 transition-all" data-alt="professional portrait of a middle-aged male executive with sharp features and thoughtful expression, studio lighting, corporate aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjunQSro0PbfDD3rK9l92BkciIsFX7GIfqJGK82NIjpF8RzK1lGpkP8GBSlOSupjlbNbn7xJBDBzzHWv0yCdLeI3Ws6xnewnaVdnzmvc8ldlqR_GkxWzEG21pRKf2LUJWJP6dI7NnmLdeX3u-qwXleF0OFOVSdERBYBtfHJV7iP1425LuykhABupRK7l6GIiAwkxDzYpb3w-LgJkMs7CHm8A6EYmLoAD7XwCEvyvIz9XrfnnuY9IEy98PsEp55uYaygwhYkTF2tJYf"/>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="ml-64 mt-16 p-8 min-h-screen">
+<div class="flex flex-col lg:flex-row gap-8 max-w-[1600px] mx-auto">
+<!-- Main Content (70%) -->
+<section class="flex-1 lg:max-w-[70%]">
+<div class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div>
+<h2 class="text-3xl font-bold tracking-tight text-white mb-2">Alerts &amp; Notifications</h2>
+<p class="text-[#c7c4d8] text-sm">Proactive insights generated by Sovereign Intelligence.</p>
+</div>
+<div class="flex items-center gap-2 bg-[#191b22] p-1 rounded-xl">
+<button class="px-4 py-1.5 rounded-lg text-xs font-semibold bg-[#282a30] text-[#c3c0ff]">All</button>
+<button class="px-4 py-1.5 rounded-lg text-xs font-semibold text-[#c7c4d8] hover:bg-[#282a30]/50 transition-colors">Critical</button>
+<button class="px-4 py-1.5 rounded-lg text-xs font-semibold text-[#c7c4d8] hover:bg-[#282a30]/50 transition-colors">Warning</button>
+<button class="px-4 py-1.5 rounded-lg text-xs font-semibold text-[#c7c4d8] hover:bg-[#282a30]/50 transition-colors">Info</button>
+</div>
+<button class="text-xs font-medium text-[#c3c0ff] hover:underline underline-offset-4 decoration-[#c3c0ff]/30">Mark All Read</button>
+</div>
+<div class="space-y-4">
+<!-- Critical Alert 1 -->
+<div class="glass-card rounded-xl p-5 flex items-start gap-5 hover:bg-[#282a30]/40 transition-all duration-300 group">
+<div class="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-red-400" style="font-variation-settings: 'FILL' 1;">warning</span>
+</div>
+<div class="flex-1">
+<div class="flex items-center justify-between mb-1">
+<h3 class="text-white font-semibold tracking-tight">Low Cash Warning</h3>
+<span class="text-[10px] text-[#c7c4d8] opacity-60">2h ago</span>
+</div>
+<p class="text-[#c7c4d8] text-sm leading-relaxed mb-4">Cash balance projected to drop below ₹5L in 45 days. This will impact planned capital expenditures.</p>
+<div class="flex items-center gap-3">
+<button class="px-4 py-1.5 rounded-lg bg-[#c3c0ff] text-[#0f0069] text-xs font-bold hover:brightness-110 transition-all">View Details</button>
+<button class="px-4 py-1.5 rounded-lg text-[#c7c4d8] hover:text-white text-xs font-medium transition-colors">Dismiss</button>
+</div>
+</div>
+</div>
+<!-- Critical Alert 2 -->
+<div class="glass-card rounded-xl p-5 flex items-start gap-5 hover:bg-[#282a30]/40 transition-all duration-300 group">
+<div class="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-red-400" style="font-variation-settings: 'FILL' 1;">error</span>
+</div>
+<div class="flex-1">
+<div class="flex items-center justify-between mb-1">
+<h3 class="text-white font-semibold tracking-tight">Short Runway Alert</h3>
+<span class="text-[10px] text-[#c7c4d8] opacity-60">5h ago</span>
+</div>
+<p class="text-[#c7c4d8] text-sm leading-relaxed mb-4">Runway below 6 months at current burn rate. Immediate fundraising or cost reduction strategy recommended.</p>
+<div class="flex items-center gap-3">
+<button class="px-4 py-1.5 rounded-lg bg-[#c3c0ff] text-[#0f0069] text-xs font-bold hover:brightness-110 transition-all">View Details</button>
+<button class="px-4 py-1.5 rounded-lg text-[#c7c4d8] hover:text-white text-xs font-medium transition-colors">Dismiss</button>
+</div>
+</div>
+</div>
+<!-- Warning Alert 1 -->
+<div class="glass-card rounded-xl p-5 flex items-start gap-5 hover:bg-[#282a30]/40 transition-all duration-300 group">
+<div class="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-amber-400" style="font-variation-settings: 'FILL' 1;">report_problem</span>
+</div>
+<div class="flex-1">
+<div class="flex items-center justify-between mb-1">
+<h3 class="text-white font-semibold tracking-tight">Budget Overspend</h3>
+<span class="text-[10px] text-[#c7c4d8] opacity-60">1d ago</span>
+</div>
+<p class="text-[#c7c4d8] text-sm leading-relaxed mb-4">Marketing budget exceeded by 23% this month. Peak spend identified in performance marketing channels.</p>
+<div class="flex items-center gap-3">
+<button class="px-4 py-1.5 rounded-lg bg-surface-container-highest text-[#c3c0ff] text-xs font-bold hover:bg-surface-container-high transition-all">View Details</button>
+<button class="px-4 py-1.5 rounded-lg text-[#c7c4d8] hover:text-white text-xs font-medium transition-colors">Dismiss</button>
+</div>
+</div>
+</div>
+<!-- Warning Alert 2 -->
+<div class="glass-card rounded-xl p-5 flex items-start gap-5 hover:bg-[#282a30]/40 transition-all duration-300 group">
+<div class="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-amber-400" style="font-variation-settings: 'FILL' 1;">trending_down</span>
+</div>
+<div class="flex-1">
+<div class="flex items-center justify-between mb-1">
+<h3 class="text-white font-semibold tracking-tight">Revenue Drop</h3>
+<span class="text-[10px] text-[#c7c4d8] opacity-60">2d ago</span>
+</div>
+<p class="text-[#c7c4d8] text-sm leading-relaxed mb-4">Revenue declined 15% compared to last month. Subscription churn rate has increased in the Enterprise segment.</p>
+<div class="flex items-center gap-3">
+<button class="px-4 py-1.5 rounded-lg bg-surface-container-highest text-[#c3c0ff] text-xs font-bold hover:bg-surface-container-high transition-all">View Details</button>
+<button class="px-4 py-1.5 rounded-lg text-[#c7c4d8] hover:text-white text-xs font-medium transition-colors">Dismiss</button>
+</div>
+</div>
+</div>
+<!-- Info Alert 1 -->
+<div class="glass-card rounded-xl p-5 flex items-start gap-5 hover:bg-[#282a30]/40 transition-all duration-300 group">
+<div class="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-blue-400" style="font-variation-settings: 'FILL' 1;">info</span>
+</div>
+<div class="flex-1">
+<div class="flex items-center justify-between mb-1">
+<h3 class="text-white font-semibold tracking-tight">Unusual Transaction</h3>
+<span class="text-[10px] text-[#c7c4d8] opacity-60">3d ago</span>
+</div>
+<p class="text-[#c7c4d8] text-sm leading-relaxed mb-4">₹2,50,000 payment to new vendor 'TechSupply Co' flagged as unusual frequency for the first month of onboarding.</p>
+<div class="flex items-center gap-3">
+<button class="px-4 py-1.5 rounded-lg bg-surface-container-highest text-[#c3c0ff] text-xs font-bold hover:bg-surface-container-high transition-all">View Details</button>
+<button class="px-4 py-1.5 rounded-lg text-[#c7c4d8] hover:text-white text-xs font-medium transition-colors">Dismiss</button>
+</div>
+</div>
+</div>
+<!-- Info Alert 2 -->
+<div class="glass-card rounded-xl p-5 flex items-start gap-5 hover:bg-[#282a30]/40 transition-all duration-300 group">
+<div class="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-blue-400" style="font-variation-settings: 'FILL' 1;">history_toggle_off</span>
+</div>
+<div class="flex-1">
+<div class="flex items-center justify-between mb-1">
+<h3 class="text-white font-semibold tracking-tight">Collection Reminder</h3>
+<span class="text-[10px] text-[#c7c4d8] opacity-60">3d ago</span>
+</div>
+<p class="text-[#c7c4d8] text-sm leading-relaxed mb-4">₹3,40,000 invoice from Client XYZ overdue by 15 days. Automation suggests sending a gentle reminder email.</p>
+<div class="flex items-center gap-3">
+<button class="px-4 py-1.5 rounded-lg bg-surface-container-highest text-[#c3c0ff] text-xs font-bold hover:bg-surface-container-high transition-all">View Details</button>
+<button class="px-4 py-1.5 rounded-lg text-[#c7c4d8] hover:text-white text-xs font-medium transition-colors">Dismiss</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Right Sidebar (30%) -->
+<aside class="w-full lg:w-[30%] space-y-6">
+<!-- Alert Summary Card -->
+<div class="bg-[#191b22] rounded-xl overflow-hidden border border-[#c7c4d8]/5 shadow-xl">
+<div class="p-6">
+<h4 class="text-white font-bold text-lg mb-6 tracking-tight">Alert Summary</h4>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-3 rounded-lg bg-red-500/5 border-l-4 border-red-500">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-red-400 text-lg" style="font-variation-settings: 'FILL' 1;">error</span>
+<span class="text-sm font-medium text-white">Critical Issues</span>
+</div>
+<span class="text-lg font-bold text-red-400">2</span>
+</div>
+<div class="flex items-center justify-between p-3 rounded-lg bg-amber-500/5 border-l-4 border-amber-500">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-amber-400 text-lg" style="font-variation-settings: 'FILL' 1;">warning</span>
+<span class="text-sm font-medium text-white">Warnings</span>
+</div>
+<span class="text-lg font-bold text-amber-400">2</span>
+</div>
+<div class="flex items-center justify-between p-3 rounded-lg bg-blue-500/5 border-l-4 border-blue-500">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-blue-400 text-lg" style="font-variation-settings: 'FILL' 1;">info</span>
+<span class="text-sm font-medium text-white">Information</span>
+</div>
+<span class="text-lg font-bold text-blue-400">2</span>
+</div>
+</div>
+</div>
+<div class="bg-surface-container px-6 py-4 flex items-center justify-between">
+<span class="text-xs text-[#c7c4d8]">Last updated: Just now</span>
+<a class="text-xs font-semibold text-[#c3c0ff] hover:underline" href="#">Alert History</a>
+</div>
+</div>
+<!-- Notification Preferences -->
+<div class="bg-[#191b22] rounded-xl p-6 border border-[#c7c4d8]/5 shadow-xl">
+<h4 class="text-white font-bold text-lg mb-6 tracking-tight">Preferences</h4>
+<div class="space-y-6">
+<div class="flex items-center justify-between group">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#c7c4d8] group-hover:text-[#c3c0ff] transition-colors">phonelink_setup</span>
+<div>
+<p class="text-sm font-medium text-white">In-App Notifications</p>
+<p class="text-[10px] text-[#c7c4d8]">Real-time dashboard alerts</p>
+</div>
+</div>
+<button class="w-10 h-5 bg-[#c3c0ff] rounded-full relative transition-all">
+<span class="absolute right-1 top-1 w-3 h-3 bg-[#0f0069] rounded-full"></span>
+</button>
+</div>
+<div class="flex items-center justify-between group">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#c7c4d8] group-hover:text-[#c3c0ff] transition-colors">mail</span>
+<div>
+<p class="text-sm font-medium text-white">Email Digest</p>
+<p class="text-[10px] text-[#c7c4d8]">Daily and weekly summaries</p>
+</div>
+</div>
+<button class="w-10 h-5 bg-[#c3c0ff] rounded-full relative transition-all">
+<span class="absolute right-1 top-1 w-3 h-3 bg-[#0f0069] rounded-full"></span>
+</button>
+</div>
+<div class="flex items-center justify-between group">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#c7c4d8] group-hover:text-[#c3c0ff] transition-colors">forum</span>
+<div>
+<p class="text-sm font-medium text-white">Slack Integration</p>
+<p class="text-[10px] text-[#c7c4d8]">Sync to #finance-alerts</p>
+</div>
+</div>
+<button class="w-10 h-5 bg-[#282a30] rounded-full relative transition-all border border-[#c7c4d8]/20">
+<span class="absolute left-1 top-1 w-3 h-3 bg-[#c7c4d8]/40 rounded-full"></span>
+</button>
+</div>
+</div>
+<button class="w-full mt-8 py-2 text-xs font-bold border border-[#c3c0ff]/20 text-[#c3c0ff] rounded-lg hover:bg-[#c3c0ff]/5 transition-all">
+                        Update All Settings
+                    </button>
+</div>
+<!-- AI Insight Card (Decorative/Bonus) -->
+<div class="glass-card rounded-xl p-6 border border-white/5 relative overflow-hidden group">
+<div class="relative z-10">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-[#c3c0ff] text-sm" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+<span class="text-[10px] uppercase tracking-widest text-[#c3c0ff] font-bold">Smart Analysis</span>
+</div>
+<p class="text-white text-sm font-medium mb-3">Predicted Burn Increase</p>
+<p class="text-[#c7c4d8] text-xs leading-relaxed opacity-80 mb-4">Based on historical trends, marketing spend usually increases by 40% in Q4. Plan your reserves accordingly.</p>
+<a class="text-xs text-[#c3c0ff] font-bold flex items-center gap-1 group-hover:gap-2 transition-all" href="#">
+                            View Forecast <span class="material-symbols-outlined text-xs">arrow_forward</span>
+</a>
+</div>
+<div class="absolute -bottom-10 -right-10 w-32 h-32 bg-[#4f46e5]/10 rounded-full blur-3xl group-hover:bg-[#4f46e5]/20 transition-all"></div>
+</div>
+</aside>
+</div>
+</main>
+</body></html>
