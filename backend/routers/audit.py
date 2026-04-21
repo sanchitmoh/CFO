@@ -2,7 +2,6 @@
 AI CFO — Audit Log Router (Feature D)
 Read-only access to the audit trail with pagination and filtering.
 """
-import uuid
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, Query

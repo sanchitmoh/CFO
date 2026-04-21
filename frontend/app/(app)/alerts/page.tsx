@@ -43,7 +43,7 @@ export default function AlertsPage() {
     load();
   }, [load]);
 
-  const dismiss = async (id: number) => {
+  const dismiss = async (id: string) => {
     try {
       const token = await getToken();
       await api.dismissAlert(id, token);
@@ -94,7 +94,7 @@ export default function AlertsPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-semibold" style={{ color: "var(--text)" }}>{a.alert_type}</span>
+                        <span className="text-sm font-semibold" style={{ color: "var(--text)" }}>{a.title}</span>
                         <span className={`badge ${sev.badge}`}>{a.severity}</span>
                       </div>
                       <p className="text-sm" style={{ color: "var(--text-muted)" }}>{a.message}</p>

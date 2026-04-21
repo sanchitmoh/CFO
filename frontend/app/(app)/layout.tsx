@@ -1,10 +1,25 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useUser } from "@clerk/nextjs";
 import Sidebar from "@/components/Sidebar";
+import { onboardingApi } from "@/lib/api";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { isLoaded, isSignedIn } = useUser();
+  const provisionedRef = useRef(false);
+
+  // Provision workspace + user on first authenticated render.
+  // Idempotent — the backend returns "already_exists" on subsequent calls.
+  useEffect(() => {
+    if (isLoaded && isSignedIn && !provisionedRef.current) {
+      provisionedRef.current = true;
+      onboardingApi.provision().catch((err) => {
+        console.error("[onboarding] Provision failed:", err);
+        provisionedRef.current = false; // allow retry on next render
+      });
+    }
+  }, [isLoaded, isSignedIn]);
 
   if (!isLoaded) {
     return (

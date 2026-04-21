@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { settingsApi } from "@/lib/api";
 import {
   Users,
   Plus,
@@ -82,8 +83,35 @@ export default function UsersPage() {
   const [inviteSent, setInviteSent] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
 
-  const handleInvite = (e: React.FormEvent) => {
+  const loadTeam = useCallback(async () => {
+    try {
+      const data = await settingsApi.getTeam();
+      if (data?.members?.length) {
+        setTeam(data.members.map((m: any) => ({
+          id: m.id,
+          name: m.full_name || m.name || "Team Member",
+          email: m.email,
+          role: m.role || "employee",
+          status: m.is_active ? "active" : "invited",
+          joinedAt: m.created_at || m.joined_at || "",
+        })));
+      }
+    } catch {
+      // API unavailable — keep demo data
+    }
+  }, []);
+
+  useEffect(() => {
+    loadTeam();
+  }, [loadTeam]);
+
+  const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
+    try {
+      await settingsApi.inviteUser(inviteForm.email, inviteForm.role);
+    } catch {
+      // API unavailable — still add locally for demo
+    }
     const newMember: TeamMember = {
       id: team.length + 1,
       name: inviteForm.name,
@@ -101,11 +129,21 @@ export default function UsersPage() {
     }, 2000);
   };
 
-  const removeUser = (id: number) => {
+  const removeUser = async (id: number) => {
+    try {
+      await settingsApi.removeUser(id);
+    } catch {
+      // API unavailable — still remove locally
+    }
     setTeam((t) => t.filter((m) => m.id !== id));
   };
 
-  const updateRole = (id: number, role: Role) => {
+  const updateRole = async (id: number, role: Role) => {
+    try {
+      await settingsApi.updateUserRole(id, role);
+    } catch {
+      // API unavailable — still update locally
+    }
     setTeam((t) => t.map((m) => (m.id === id ? { ...m, role } : m)));
   };
 

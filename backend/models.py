@@ -1,17 +1,18 @@
 """
 AI CFO — SQLAlchemy ORM Models
-12 indexed tables, multi-tenant via workspace_id, financial-grade precision.
+13 indexed tables, multi-tenant via workspace_id, financial-grade precision.
 """
 import uuid
 import enum
+from decimal import Decimal
 from datetime import datetime
 
 from sqlalchemy import (
-    String, Float, DateTime, Boolean, Integer, SmallInteger,
-    Text, ForeignKey, Numeric, Index, CheckConstraint,
+    String, Float, DateTime, Boolean, SmallInteger,
+    Text, ForeignKey, Numeric, Index, CheckConstraint, Enum as SAEnum,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.dialects.postgresql import UUID, JSONB, INET
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 
 from database import Base
 
@@ -79,6 +80,7 @@ class Workspace(Base):
     goals: Mapped[list["Goal"]] = relationship(back_populates="workspace")
     alerts: Mapped[list["Alert"]] = relationship(back_populates="workspace")
     alert_rules: Mapped[list["AlertRule"]] = relationship(back_populates="workspace")
+    chat_sessions: Mapped[list["ChatSession"]] = relationship(back_populates="workspace")
     chat_messages: Mapped[list["ChatMessage"]] = relationship(back_populates="workspace")
     forecast_results: Mapped[list["ForecastResult"]] = relationship(back_populates="workspace")
     audit_logs: Mapped[list["AuditLog"]] = relationship(back_populates="workspace")
@@ -105,7 +107,7 @@ class User(Base):
     )
     email: Mapped[str] = mapped_column(String(255), nullable=False)
     full_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    role: Mapped[UserRole] = mapped_column(default=UserRole.owner)
+    role: Mapped[UserRole] = mapped_column(SAEnum(UserRole), default=UserRole.owner)
     avatar_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     last_login_at: Mapped[datetime | None] = mapped_column(
@@ -121,6 +123,7 @@ class User(Base):
     budgets: Mapped[list["Budget"]] = relationship(back_populates="user")
     goals: Mapped[list["Goal"]] = relationship(back_populates="user")
     alerts: Mapped[list["Alert"]] = relationship(back_populates="user")
+    chat_sessions: Mapped[list["ChatSession"]] = relationship(back_populates="user")
     chat_messages: Mapped[list["ChatMessage"]] = relationship(back_populates="user")
     audit_logs: Mapped[list["AuditLog"]] = relationship(back_populates="user")
 
@@ -135,6 +138,7 @@ class Transaction(Base):
         Index("idx_txn_ws_date", "workspace_id", "date"),
         Index("idx_txn_ws_cat_date", "workspace_id", "category", "date"),
         Index("idx_txn_ws_type", "workspace_id", "type"),
+        Index("idx_txn_ws_type_cat_date", "workspace_id", "type", "category", "date"),
         CheckConstraint("amount >= 0", name="ck_txn_amount_positive"),
     )
 
@@ -142,7 +146,7 @@ class Transaction(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     workspace_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("workspaces.id"), nullable=False
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
     )
     user_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id"), index=True, nullable=False
@@ -151,11 +155,11 @@ class Transaction(Base):
         DateTime(timezone=True), nullable=False, index=True
     )
     description: Mapped[str] = mapped_column(String(500), nullable=False)
-    amount: Mapped[float] = mapped_column(
+    amount: Mapped[Decimal] = mapped_column(
         Numeric(14, 2), nullable=False
     )
     category: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
-    type: Mapped[TransactionType] = mapped_column(nullable=False)
+    type: Mapped[TransactionType] = mapped_column(SAEnum(TransactionType), nullable=False)
     account: Mapped[str] = mapped_column(
         String(100), nullable=False, default="Main Account"
     )
@@ -189,17 +193,17 @@ class Budget(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     workspace_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("workspaces.id"), nullable=False
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
     )
     user_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id"), index=True, nullable=False
     )
     category: Mapped[str] = mapped_column(String(100), nullable=False)
-    monthly_limit: Mapped[float] = mapped_column(
+    monthly_limit: Mapped[Decimal] = mapped_column(
         Numeric(12, 2), nullable=False
     )
     alert_threshold: Mapped[float] = mapped_column(Float, nullable=False, default=0.8)
-    current_spend: Mapped[float] = mapped_column(
+    current_spend: Mapped[Decimal] = mapped_column(
         Numeric(12, 2), nullable=False, default=0.0
     )
     month: Mapped[str] = mapped_column(String(7), nullable=False)  # YYYY-MM
@@ -226,21 +230,21 @@ class Goal(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     workspace_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("workspaces.id"), nullable=False
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
     )
     user_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id"), index=True, nullable=False
     )
     title: Mapped[str] = mapped_column(String(255), nullable=False)
-    target_value: Mapped[float] = mapped_column(Numeric(14, 2), nullable=False)
-    current_value: Mapped[float] = mapped_column(Numeric(14, 2), default=0.0)
+    target_value: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
+    current_value: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=0.0)
     metric_type: Mapped[str] = mapped_column(
         String(50), nullable=False
     )  # revenue | savings | expense_reduction
     deadline: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
-    status: Mapped[GoalStatus] = mapped_column(default=GoalStatus.active)
+    status: Mapped[GoalStatus] = mapped_column(SAEnum(GoalStatus), default=GoalStatus.active)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=datetime.utcnow
     )
@@ -267,14 +271,14 @@ class Alert(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     workspace_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("workspaces.id"), nullable=False
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
     )
     user_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id"), index=True, nullable=False
     )
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     message: Mapped[str] = mapped_column(Text, nullable=False)
-    severity: Mapped[AlertSeverity] = mapped_column(default=AlertSeverity.info)
+    severity: Mapped[AlertSeverity] = mapped_column(SAEnum(AlertSeverity), default=AlertSeverity.info)
     category: Mapped[str] = mapped_column(String(100), nullable=False)
     action_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_read: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -288,7 +292,7 @@ class Alert(Base):
 
     # Relationships
     workspace: Mapped["Workspace"] = relationship(back_populates="alerts")
-    user: Mapped["User"] = relationship(back_populates="user")
+    user: Mapped["User"] = relationship(back_populates="alerts")
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -305,12 +309,12 @@ class AlertRule(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     workspace_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("workspaces.id"), nullable=False
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
     )
     rule_type: Mapped[str] = mapped_column(
         String(50), nullable=False
     )  # low_cash | short_runway | overspend | revenue_drop
-    threshold_value: Mapped[float] = mapped_column(Numeric(14, 2), nullable=False)
+    threshold_value: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
     is_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     notify_email: Mapped[bool] = mapped_column(Boolean, default=True)
     notify_slack: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -324,25 +328,62 @@ class AlertRule(Base):
 
 
 # ═══════════════════════════════════════════════════════════════════
-# CHAT MESSAGES — Enhanced with RAG metadata
+# CHAT SESSION — Owns a sequence of chat messages (SCHEMA-003)
 # ═══════════════════════════════════════════════════════════════════
 
-class ChatMessage(Base):
-    __tablename__ = "chat_messages"
+class ChatSession(Base):
+    __tablename__ = "chat_sessions"
     __table_args__ = (
-        Index("idx_chat_session", "session_id", "created_at"),
+        Index("idx_chat_sessions_ws_user", "workspace_id", "user_id"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     workspace_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("workspaces.id"), nullable=False
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    title: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow
+    )
+    last_active_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+    # Relationships
+    workspace: Mapped["Workspace"] = relationship(back_populates="chat_sessions")
+    user: Mapped["User"] = relationship(back_populates="chat_sessions")
+    messages: Mapped[list["ChatMessage"]] = relationship(
+        back_populates="session", cascade="all, delete-orphan"
+    )
+
+
+# ═══════════════════════════════════════════════════════════════════
+# CHAT MESSAGES — Enhanced with RAG metadata
+# ═══════════════════════════════════════════════════════════════════
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+    __table_args__ = (
+        Index("idx_chat_msg_session", "session_id", "created_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
     )
     user_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id"), index=True, nullable=False
     )
-    session_id: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    session_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("chat_sessions.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     role: Mapped[str] = mapped_column(String(20), nullable=False)  # user | assistant
     content: Mapped[str] = mapped_column(Text, nullable=False)
     sources_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
@@ -356,6 +397,7 @@ class ChatMessage(Base):
     # Relationships
     workspace: Mapped["Workspace"] = relationship(back_populates="chat_messages")
     user: Mapped["User"] = relationship(back_populates="chat_messages")
+    session: Mapped["ChatSession"] = relationship(back_populates="messages")
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -372,7 +414,7 @@ class ForecastResult(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     workspace_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("workspaces.id"), nullable=False
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
     )
     scenario: Mapped[str] = mapped_column(String(20), nullable=False)
     horizon_months: Mapped[int] = mapped_column(SmallInteger, nullable=False)
@@ -407,7 +449,7 @@ class AuditLog(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     workspace_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("workspaces.id"), nullable=False
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
     )
     user_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id"), index=True, nullable=False
@@ -423,7 +465,8 @@ class AuditLog(Base):
     )
     old_value: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     new_value: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
+    # NOTE: ip_address intentionally removed — PII under GDPR/CCPA
+    # without consent mechanism, retention policy, or deletion capability.
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=datetime.utcnow
     )
@@ -451,10 +494,52 @@ class IndustryBenchmark(Base):
     )
     industry: Mapped[str] = mapped_column(String(50), nullable=False)
     metric_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    metric_value: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    metric_value: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     unit: Mapped[str] = mapped_column(String(20), nullable=False, default="percentage")
     source: Mapped[str | None] = mapped_column(String(255), nullable=True)
     year: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=2025)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=datetime.utcnow
     )
+
+
+# ═══════════════════════════════════════════════════════════════════
+# PLAID ITEM — Banking connections (ADVANCE-003)
+# ═══════════════════════════════════════════════════════════════════
+
+class PlaidItem(Base):
+    __tablename__ = "plaid_items"
+    __table_args__ = (
+        Index("idx_plaid_ws_item", "workspace_id", "item_id", unique=True),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id"), index=True, nullable=False
+    )
+    item_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    access_token_encrypted: Mapped[str] = mapped_column(
+        Text, nullable=False
+    )  # Fernet-encrypted access token
+    institution_id: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    institution_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    sync_cursor: Mapped[str | None] = mapped_column(
+        Text, nullable=True
+    )  # Plaid sync cursor for incremental updates
+    last_synced_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow
+    )
+
+    # Relationships
+    workspace: Mapped["Workspace"] = relationship("Workspace")
+    user: Mapped["User"] = relationship("User")
+

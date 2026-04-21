@@ -18,6 +18,7 @@ import type {
   ForecastResponse,
   ChatRequest,
   ChatResponse,
+  ChatSession,
   ScanResult,
   HealthScoreResponse,
   ReportSummary,
@@ -77,7 +78,24 @@ async function fetchApi<T>(
 
 export const authApi = {
   getMe: () => fetchApi<User>("/auth/me"),
-  sync: () => fetchApi<{ status: string }>("/auth/sync", { method: "POST" }),
+  /** @deprecated Use onboardingApi.provision() for first-time setup */
+  sync: () => fetchApi<{ status: string; user_id: string; workspace_id: string }>("/auth/sync", { method: "POST" }),
+};
+
+
+// ── Onboarding ──────────────────────────────────────────────────
+
+export const onboardingApi = {
+  /**
+   * Provision workspace + user on first login.
+   * Idempotent — safe to call multiple times.
+   * Frontend should call this once after Clerk sign-in.
+   */
+  provision: () =>
+    fetchApi<{ status: string; user: User; workspace_id: string }>(
+      "/onboarding/provision",
+      { method: "POST" }
+    ),
 };
 
 
@@ -223,6 +241,8 @@ export const chatApi = {
       body: JSON.stringify(data),
     }),
 
+  sessions: () => fetchApi<ChatSession[]>("/chat/sessions"),
+
   history: (sessionId: string) =>
     fetchApi<{ role: string; content: string; created_at: string }[]>(
       `/chat/history?session_id=${sessionId}`
@@ -318,15 +338,30 @@ export const settingsApi = {
       body: JSON.stringify(data),
     }),
   listTeam: () => fetchApi<User[]>("/settings/team"),
+  getTeam: () => fetchApi<{ members: User[] }>("/settings/team"),
   inviteMember: (data: { email: string; full_name: string; role: string }) =>
     fetchApi<void>("/settings/team/invite", {
       method: "POST",
       body: JSON.stringify(data),
     }),
+  inviteUser: (email: string, role: string) =>
+    fetchApi<void>("/settings/team/invite", {
+      method: "POST",
+      body: JSON.stringify({ email, full_name: "", role }),
+    }),
   updateRole: (memberId: string, role: string) =>
     fetchApi<void>(`/settings/team/${memberId}/role`, {
       method: "PUT",
       body: JSON.stringify({ role }),
+    }),
+  updateUserRole: (memberId: number, role: string) =>
+    fetchApi<void>(`/settings/team/${memberId}/role`, {
+      method: "PUT",
+      body: JSON.stringify({ role }),
+    }),
+  removeUser: (memberId: number) =>
+    fetchApi<void>(`/settings/team/${memberId}`, {
+      method: "DELETE",
     }),
 };
 
@@ -335,4 +370,99 @@ export const settingsApi = {
 
 export const systemApi = {
   health: () => fetchApi<{ status: string; version: string }>("/health"),
+};
+
+
+// ── Investor View ────────────────────────────────────────────────
+
+export const investorApi = {
+  getSummary: () =>
+    fetchApi<{
+      health_score: number;
+      health_label: string;
+      metrics: { label: string; value: string; delta: string; positive: boolean; note: string }[];
+      revenue_trend: { month: string; revenue: number; expenses: number }[];
+      kpis: { label: string; value: string; trend: string; change: string }[];
+    }>("/dashboard/investor-summary"),
+};
+
+
+// ══════════════════════════════════════════════════════════════════
+// Unified namespace — supports `import { api } from "@/lib/api"`
+// ══════════════════════════════════════════════════════════════════
+
+export const api = {
+  // ── Nested namespaces (preferred) ──────────────────────────────
+  auth: authApi,
+  onboarding: onboardingApi,
+  dashboard: dashboardApi,
+  transactions: transactionsApi,
+  budgets: budgetsApi,
+  goals: goalsApi,
+  alerts: alertsApi,
+  chat: chatApi,
+  forecast: forecastApi,
+  anomaly: anomalyApi,
+  healthScore: healthScoreApi,
+  reports: reportsApi,
+  calculator: calculatorApi,
+  audit: auditApi,
+  benchmarks: benchmarksApi,
+  settings: settingsApi,
+  investor: investorApi,
+  system: systemApi,
+
+  // ── Flat compatibility methods (used by existing pages) ────────
+  // These accept an optional trailing `_token` param for backward
+  // compat — the token is actually resolved internally by fetchApi.
+
+  getDashboard: (_token?: string | null) =>
+    dashboardApi.getSummary(),
+
+  getAlerts: (_unreadOnly?: boolean, _token?: string | null) =>
+    alertsApi.list(_unreadOnly),
+
+  dismissAlert: (id: string | number, _token?: string | null) =>
+    alertsApi.dismiss(String(id)),
+
+  getTransactions: (
+    page?: number,
+    perPage?: number,
+    search?: string,
+    _token?: string | null,
+  ) =>
+    transactionsApi.list({ page, per_page: perPage, search: search || undefined }),
+
+  createTransaction: (
+    data: TransactionCreate,
+    _token?: string | null,
+  ) =>
+    transactionsApi.create(data),
+
+  uploadCSV: (file: File, _token?: string | null) =>
+    transactionsApi.uploadCsv(file),
+
+  getBudgets: (_token?: string | null) =>
+    budgetsApi.list(),
+
+  createBudget: (
+    data: { category: string; limit_amount?: number; monthly_limit?: number; period?: string; month?: string; alert_threshold?: number },
+    _token?: string | null,
+  ) =>
+    budgetsApi.create({
+      category: data.category,
+      monthly_limit: data.limit_amount ?? data.monthly_limit ?? 0,
+      alert_threshold: data.alert_threshold,
+      month: data.period ?? data.month,
+    }),
+
+  getForecast: (
+    scenario?: string,
+    months?: number,
+    _token?: string | null,
+  ) =>
+    forecastApi.get(months, scenario),
+
+  sendChat: (message: string, _token?: string | null) =>
+    chatApi.send({ message }),
 };

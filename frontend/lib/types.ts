@@ -42,6 +42,9 @@ export interface Transaction {
   created_at: string;
 }
 
+/** Alias for backward compatibility with pages importing TransactionOut */
+export type TransactionOut = Transaction;
+
 export interface PaginatedTransactions {
   items: Transaction[];
   total: number;
@@ -167,20 +170,35 @@ export interface ForecastResponse {
   historical_months: number;
   data_points: ForecastPoint[];
   model_version: string;
+  assumptions?: Record<string, number | string>;
 }
 
 // ── Chat ─────────────────────────────────────────────────────────
 
 export interface ChatRequest {
   message: string;
-  session_id?: string;
+  session_id?: string; // UUID
+}
+
+export interface ChatSession {
+  id: string;
+  title?: string;
+  created_at: string;
+  last_active_at: string;
 }
 
 export interface ChatResponse {
   reply: string;
+  session_id: string; // UUID — persist this for follow-up messages
   sources: string[];
   suggested_actions: string[];
   confidence: string;
+}
+
+/** Simple chat message used by the chat page UI */
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
 }
 
 // ── Anomaly Detection ────────────────────────────────────────────
@@ -216,6 +234,7 @@ export interface ScoreComponent {
 export interface HealthScoreResponse {
   overall_score: number;
   grade: string;
+  stage: string;
   components: ScoreComponent[];
   recommendations: string[];
   computed_at: string;

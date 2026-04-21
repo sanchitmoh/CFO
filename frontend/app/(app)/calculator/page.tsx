@@ -4,16 +4,20 @@ import { useState } from "react";
 import {
   Calculator,
   DollarSign,
-  TrendingDown,
   CheckCircle,
   AlertTriangle,
   XCircle,
   Repeat,
   Calendar,
   ArrowRight,
+  Loader2,
 } from "lucide-react";
+import { calculatorApi } from "@/lib/api";
+import type { AffordabilityResponse } from "@/lib/types";
 
 type Frequency = "one-time" | "monthly" | "annual";
+
+type Verdict = "safe" | "caution" | "risky";
 
 interface AffordResult {
   canAfford: boolean;
@@ -23,7 +27,7 @@ interface AffordResult {
   monthlyImpact: number;
   breakEven: number | null;
   suggestion: string;
-  verdict: "safe" | "caution" | "risky";
+  verdict: Verdict;
 }
 
 const fmt = (n: number) =>
@@ -33,64 +37,34 @@ const fmt = (n: number) =>
     maximumFractionDigits: 0,
   }).format(n);
 
-// Demo data: Luna Bakery snapshot
-const DEMO = {
-  cashBalance: 45000,
-  monthlyBurnRate: 5600,
-  monthlyRevenue: 28000,
-};
+/** Map frontend frequency values to backend enum format. */
+const freqToBackend = (f: Frequency): "one_time" | "monthly" | "annual" =>
+  f === "one-time" ? "one_time" : f;
 
-function calculate(
-  name: string,
+/** Derive a UI verdict from the backend response. */
+function deriveVerdict(res: AffordabilityResponse): Verdict {
+  if (!res.can_afford) return "risky";
+  return res.projected_runway_months >= 6 ? "safe" : "caution";
+}
+
+/** Map backend AffordabilityResponse → UI AffordResult. */
+function toAffordResult(
+  res: AffordabilityResponse,
   amount: number,
-  frequency: Frequency,
-  isHire: boolean
+  frequency: Frequency
 ): AffordResult {
-  const monthlyAmount =
-    frequency === "one-time"
-      ? 0
-      : frequency === "monthly"
-      ? amount
-      : amount / 12;
-
-  const oneTimeCost = frequency === "one-time" ? amount : 0;
-  const newBurn = DEMO.monthlyBurnRate + monthlyAmount;
-  const newCash = DEMO.cashBalance - oneTimeCost;
-
-  const runwayBefore =
-    DEMO.monthlyBurnRate > DEMO.monthlyRevenue
-      ? DEMO.cashBalance / (DEMO.monthlyBurnRate - DEMO.monthlyRevenue)
-      : 99;
-
-  const netBurnAfter = newBurn - DEMO.monthlyRevenue;
-  const runwayAfter =
-    netBurnAfter > 0 ? newCash / netBurnAfter : 99;
-
-  const balance3months = newCash - netBurnAfter * 3;
-
-  const breakEven = isHire ? Math.ceil(amount / (DEMO.monthlyRevenue * 0.15)) : null;
-
-  const verdict: AffordResult["verdict"] =
-    runwayAfter < 2 ? "risky" : runwayAfter < 4 ? "caution" : "safe";
-
-  let suggestion = "";
-  if (verdict === "risky") {
-    suggestion = `This expense would reduce runway to ${runwayAfter.toFixed(1)} months — dangerously low. Consider deferring or reducing Marketing spend by $${Math.round(monthlyAmount * 0.5).toLocaleString()}/month to offset.`;
-  } else if (verdict === "caution") {
-    suggestion = `Affordable but watch closely — runway drops to ${runwayAfter.toFixed(1)} months. Ensure revenue grows by at least ${(((monthlyAmount / DEMO.monthlyRevenue) * 100)).toFixed(0)}% to offset this cost.`;
-  } else {
-    suggestion = `This expense looks manageable. Runway stays healthy at ${runwayAfter.toFixed(1)} months. Proceed with confidence, but review in 30 days.`;
-  }
+  const monthlyImpact =
+    frequency === "one-time" ? 0 : frequency === "monthly" ? amount : amount / 12;
 
   return {
-    canAfford: verdict !== "risky",
-    runwayBefore,
-    runwayAfter,
-    balance3months,
-    monthlyImpact: monthlyAmount,
-    breakEven,
-    suggestion,
-    verdict,
+    canAfford: res.can_afford,
+    runwayBefore: res.current_runway_months,
+    runwayAfter: res.projected_runway_months,
+    balance3months: res.projected_balance_3m,
+    monthlyImpact,
+    breakEven: res.break_even_revenue ? Math.ceil(res.break_even_revenue) : null,
+    suggestion: res.ai_suggestion,
+    verdict: deriveVerdict(res),
   };
 }
 
@@ -102,12 +76,30 @@ export default function CalculatorPage() {
     isHire: false,
   });
   const [result, setResult] = useState<AffordResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const amt = parseFloat(form.amount);
     if (!amt || amt <= 0) return;
-    setResult(calculate(form.name, amt, form.frequency, form.isHire));
+
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await calculatorApi.checkAffordability({
+        expense_name: form.name,
+        amount: amt,
+        frequency: freqToBackend(form.frequency),
+      });
+      setResult(toAffordResult(res, amt, form.frequency));
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to analyse affordability";
+      setError(message);
+      setResult(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const verdictColor = {
@@ -268,31 +260,44 @@ export default function CalculatorPage() {
               </button>
             </div>
 
-            {/* Context snapshot */}
+            {/* Data source info */}
             <div
               className="p-3 rounded-lg text-xs"
               style={{ background: "var(--bg)", border: "1px solid var(--border)" }}
             >
-              <p className="font-medium mb-2" style={{ color: "var(--text)" }}>
-                Luna Bakery Snapshot
+              <p className="font-medium mb-1" style={{ color: "var(--text)" }}>
+                📊 Powered by Your Financial Data
               </p>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { label: "Cash Balance", value: fmt(DEMO.cashBalance) },
-                  { label: "Monthly Burn", value: fmt(DEMO.monthlyBurnRate) },
-                  { label: "Monthly Revenue", value: fmt(DEMO.monthlyRevenue) },
-                ].map(({ label, value }) => (
-                  <div key={label}>
-                    <p style={{ color: "var(--text-dim)" }}>{label}</p>
-                    <p className="font-semibold" style={{ color: "var(--accent)" }}>{value}</p>
-                  </div>
-                ))}
-              </div>
+              <p style={{ color: "var(--text-dim)" }}>
+                Analysis uses your actual 3-month income, expenses, and burn rate to model real impact.
+              </p>
             </div>
 
-            <button type="submit" className="btn-primary w-full flex items-center justify-center gap-2">
-              <Calculator size={15} />
-              Calculate Affordability
+            {error && (
+              <div
+                className="p-3 rounded-lg text-xs"
+                style={{ background: "var(--danger-soft)", border: "1px solid var(--danger)33", color: "var(--danger)" }}
+              >
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="btn-primary w-full flex items-center justify-center gap-2"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 size={15} className="animate-spin" />
+                  Analysing…
+                </>
+              ) : (
+                <>
+                  <Calculator size={15} />
+                  Calculate Affordability
+                </>
+              )}
             </button>
           </form>
         </div>
@@ -418,10 +423,9 @@ export default function CalculatorPage() {
                       Break-even Point
                     </p>
                     <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                      This hire pays off in{" "}
-                      <strong style={{ color: "var(--info)" }}>{result.breakEven} months</strong>{" "}
-                      if they generate 15%+ of monthly revenue ($
-                      {Math.round(DEMO.monthlyRevenue * 0.15).toLocaleString()}/mo).
+                      You would need to generate an additional{" "}
+                      <strong style={{ color: "var(--info)" }}>{fmt(result.breakEven)}</strong>{" "}
+                      in revenue over 3 months to break even on this expense.
                     </p>
                   </div>
                 </div>
@@ -463,7 +467,7 @@ export default function CalculatorPage() {
       </div>
 
       <p className="text-xs text-center animate-fade-up delay-5" style={{ color: "var(--text-dim)" }}>
-        Analysis based on current cash balance, burn rate, and revenue. Connect your accounts for live data.
+        Analysis based on your actual income, expenses, and burn rate from the last 3 months.
       </p>
     </div>
   );

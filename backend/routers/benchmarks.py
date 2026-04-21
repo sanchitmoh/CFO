@@ -2,7 +2,6 @@
 AI CFO — Industry Benchmarks Router (Feature C)
 Compare workspace metrics against industry averages.
 """
-import uuid
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends
@@ -64,8 +63,7 @@ async def get_benchmarks(
         else:
             expenses = float(row[1] or 0)
 
-    # Compute workspace metrics
-    revenue = income
+    # Compute workspace metrics (income used directly below)
     profit_margin = ((income - expenses) / income * 100) if income > 0 else 0
     expense_ratio = (expenses / income * 100) if income > 0 else 0
 

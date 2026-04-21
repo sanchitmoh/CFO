@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings
 from database import engine, Base
+from telemetry import setup_telemetry
 
 # ── Import all routers ────────────────────────────────────────────
 from routers import (
@@ -27,6 +28,9 @@ from routers import (
     goals as goals_router,
     audit as audit_router,
     benchmarks as benchmarks_router,
+    onboarding as onboarding_router,
+    plaid as plaid_router,
+    semantic_search as semantic_search_router,
 )
 
 
@@ -44,6 +48,9 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+# ── Observability (ADVANCE-001) ───────────────────────────────────
+setup_telemetry(app)
 
 # ── CORS ──────────────────────────────────────────────────────────
 app.add_middleware(
@@ -70,6 +77,9 @@ app.include_router(calculator_router.router, prefix="/api/calculator", tags=["Ca
 app.include_router(goals_router.router, prefix="/api/goals", tags=["Goals"])
 app.include_router(audit_router.router, prefix="/api/audit", tags=["Audit Log"])
 app.include_router(benchmarks_router.router, prefix="/api/benchmarks", tags=["Benchmarks"])
+app.include_router(onboarding_router.router, prefix="/api/onboarding", tags=["Onboarding"])
+app.include_router(plaid_router.router, prefix="/api/plaid", tags=["Plaid"])
+app.include_router(semantic_search_router.router, prefix="/api/search", tags=["Semantic Search"])
 
 
 @app.get("/api/health", tags=["System"])

@@ -19,6 +19,7 @@ import {
   ClipboardList,
   Users,
   Eye,
+  Target,
 } from "lucide-react";
 
 const NAV_PRIMARY = [
@@ -30,6 +31,7 @@ const NAV_PRIMARY = [
 const NAV_MANAGE = [
   { href: "/transactions", label: "Transactions", icon: ArrowLeftRight },
   { href: "/budgets", label: "Budgets", icon: Wallet },
+  { href: "/goals", label: "Goals", icon: Target },
   { href: "/alerts", label: "Alerts", icon: Bell },
   { href: "/anomalies", label: "Anomalies", icon: ShieldAlert },
 ];

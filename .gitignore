@@ -28,3 +28,28 @@ Thumbs.db
 # Misc
 *.docx
 skills-lock.json
+
+# Agent / AI configs (not project code)
+CLAUDE.md
+GEMINI.md
+AGENTS.md
+SKILL.md
+.claude/
+.agents/
+.mcp.json
+.opencode.json
+.cursorrules
+.windsurfrules
+frontendskills.md
+implementation_plan.md
+
+# Obsidian vault
+CFO/
+
+# Stitch screen designs (HTML mockups)
+frontend/Screens/
+frontend/CLAUDE.md
+frontend/AGENTS.md
+
+# Code review graph DB
+.code-review-graph/

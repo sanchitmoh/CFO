@@ -19,6 +19,24 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-4o-mini"
 
+    # ── Encryption (field-level for webhooks, API keys) ──
+    WEBHOOK_ENCRYPTION_KEY: str = ""  # Fernet key — generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+
+    # ── Observability (OpenTelemetry) ──
+    OTEL_ENABLED: bool = False
+    OTEL_SERVICE_NAME: str = "ai-cfo-backend"
+    OTEL_EXPORTER_OTLP_ENDPOINT: str = "http://localhost:4317"  # gRPC
+
+    # ── Plaid (ADVANCE-003) ──
+    PLAID_CLIENT_ID: str = ""
+    PLAID_SECRET: str = ""
+    PLAID_ENV: str = "sandbox"  # sandbox | development | production
+    PLAID_WEBHOOK_URL: str = ""  # e.g. https://yourdomain.com/api/plaid/webhook
+
+    # ── Embeddings (ADVANCE-005) ──
+    EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"  # free, local, 384 dims
+    EMBEDDING_DIMENSIONS: int = 384
+
     # ── App ──
     CORS_ORIGINS: list[str] = ["http://localhost:3000"]
     DEBUG: bool = False

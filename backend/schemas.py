@@ -222,6 +222,7 @@ class AlertRuleOut(BaseModel):
     is_enabled: bool
     notify_email: bool
     notify_slack: bool
+    slack_webhook_masked: Optional[str] = None  # e.g. "http...xxxx" — never the full URL
     model_config = {"from_attributes": True}
 
 
@@ -254,7 +255,15 @@ class ForecastResponse(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str
-    session_id: Optional[str] = None
+    session_id: Optional[uuid.UUID] = None
+
+
+class ChatSessionOut(BaseModel):
+    id: uuid.UUID
+    title: Optional[str] = None
+    created_at: datetime
+    last_active_at: datetime
+    model_config = {"from_attributes": True}
 
 
 class ChatResponse(BaseModel):
@@ -294,7 +303,7 @@ class ScanResult(BaseModel):
 class ScoreComponent(BaseModel):
     name: str
     score: float
-    max_score: float = 25
+    max_score: float = 100
     description: str
     status: str  # excellent | good | fair | poor
 
@@ -302,6 +311,7 @@ class ScoreComponent(BaseModel):
 class HealthScoreResponse(BaseModel):
     overall_score: float
     grade: str
+    stage: str = "growth"  # early | growth | mature
     components: list[ScoreComponent]
     recommendations: list[str]
     computed_at: datetime

@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState, useCallback } from "react";
+import { investorApi, dashboardApi, healthScoreApi } from "@/lib/api";
 import {
   TrendingUp,
   TrendingDown,
@@ -20,9 +22,26 @@ import {
 } from "recharts";
 
 // Investor view: read-only, clean, professional — no raw transactions
-// Demo data: Luna Bakery
 
-const METRICS = [
+interface Metric {
+  label: string;
+  value: string;
+  delta: string;
+  positive: boolean;
+  icon: React.ElementType;
+  color: string;
+  bg: string;
+  note: string;
+}
+
+interface KPI {
+  label: string;
+  value: string;
+  trend: string;
+  change: string;
+}
+
+const DEMO_METRICS: Metric[] = [
   {
     label: "Monthly Revenue",
     value: "$28,000",
@@ -65,7 +84,7 @@ const METRICS = [
   },
 ];
 
-const REVENUE_TREND = [
+const DEMO_REVENUE_TREND = [
   { month: "Aug", revenue: 18000, expenses: 14000 },
   { month: "Sep", revenue: 19500, expenses: 15200 },
   { month: "Oct", revenue: 21000, expenses: 16400 },
@@ -74,7 +93,7 @@ const REVENUE_TREND = [
   { month: "Jan", revenue: 28000, expenses: 21600 },
 ];
 
-const KEY_KPIS = [
+const DEMO_KPIS: KPI[] = [
   { label: "Gross Margin", value: "62%", trend: "up", change: "+3pp" },
   { label: "MRR Growth", value: "12% MoM", trend: "up", change: "↑ 2pp" },
   { label: "Burn Multiple", value: "0.77×", trend: "up", change: "Efficient" },
@@ -82,6 +101,20 @@ const KEY_KPIS = [
   { label: "Health Score", value: "72/100", trend: "neutral", change: "Good" },
   { label: "Top Expense", value: "Payroll", trend: "neutral", change: "45% of burn" },
 ];
+
+const ICON_MAP: Record<string, React.ElementType> = {
+  "Monthly Revenue": TrendingUp,
+  "Burn Rate": Flame,
+  "Cash Runway": Clock,
+  "Cash Balance": DollarSign,
+};
+
+const COLOR_MAP: Record<string, [string, string]> = {
+  "Monthly Revenue": ["var(--accent)", "var(--accent-soft)"],
+  "Burn Rate": ["var(--danger)", "var(--danger-soft)"],
+  "Cash Runway": ["var(--warning)", "var(--warning-soft)"],
+  "Cash Balance": ["var(--info)", "var(--info-soft)"],
+};
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("en-US", {
@@ -91,6 +124,44 @@ const fmt = (n: number) =>
   }).format(n);
 
 export default function InvestorPage() {
+  const [metrics, setMetrics] = useState<Metric[]>(DEMO_METRICS);
+  const [revenueTrend, setRevenueTrend] = useState(DEMO_REVENUE_TREND);
+  const [kpis, setKpis] = useState<KPI[]>(DEMO_KPIS);
+  const [healthScore, setHealthScore] = useState(72);
+  const [healthLabel, setHealthLabel] = useState("Good");
+
+  const loadInvestorData = useCallback(async () => {
+    try {
+      const data = await investorApi.getSummary();
+      if (data) {
+        if (data.health_score) setHealthScore(data.health_score);
+        if (data.health_label) setHealthLabel(data.health_label);
+        if (data.metrics?.length) {
+          setMetrics(data.metrics.map((m) => ({
+            ...m,
+            icon: ICON_MAP[m.label] || TrendingUp,
+            color: COLOR_MAP[m.label]?.[0] || "var(--text)",
+            bg: COLOR_MAP[m.label]?.[1] || "var(--surface)",
+          })));
+        }
+        if (data.revenue_trend?.length) setRevenueTrend(data.revenue_trend);
+        if (data.kpis?.length) setKpis(data.kpis);
+      }
+    } catch {
+      // API unavailable — try individual endpoints
+      try {
+        const hs = await healthScoreApi.get();
+        if (hs?.overall_score) {
+          setHealthScore(hs.overall_score);
+          setHealthLabel(hs.overall_score >= 71 ? "Good" : hs.overall_score >= 41 ? "Caution" : "Critical");
+        }
+      } catch { /* keep defaults */ }
+    }
+  }, []);
+
+  useEffect(() => {
+    loadInvestorData();
+  }, [loadInvestorData]);
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {/* Header */}
@@ -136,20 +207,20 @@ export default function InvestorPage() {
                 fill="none"
                 stroke="var(--warning)"
                 strokeWidth="8"
-                strokeDasharray={`${(72 / 100) * 2 * Math.PI * 28} ${2 * Math.PI * 28}`}
+                strokeDasharray={`${(healthScore / 100) * 2 * Math.PI * 28} ${2 * Math.PI * 28}`}
                 strokeDashoffset={`${0.25 * 2 * Math.PI * 28}`}
                 strokeLinecap="round"
                 transform="rotate(-90 36 36)"
               />
             </svg>
             <div className="absolute text-center">
-              <div className="text-xl font-bold leading-none" style={{ color: "var(--warning)" }}>72</div>
+              <div className="text-xl font-bold leading-none" style={{ color: "var(--warning)" }}>{healthScore}</div>
               <div className="text-xs" style={{ color: "var(--text-dim)" }}>/100</div>
             </div>
           </div>
           <div>
             <p className="font-bold" style={{ color: "var(--text)" }}>
-              Financial Health Score: Good
+              Financial Health Score: {healthLabel}
             </p>
             <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
               Strong runway and revenue growth. Marketing overspend is the primary drag on this score.
@@ -165,7 +236,7 @@ export default function InvestorPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-up delay-2">
-        {METRICS.map(({ label, value, delta, positive, icon: Icon, color, bg, note }, i) => (
+        {metrics.map(({ label, value, delta, positive, icon: Icon, color, bg, note }, i) => (
           <div key={label} className={`glass p-5 animate-fade-up delay-${i + 1}`}>
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs uppercase tracking-wider font-medium" style={{ color: "var(--text-muted)" }}>
@@ -208,7 +279,7 @@ export default function InvestorPage() {
           Revenue vs. Expenses — Last 6 Months
         </h3>
         <ResponsiveContainer width="100%" height={220}>
-          <AreaChart data={REVENUE_TREND}>
+          <AreaChart data={revenueTrend}>
             <defs>
               <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#00E5CC" stopOpacity={0.3} />
@@ -241,7 +312,7 @@ export default function InvestorPage() {
           Key Performance Indicators
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          {KEY_KPIS.map(({ label, value, trend, change }) => (
+          {kpis.map(({ label, value, trend, change }) => (
             <div
               key={label}
               className="p-4 rounded-lg"

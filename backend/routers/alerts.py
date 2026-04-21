@@ -5,11 +5,11 @@ CRUD for system and user-generated alerts.
 import uuid
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select, func, and_, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import get_db
+from database import get_db, get_db_with_rls
 from auth import get_current_user
 from models import User, Alert, AlertSeverity
 from schemas import AlertOut
@@ -27,10 +27,10 @@ async def list_alerts(
 ):
     """List alerts for the workspace."""
     ws_id = user.workspace_id
-    filters = [Alert.workspace_id == ws_id, Alert.is_dismissed == False]
+    filters = [Alert.workspace_id == ws_id, Alert.is_dismissed.is_(False)]
 
     if unread_only:
-        filters.append(Alert.is_read == False)
+        filters.append(Alert.is_read.is_(False))
     if severity:
         filters.append(Alert.severity == AlertSeverity(severity))
 
@@ -54,8 +54,8 @@ async def alert_count(
         .where(
             and_(
                 Alert.workspace_id == user.workspace_id,
-                Alert.is_read == False,
-                Alert.is_dismissed == False,
+                Alert.is_read.is_(False),
+                Alert.is_dismissed.is_(False),
             )
         )
     )
@@ -94,7 +94,7 @@ async def mark_all_read(
         .where(
             and_(
                 Alert.workspace_id == user.workspace_id,
-                Alert.is_read == False,
+                Alert.is_read.is_(False),
             )
         )
         .values(is_read=True)

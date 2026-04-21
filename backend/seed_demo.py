@@ -4,7 +4,6 @@ Creates the "Luna Bakery" demo workspace with realistic financial data.
 Run: python seed_demo.py
 """
 import asyncio
-import uuid
 from datetime import datetime, timedelta
 import random
 
@@ -216,7 +215,7 @@ async def seed():
         print(f"✅ Seeded Luna Bakery workspace: {ws.id}")
         print(f"   Owner: {owner.email}")
         print(f"   Transactions: {len(transactions)}")
-        print(f"   Budgets: 8 | Goals: 2 | Alerts: 3")
+        print("   Budgets: 8 | Goals: 2 | Alerts: 3")
 
 
 if __name__ == "__main__":

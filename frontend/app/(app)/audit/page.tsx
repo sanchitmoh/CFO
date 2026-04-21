@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { auditApi } from "@/lib/api";
 import {
   ClipboardList,
   Filter,
@@ -150,13 +151,40 @@ function fmtDate(ts: string) {
 }
 
 export default function AuditPage() {
+  const [entries, setEntries] = useState<AuditEntry[]>(DEMO_ENTRIES);
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [userFilter, setUserFilter] = useState("all");
   const [expanded, setExpanded] = useState<number | null>(null);
 
-  const users = ["all", ...Array.from(new Set(DEMO_ENTRIES.map((e) => e.user)))];
+  const loadAuditLog = useCallback(async () => {
+    try {
+      const data = await auditApi.list({ days: 90 });
+      if (data?.items?.length) {
+        setEntries(
+          data.items.map((log: any) => ({
+            id: log.id,
+            timestamp: log.created_at || log.timestamp,
+            user: log.user_email || log.user || "system",
+            action: log.action || log.event_type || "",
+            category: log.entity_type || "default",
+            detail: log.detail || log.description || "",
+            before: log.old_value,
+            after: log.new_value,
+          }))
+        );
+      }
+    } catch {
+      // API unavailable — keep demo data
+    }
+  }, []);
 
-  const filtered = DEMO_ENTRIES.filter((e) => {
+  useEffect(() => {
+    loadAuditLog();
+  }, [loadAuditLog]);
+
+  const users = ["all", ...Array.from(new Set(entries.map((e) => e.user)))];
+
+  const filtered = entries.filter((e) => {
     if (categoryFilter !== "all" && e.category !== categoryFilter) return false;
     if (userFilter !== "all" && e.user !== userFilter) return false;
     return true;
@@ -177,10 +205,10 @@ export default function AuditPage() {
       {/* Summary stats */}
       <div className="grid grid-cols-4 gap-4 animate-fade-up delay-1">
         {[
-          { label: "Total Events", value: DEMO_ENTRIES.length, color: "var(--text)" },
-          { label: "Budget Changes", value: DEMO_ENTRIES.filter(e => e.category === "budget").length, color: "var(--warning)" },
-          { label: "Uploads", value: DEMO_ENTRIES.filter(e => e.category === "upload").length, color: "var(--info)" },
-          { label: "Exports", value: DEMO_ENTRIES.filter(e => e.category === "export").length, color: "var(--accent)" },
+          { label: "Total Events", value: entries.length, color: "var(--text)" },
+          { label: "Budget Changes", value: entries.filter(e => e.category === "budget").length, color: "var(--warning)" },
+          { label: "Uploads", value: entries.filter(e => e.category === "upload").length, color: "var(--info)" },
+          { label: "Exports", value: entries.filter(e => e.category === "export").length, color: "var(--accent)" },
         ].map(({ label, value, color }) => (
           <div key={label} className="glass p-4">
             <p className="text-xs uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>

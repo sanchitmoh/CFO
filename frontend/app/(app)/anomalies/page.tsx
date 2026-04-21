@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { anomalyApi } from "@/lib/api";
 import {
   AlertTriangle,
   ShieldAlert,
@@ -113,14 +114,54 @@ export default function AnomaliesPage() {
   const [expanded, setExpanded] = useState<number | null>(null);
   const [scanning, setScanning] = useState(false);
 
-  const runScan = useCallback(() => {
+  const loadAnomalies = useCallback(async () => {
+    try {
+      const data = await anomalyApi.list();
+      if (data && data.length > 0) {
+        setAnomalies(data.map((a: any, i: number) => ({
+          id: a.id || i + 1,
+          transaction_id: a.transaction_id || i + 100,
+          date: a.date || a.created_at || "",
+          description: a.description || "",
+          amount: a.amount || 0,
+          category: a.category || "Unknown",
+          anomaly_score: a.anomaly_score || a.z_score || 0.5,
+          reason: a.reason || a.explanation || "",
+          status: a.status || "flagged",
+        })));
+      }
+    } catch {
+      // API unavailable — keep demo data
+    }
+  }, []);
+
+  const runScan = useCallback(async () => {
     setScanning(true);
-    setTimeout(() => setScanning(false), 2000);
+    try {
+      const result = await anomalyApi.scan(2.0, 90);
+      if (result?.anomalies?.length) {
+        setAnomalies(result.anomalies.map((a: any, i: number) => ({
+          id: a.id || i + 1,
+          transaction_id: a.transaction_id || i + 100,
+          date: a.date || "",
+          description: a.description || "",
+          amount: a.amount || 0,
+          category: a.category || "Unknown",
+          anomaly_score: a.anomaly_score || a.z_score || 0.5,
+          reason: a.reason || a.explanation || "",
+          status: "flagged",
+        })));
+      }
+    } catch {
+      // scan failed — keep existing data
+    } finally {
+      setScanning(false);
+    }
   }, []);
 
   useEffect(() => {
-    // In production: fetch from /api/anomalies/
-  }, []);
+    loadAnomalies();
+  }, [loadAnomalies]);
 
   const dismiss = (id: number) => {
     setAnomalies((prev) =>

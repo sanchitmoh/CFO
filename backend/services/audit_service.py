@@ -1,6 +1,9 @@
 """
 AI CFO — Audit Service
 Logs all user actions for compliance and traceability.
+
+NOTE: IP addresses are intentionally NOT logged (GDPR/CCPA — PII without
+consent mechanism, retention policy, or deletion capability).
 """
 import uuid
 from typing import Optional
@@ -18,7 +21,6 @@ async def log_action(
     entity_id: Optional[uuid.UUID] = None,
     old_value: Optional[dict] = None,
     new_value: Optional[dict] = None,
-    ip_address: Optional[str] = None,
 ) -> AuditLog:
     """Create an audit log entry."""
     entry = AuditLog(
@@ -29,8 +31,8 @@ async def log_action(
         entity_id=entity_id,
         old_value=old_value,
         new_value=new_value,
-        ip_address=ip_address,
     )
     db.add(entry)
     await db.commit()
     return entry
+

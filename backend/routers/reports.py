@@ -4,7 +4,7 @@ Generate financial reports with date range filtering.
 """
 from datetime import datetime, timedelta, date
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 

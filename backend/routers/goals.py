@@ -3,7 +3,6 @@ AI CFO — Goals Router (Feature 5)
 Financial goal tracking with CRUD and progress computation.
 """
 import uuid
-from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, and_
@@ -14,7 +13,6 @@ from auth import get_current_user
 from models import User, Goal, GoalStatus
 from schemas import GoalCreate, GoalUpdate, GoalOut
 from services.audit_service import log_action
-from cache import cache_delete
 
 router = APIRouter()
 

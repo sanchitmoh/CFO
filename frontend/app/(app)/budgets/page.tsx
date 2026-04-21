@@ -35,8 +35,8 @@ export default function BudgetsPage() {
     load();
   }, [load]);
 
-  const totalBudget = budgets.reduce((s, b) => s + b.limit_amount, 0);
-  const totalSpent = budgets.reduce((s, b) => s + b.spent_amount, 0);
+  const totalBudget = budgets.reduce((s, b) => s + b.monthly_limit, 0);
+  const totalSpent = budgets.reduce((s, b) => s + b.current_spend, 0);
   const overallPct = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
 
   return (
@@ -85,11 +85,11 @@ export default function BudgetsPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {budgets.map((b, i) => {
-            const pct = b.limit_amount > 0 ? Math.min((b.spent_amount / b.limit_amount) * 100, 100) : 0;
+            const pct = b.monthly_limit > 0 ? Math.min((b.current_spend / b.monthly_limit) * 100, 100) : 0;
             const over = pct >= 100;
             const warn = pct >= 80 && !over;
             const barColor = over ? "var(--danger)" : warn ? "var(--warning)" : "var(--accent)";
-            const remaining = b.limit_amount - b.spent_amount;
+            const remaining = b.monthly_limit - b.current_spend;
 
             return (
               <div key={b.id} className={`glass glass-hover p-5 animate-fade-up delay-${(i % 6) + 1}`}>
@@ -100,8 +100,8 @@ export default function BudgetsPage() {
                   {!over && !warn && pct < 50 && <span className="badge badge-income">On track</span>}
                 </div>
                 <div className="flex items-baseline gap-1 mb-1">
-                  <span className="text-lg font-bold" style={{ color: barColor }}>{fmt(b.spent_amount)}</span>
-                  <span className="text-xs" style={{ color: "var(--text-dim)" }}>/ {fmt(b.limit_amount)}</span>
+                  <span className="text-lg font-bold" style={{ color: barColor }}>{fmt(b.current_spend)}</span>
+                  <span className="text-xs" style={{ color: "var(--text-dim)" }}>/ {fmt(b.monthly_limit)}</span>
                 </div>
                 <div className="mt-3 rounded-full overflow-hidden" style={{ height: 6, background: "var(--bg)" }}>
                   <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: barColor }} />
@@ -110,8 +110,8 @@ export default function BudgetsPage() {
                   <span>{pct.toFixed(0)}% used</span>
                   <span>{remaining >= 0 ? `${fmt(remaining)} remaining` : `${fmt(Math.abs(remaining))} over`}</span>
                 </div>
-                {b.period && (
-                  <span className="badge mt-2" style={{ background: "var(--surface-hover)", color: "var(--text-dim)" }}>{b.period}</span>
+                {b.month && (
+                  <span className="badge mt-2" style={{ background: "var(--surface-hover)", color: "var(--text-dim)" }}>{b.month}</span>
                 )}
               </div>
             );

@@ -5,7 +5,7 @@ Aggregation logic for the main dashboard, with Redis caching.
 import uuid
 from datetime import datetime, timedelta
 
-from sqlalchemy import select, func, extract, case, and_
+from sqlalchemy import select, func, extract, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models import Transaction, Budget, Alert, TransactionType
@@ -123,8 +123,8 @@ async def get_dashboard_summary(
         .where(
             and_(
                 Alert.workspace_id == ws_id,
-                Alert.is_read == False,
-                Alert.is_dismissed == False,
+                Alert.is_read.is_(False),
+                Alert.is_dismissed.is_(False),
             )
         )
     )

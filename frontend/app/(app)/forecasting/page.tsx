@@ -75,7 +75,7 @@ export default function ForecastingPage() {
       const result = await api.getForecast(scenario, months, token);
       setData(result);
       if (result.assumptions?.income_growth_rate) {
-        setRevenueGrowth(Math.round((result.assumptions.income_growth_rate as number) * 100));
+        setRevenueGrowth(Math.round(Number(result.assumptions.income_growth_rate) * 100));
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load forecast");
@@ -90,7 +90,7 @@ export default function ForecastingPage() {
 
   const points: ForecastPoint[] = useMemo(() => {
     if (!data?.data_points) return [];
-    const baseGrowth = (data.assumptions?.income_growth_rate as number) ?? 0.12;
+    const baseGrowth = Number(data.assumptions?.income_growth_rate ?? 0.12);
     const baseGrowthPct = Math.round(baseGrowth * 100);
     if (revenueGrowth === baseGrowthPct) return data.data_points;
 

@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import get_db
+from database import get_db, get_db_with_rls
 from auth import get_current_user
 from models import User, Budget, Transaction, TransactionType
 from schemas import BudgetCreate, BudgetOut

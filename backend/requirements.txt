@@ -8,6 +8,7 @@ pydantic-settings>=2.1.0
 sqlalchemy[asyncio]>=2.0.25
 asyncpg>=0.29.0
 greenlet>=3.0.0
+alembic>=1.13.0
 
 # Redis (Upstash)
 redis>=5.0.0
@@ -24,3 +25,21 @@ python-multipart>=0.0.6
 
 # Utilities
 email-validator>=2.1.0
+
+# Encryption (field-level for webhooks, API keys)
+cryptography>=42.0.0
+
+# Observability (OpenTelemetry — ADVANCE-001)
+opentelemetry-api>=1.22.0
+opentelemetry-sdk>=1.22.0
+opentelemetry-exporter-otlp-proto-grpc>=1.22.0
+opentelemetry-instrumentation-fastapi>=0.43b0
+opentelemetry-instrumentation-sqlalchemy>=0.43b0
+opentelemetry-instrumentation-httpx>=0.43b0
+
+# Plaid banking integration (ADVANCE-003)
+plaid-python>=22.0.0
+
+# pgvector semantic search (ADVANCE-005)
+pgvector>=0.2.4
+sentence-transformers>=2.2.0
