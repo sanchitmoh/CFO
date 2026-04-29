@@ -1,10 +1,16 @@
 import ssl as _ssl
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore"  # Ignore extra fields in .env file
+    )
+    
     # ── Database ──
     # L-003: Generic local default — override via .env for Neon / hosted Postgres
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/aicfo"
@@ -134,11 +140,6 @@ class Settings(BaseSettings):
             ctx.verify_mode = _ssl.CERT_NONE
             return {"ssl": ctx}
         return {}
-
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        extra = "ignore"  # Ignore extra fields in .env file
 
 
 settings = Settings()
