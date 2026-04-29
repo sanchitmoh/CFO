@@ -2,13 +2,13 @@
 AI CFO — Audit Log Router (Feature D)
 Read-only access to the audit trail with pagination and filtering.
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import get_db
+from dependencies import get_rls_db
 from auth import get_current_user
 from models import User, AuditLog
 from schemas import AuditLogOut, PaginatedAuditLogs
@@ -24,11 +24,11 @@ async def list_audit_logs(
     action: str | None = None,
     days: int = Query(30, ge=1, le=365),
     user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_rls_db),
 ):
     """List audit log entries with filtering and pagination."""
     ws_id = user.workspace_id
-    cutoff = datetime.utcnow() - timedelta(days=days)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
 
     base_filter = and_(
         AuditLog.workspace_id == ws_id,

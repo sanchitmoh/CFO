@@ -14,6 +14,7 @@ import {
   ChevronDown,
   CheckCircle,
   Mail,
+  AlertTriangle,
 } from "lucide-react";
 
 type Role = "admin" | "cfo" | "accountant" | "investor" | "employee";
@@ -68,25 +69,23 @@ const ROLE_META: Record<
   },
 };
 
-const DEMO_TEAM: TeamMember[] = [
-  { id: 1, name: "Sarah Johnson", email: "admin@lunabakery.com", role: "admin", status: "active", joinedAt: "2024-09-01" },
-  { id: 2, name: "Raj Patel", email: "cfo@lunabakery.com", role: "cfo", status: "active", joinedAt: "2024-11-15" },
-  { id: 3, name: "Priya Agarwal", email: "accountant@lunabakery.com", role: "accountant", status: "active", joinedAt: "2024-12-01" },
-  { id: 4, name: "Mark Chen", email: "investor@venturecap.com", role: "investor", status: "invited", joinedAt: "2025-01-10" },
-  { id: 5, name: "Lisa Kumar", email: "ops@lunabakery.com", role: "employee", status: "active", joinedAt: "2025-01-05" },
-];
+
 
 export default function UsersPage() {
-  const [team, setTeam] = useState<TeamMember[]>(DEMO_TEAM);
+  const [team, setTeam] = useState<TeamMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showInvite, setShowInvite] = useState(false);
   const [inviteForm, setInviteForm] = useState({ name: "", email: "", role: "accountant" as Role });
   const [inviteSent, setInviteSent] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
 
   const loadTeam = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
       const data = await settingsApi.getTeam();
-      if (data?.members?.length) {
+      if (data?.members && Array.isArray(data.members)) {
         setTeam(data.members.map((m: any) => ({
           id: m.id,
           name: m.full_name || m.name || "Team Member",
@@ -97,7 +96,9 @@ export default function UsersPage() {
         })));
       }
     } catch {
-      // API unavailable — keep demo data
+      setError("Unable to load team members. Please check your connection and try again.");
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -149,6 +150,13 @@ export default function UsersPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
+      {error && (
+        <div className="glass p-4 flex items-center gap-3 animate-fade-up" style={{ borderColor: "var(--danger)44", background: "var(--danger-soft)" }}>
+          <AlertTriangle size={18} style={{ color: "var(--danger)", flexShrink: 0 }} />
+          <p className="text-sm" style={{ color: "var(--danger)" }}>{error}</p>
+          <button onClick={loadTeam} className="ml-auto text-xs font-medium px-3 py-1.5 rounded-lg" style={{ background: "var(--danger)", color: "#fff" }}>Retry</button>
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-start justify-between animate-fade-up">
         <div>

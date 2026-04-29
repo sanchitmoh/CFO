@@ -1,6 +1,6 @@
 """
 AI CFO — Transactions Router
-CRUD, CSV upload, pagination, and filtering.
+CRUD, CSV upload with file storage & audit trail, pagination, and filtering.
 """
 import csv
 import io
@@ -11,16 +11,21 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, U
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import get_db, get_db_with_rls, get_db_context
+from database import get_db_context
+from dependencies import get_rls_db
 from auth import get_current_user
-from models import User, Transaction, TransactionType
+from models import User, Transaction, TransactionType, FileUpload, FileUploadStatus
 from schemas import TransactionCreate, TransactionOut, PaginatedTransactions
 from services.audit_service import log_action
 from services.alert_engine import run_alert_engine
 from services.embedding_service import embed_transaction
-from cache import cache_delete
+from services.file_storage import save_upload, compute_content_hash
+from cache import invalidate_workspace_cache
 
 router = APIRouter()
+
+# SEC-007: Explicit allowlist for sort columns — prevents attribute injection
+ALLOWED_SORT_COLUMNS = {"date", "amount", "category", "description", "created_at", "type", "vendor"}
 
 
 @router.get("/", response_model=PaginatedTransactions)
@@ -33,9 +38,16 @@ async def list_transactions(
     sort_by: str = "date",
     sort_order: str = "desc",
     user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),  # TODO(ADVANCE-004): Switch to RLS after Phase 2 testing
+    db: AsyncSession = Depends(get_rls_db),
 ):
     """List transactions with filtering, sorting, and pagination."""
+    # SEC-007: Validate sort_by against allowlist before getattr
+    if sort_by not in ALLOWED_SORT_COLUMNS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid sort field '{sort_by}'. Allowed: {sorted(ALLOWED_SORT_COLUMNS)}",
+        )
+
     ws_id = user.workspace_id
     base_filter = Transaction.workspace_id == ws_id
 
@@ -49,26 +61,25 @@ async def list_transactions(
 
     combined = and_(*filters)
 
-    # Count
-    count_q = await db.execute(
-        select(func.count(Transaction.id)).where(combined)
-    )
-    total = count_q.scalar() or 0
-
-    # Sort
-    sort_col = getattr(Transaction, sort_by, Transaction.date)
+    # Sort — safe after allowlist check above
+    sort_col = getattr(Transaction, sort_by)
     order = sort_col.desc() if sort_order == "desc" else sort_col.asc()
 
-    # Paginate
+    # PERF-003: Single query with window function for count + rows
     offset = (page - 1) * per_page
+    window_count = func.count(Transaction.id).over().label("total_count")
     result = await db.execute(
-        select(Transaction)
+        select(Transaction, window_count)
         .where(combined)
         .order_by(order)
         .offset(offset)
         .limit(per_page)
     )
-    items = [TransactionOut.model_validate(t) for t in result.scalars()]
+    rows = result.all()
+
+    # Extract total from window function (same value on every row)
+    total = rows[0].total_count if rows else 0
+    items = [TransactionOut.model_validate(r[0]) for r in rows]
 
     pages = (total + per_page - 1) // per_page
 
@@ -82,7 +93,7 @@ async def create_transaction(
     data: TransactionCreate,
     background_tasks: BackgroundTasks,
     user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_rls_db),
 ):
     """Create a new transaction."""
     txn = Transaction(
@@ -102,15 +113,16 @@ async def create_transaction(
     await db.commit()
     await db.refresh(txn)
 
-    # Invalidate dashboard cache
-    await cache_delete(f"ws:{user.workspace_id}:dashboard:*")
+    # PERF-002: O(1) version bump instead of scanning/deleting cache keys
+    await invalidate_workspace_cache(str(user.workspace_id))
     await log_action(db, user, "transaction.create", "transaction", txn.id)
 
     # ADVANCE-005: Generate embedding in background (non-blocking)
     async def _embed():
         async with get_db_context() as bg_db:
             await embed_transaction(
-                txn.id, txn.description, txn.category, txn.vendor, bg_db
+                txn.id, txn.description, txn.category, txn.vendor, bg_db,
+                workspace_id=user.workspace_id,  # M-005: tenant isolation
             )
     background_tasks.add_task(_embed)
 
@@ -121,7 +133,7 @@ async def create_transaction(
 async def delete_transaction(
     txn_id: uuid.UUID,
     user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_rls_db),
 ):
     """Delete a transaction."""
     result = await db.execute(
@@ -136,7 +148,7 @@ async def delete_transaction(
     await log_action(db, user, "transaction.delete", "transaction", txn.id)
     await db.delete(txn)
     await db.commit()
-    await cache_delete(f"ws:{user.workspace_id}:dashboard:*")
+    await invalidate_workspace_cache(str(user.workspace_id))
 
 
 # ── CSV Upload constraints ────────────────────────────────────────
@@ -152,11 +164,17 @@ BATCH_SIZE = 500
 @router.post("/upload-csv")
 async def upload_csv(
     file: UploadFile = File(...),
+    force: bool = Query(False, description="Skip duplicate detection"),
     background_tasks: BackgroundTasks = BackgroundTasks(),
     user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_rls_db),
 ):
-    """Upload transactions from a CSV file with full validation."""
+    """Upload transactions from a CSV file with storage, audit trail, and validation.
+
+    FILE-001: The original file is persisted to disk BEFORE parsing.
+    A FileUpload record tracks every upload for audit, reprocessing,
+    and duplicate detection via SHA-256 content hash.
+    """
 
     # ── 1. Filename extension ─────────────────────────────────────
     if not file.filename or not file.filename.lower().endswith(".csv"):
@@ -184,27 +202,79 @@ async def upload_csv(
             )
         chunks.append(chunk)
 
+    raw_content = b"".join(chunks)
+
+    # ── 4. FILE-001: Duplicate detection via SHA-256 ──────────────
+    content_hash = await compute_content_hash(raw_content)
+    if not force:
+        dup_check = await db.execute(
+            select(FileUpload.id).where(
+                and_(
+                    FileUpload.workspace_id == user.workspace_id,
+                    FileUpload.content_hash == content_hash,
+                    FileUpload.status == FileUploadStatus.processed,
+                )
+            )
+        )
+        existing = dup_check.scalar_one_or_none()
+        if existing:
+            raise HTTPException(
+                status_code=409,
+                detail=f"This file has already been uploaded (upload ID: {existing}). "
+                       f"Use ?force=true to upload anyway.",
+            )
+
+    # ── 5. FILE-001: Store original file to disk FIRST ────────────
+    storage_path = await save_upload(
+        workspace_id=user.workspace_id,
+        filename=file.filename,
+        content=raw_content,
+    )
+
+    # ── 6. FILE-001: Create FileUpload audit record ───────────────
+    upload_record = FileUpload(
+        workspace_id=user.workspace_id,
+        user_id=user.id,
+        filename=file.filename,
+        file_size=total_bytes,
+        content_hash=content_hash,
+        storage_path=storage_path,
+        status=FileUploadStatus.pending,
+    )
+    db.add(upload_record)
+    await db.flush()  # get the ID before commit
+
+    # ── 7. Decode and parse CSV ───────────────────────────────────
     try:
-        text = b"".join(chunks).decode("utf-8")
+        text = raw_content.decode("utf-8")
     except UnicodeDecodeError:
+        upload_record.status = FileUploadStatus.failed
+        upload_record.error_details = {"reason": "File is not valid UTF-8 text"}
+        await db.commit()
         raise HTTPException(status_code=400, detail="File is not valid UTF-8 text.")
 
     reader = csv.DictReader(io.StringIO(text))
 
-    # ── 4. Validate required columns ──────────────────────────────
+    # ── 8. Validate required columns ──────────────────────────────
     if reader.fieldnames is None:
+        upload_record.status = FileUploadStatus.failed
+        upload_record.error_details = {"reason": "Empty CSV or no header row"}
+        await db.commit()
         raise HTTPException(status_code=400, detail="CSV file is empty or has no header row.")
 
     header_set = {h.strip().lower() for h in reader.fieldnames}
     missing = REQUIRED_COLUMNS - header_set
     if missing:
+        upload_record.status = FileUploadStatus.failed
+        upload_record.error_details = {"reason": f"Missing columns: {sorted(missing)}"}
+        await db.commit()
         raise HTTPException(
             status_code=400,
             detail=f"CSV missing required columns: {', '.join(sorted(missing))}. "
                    f"Required: {', '.join(sorted(REQUIRED_COLUMNS))}.",
         )
 
-    # ── 5. Parse & validate rows with row-count cap ───────────────
+    # ── 9. Parse & validate rows with row-count cap ───────────────
     count = 0
     errors: list[dict] = []
     batch: list[Transaction] = []
@@ -272,10 +342,18 @@ async def upload_csv(
     if batch:
         db.add_all(batch)
 
+    # ── 10. FILE-001: Update FileUpload record with results ───────
+    upload_record.row_count = count
+    upload_record.error_count = len(errors)
+    upload_record.status = FileUploadStatus.processed
+    if errors:
+        upload_record.error_details = {"errors": errors[:50]}
+
     await db.commit()
-    await cache_delete(f"ws:{user.workspace_id}:*")
+    await invalidate_workspace_cache(str(user.workspace_id))
     await log_action(db, user, "transaction.csv_upload", "transaction",
-                     new_value={"count": count, "file": file.filename})
+                     new_value={"count": count, "file": file.filename,
+                                "file_upload_id": str(upload_record.id)})
 
     # ARCH-004: Trigger alert checks in the background after data mutation
     async def _run_alerts():
@@ -288,4 +366,8 @@ async def upload_csv(
         "imported": count,
         "errors": errors[:50],  # Cap error output to avoid huge responses
         "total_rows": count + len(errors),
+        "file_id": str(upload_record.id),
+        "file_name": file.filename,
+        "file_size": total_bytes,
+        "duplicate_detected": False,
     }

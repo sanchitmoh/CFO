@@ -5,14 +5,21 @@ AI CFO — SQLAlchemy ORM Models
 import uuid
 import enum
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import (
-    String, Float, DateTime, Boolean, SmallInteger,
+    Column, String, Float, DateTime, Boolean, SmallInteger,
     Text, ForeignKey, Numeric, Index, CheckConstraint, Enum as SAEnum,
+    LargeBinary,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID, JSONB
+
+try:
+    from pgvector.sqlalchemy import Vector as _Vector
+    _VECTOR_TYPE = _Vector(384)
+except ImportError:
+    _VECTOR_TYPE = LargeBinary  # fallback — won't support similarity ops
 
 from database import Base
 
@@ -66,11 +73,12 @@ class Workspace(Base):
         SmallInteger, nullable=False, default=1
     )
     is_demo: Mapped[bool] = mapped_column(Boolean, default=False)
+    alert_config: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=datetime.utcnow
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc)
     )
 
     # Relationships
@@ -114,7 +122,7 @@ class User(Base):
         DateTime(timezone=True), nullable=True
     )
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=datetime.utcnow
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
 
     # Relationships
@@ -170,8 +178,11 @@ class Transaction(Base):
     source: Mapped[str] = mapped_column(
         String(20), nullable=False, default="manual"
     )  # manual | csv | api
+    # pgvector embedding for semantic search (ADVANCE-005)
+    # Column created by migration 002_add_pgvector — 384 dims for all-MiniLM-L6-v2
+    description_vec = Column(_VECTOR_TYPE, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=datetime.utcnow
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
 
     # Relationships
@@ -208,7 +219,7 @@ class Budget(Base):
     )
     month: Mapped[str] = mapped_column(String(7), nullable=False)  # YYYY-MM
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=datetime.utcnow
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
 
     # Relationships
@@ -246,10 +257,10 @@ class Goal(Base):
     )
     status: Mapped[GoalStatus] = mapped_column(SAEnum(GoalStatus), default=GoalStatus.active)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=datetime.utcnow
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc)
     )
 
     # Relationships
@@ -287,7 +298,7 @@ class Alert(Base):
         DateTime(timezone=True), nullable=True
     )
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=datetime.utcnow
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
 
     # Relationships
@@ -320,7 +331,7 @@ class AlertRule(Base):
     notify_slack: Mapped[bool] = mapped_column(Boolean, default=False)
     slack_webhook: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=datetime.utcnow
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
 
     # Relationships
@@ -348,10 +359,10 @@ class ChatSession(Base):
     )
     title: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=datetime.utcnow
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
     last_active_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc)
     )
 
     # Relationships
@@ -391,7 +402,7 @@ class ChatMessage(Base):
         String(10), nullable=True
     )  # high | medium | low
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=datetime.utcnow
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
 
     # Relationships
@@ -424,7 +435,7 @@ class ForecastResult(Base):
     )
     data_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     computed_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=datetime.utcnow
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
     expires_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
@@ -468,12 +479,62 @@ class AuditLog(Base):
     # NOTE: ip_address intentionally removed — PII under GDPR/CCPA
     # without consent mechanism, retention policy, or deletion capability.
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=datetime.utcnow
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
 
     # Relationships
     workspace: Mapped["Workspace"] = relationship(back_populates="audit_logs")
     user: Mapped["User"] = relationship(back_populates="audit_logs")
+
+
+# ═══════════════════════════════════════════════════════════════════
+# FILE UPLOAD — Audit trail for CSV imports (FILE-001)
+# ═══════════════════════════════════════════════════════════════════
+
+class FileUploadStatus(str, enum.Enum):
+    pending = "pending"
+    processed = "processed"
+    failed = "failed"
+    duplicate = "duplicate"
+
+
+class FileUpload(Base):
+    __tablename__ = "file_uploads"
+    __table_args__ = (
+        Index("idx_file_upload_ws_hash", "workspace_id", "content_hash"),
+        Index("idx_file_upload_ws_created", "workspace_id", "created_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id"), index=True, nullable=False
+    )
+    filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    file_size: Mapped[int] = mapped_column(nullable=False)  # bytes
+    content_hash: Mapped[str] = mapped_column(
+        String(64), nullable=False
+    )  # SHA-256 hex digest
+    storage_path: Mapped[str] = mapped_column(
+        String(500), nullable=False
+    )  # local path or S3 key
+    row_count: Mapped[int] = mapped_column(nullable=False, default=0)
+    error_count: Mapped[int] = mapped_column(nullable=False, default=0)
+    status: Mapped[FileUploadStatus] = mapped_column(
+        SAEnum(FileUploadStatus), default=FileUploadStatus.pending
+    )
+    error_details: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+    # Relationships
+    workspace: Mapped["Workspace"] = relationship("Workspace")
+    user: Mapped["User"] = relationship("User")
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -499,7 +560,7 @@ class IndustryBenchmark(Base):
     source: Mapped[str | None] = mapped_column(String(255), nullable=True)
     year: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=2025)
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=datetime.utcnow
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
 
 
@@ -536,10 +597,199 @@ class PlaidItem(Base):
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=datetime.utcnow
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
 
     # Relationships
     workspace: Mapped["Workspace"] = relationship("Workspace")
     user: Mapped["User"] = relationship("User")
+
+
+# ═══════════════════════════════════════════════════════════════════
+# GDPR/CCPA COMPLIANCE — Data protection and privacy (COMPLIANCE-004)
+# ═══════════════════════════════════════════════════════════════════
+
+class ConsentStatus(str, enum.Enum):
+    granted = "granted"
+    withdrawn = "withdrawn"
+    pending = "pending"
+
+
+class DataExportStatus(str, enum.Enum):
+    requested = "requested"
+    processing = "processing"
+    completed = "completed"
+    failed = "failed"
+    expired = "expired"
+
+
+class DataDeletionStatus(str, enum.Enum):
+    requested = "requested"
+    scheduled = "scheduled"
+    in_progress = "in_progress"
+    completed = "completed"
+    failed = "failed"
+    cancelled = "cancelled"
+
+
+class UserConsent(Base):
+    """Track user consent for data processing under GDPR/CCPA."""
+    __tablename__ = "user_consents"
+    __table_args__ = (
+        Index("idx_consent_user_type", "user_id", "consent_type"),
+        Index("idx_consent_ws_status", "workspace_id", "status"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    consent_type: Mapped[str] = mapped_column(
+        String(50), nullable=False
+    )  # data_processing | analytics | marketing | third_party_sharing
+    status: Mapped[ConsentStatus] = mapped_column(SAEnum(ConsentStatus), nullable=False)
+    granted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    withdrawn_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    ip_address_hash: Mapped[str | None] = mapped_column(
+        String(64), nullable=True
+    )  # SHA-256 hash of IP for audit trail
+    user_agent_hash: Mapped[str | None] = mapped_column(
+        String(64), nullable=True
+    )  # SHA-256 hash of user agent
+    withdrawal_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc)
+    )
+
+    # Relationships
+    workspace: Mapped["Workspace"] = relationship("Workspace")
+    user: Mapped["User"] = relationship("User")
+
+
+class DataExport(Base):
+    """Track GDPR Article 20 data export requests."""
+    __tablename__ = "data_exports"
+    __table_args__ = (
+        Index("idx_export_user_status", "user_id", "status"),
+        Index("idx_export_ws_created", "workspace_id", "created_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    status: Mapped[DataExportStatus] = mapped_column(SAEnum(DataExportStatus), nullable=False)
+    format: Mapped[str] = mapped_column(
+        String(10), nullable=False, default="json"
+    )  # json | csv
+    file_path: Mapped[str | None] = mapped_column(Text, nullable=True)
+    file_size_bytes: Mapped[int | None] = mapped_column(nullable=True)
+    include_metadata: Mapped[bool] = mapped_column(Boolean, default=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )  # Export files expire after 30 days
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    # Relationships
+    workspace: Mapped["Workspace"] = relationship("Workspace")
+    user: Mapped["User"] = relationship("User")
+
+
+class DataDeletion(Base):
+    """Track GDPR Article 17 data deletion requests."""
+    __tablename__ = "data_deletions"
+    __table_args__ = (
+        Index("idx_deletion_user_status", "user_id", "status"),
+        Index("idx_deletion_scheduled", "scheduled_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    status: Mapped[DataDeletionStatus] = mapped_column(SAEnum(DataDeletionStatus), nullable=False)
+    reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    confirmation_token: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    scheduled_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    grace_period_ends_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    executed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    deleted_records_count: Mapped[int | None] = mapped_column(nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+    # Relationships
+    workspace: Mapped["Workspace"] = relationship("Workspace")
+    user: Mapped["User"] = relationship("User")
+
+
+class RetentionPolicy(Base):
+    """Define data retention policies for automated cleanup."""
+    __tablename__ = "retention_policies"
+    __table_args__ = (
+        Index("idx_retention_ws_entity", "workspace_id", "entity_type", unique=True),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
+    )
+    entity_type: Mapped[str] = mapped_column(
+        String(50), nullable=False
+    )  # transactions | audit_logs | chat_messages | file_uploads | users
+    retention_days: Mapped[int] = mapped_column(nullable=False)
+    is_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    last_cleanup_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    next_cleanup_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    cleanup_count: Mapped[int] = mapped_column(nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc)
+    )
+
+    # Relationships
+    workspace: Mapped["Workspace"] = relationship("Workspace")
 

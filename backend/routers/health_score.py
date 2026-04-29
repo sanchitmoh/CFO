@@ -6,7 +6,7 @@ Supports ML-004 stage override via query param.
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import get_db
+from dependencies import get_rls_db
 from auth import get_current_user
 from models import User
 from schemas import HealthScoreResponse
@@ -23,7 +23,7 @@ async def get_health_score(
         pattern="^(early|growth|mature)$",
     ),
     user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_rls_db),
 ):
     """Compute the financial health score for the workspace."""
     return await compute_health_score(db, user.workspace_id, stage_override=stage)

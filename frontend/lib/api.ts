@@ -29,23 +29,41 @@ import type {
   Workspace,
 } from "./types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+
+// ── Global Token Provider ────────────────────────────────────────
+// Clerk v7 does NOT reliably expose window.Clerk.session.getToken().
+// Instead, the auth-aware layout calls setTokenProvider() once with
+// useAuth().getToken, and fetchApi uses it as a fallback for ALL
+// API calls that don't receive an explicit token.
+
+let _tokenProvider: (() => Promise<string | null>) | null = null;
+
+/** Call once from a Clerk-aware component to register the token getter. */
+export function setTokenProvider(provider: () => Promise<string | null>) {
+  _tokenProvider = provider;
+}
 
 // ── Helper ───────────────────────────────────────────────────────
 
 async function fetchApi<T>(
   path: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  providedToken?: string | null
 ): Promise<T> {
   const url = `${API_BASE}${path}`;
 
-  // Get auth token from Clerk
-  let token: string | null = null;
-  if (typeof window !== "undefined") {
-    // @ts-ignore — Clerk exposes this globally
-    const clerk = window.Clerk;
-    if (clerk?.session) {
-      token = await clerk.session.getToken();
+  // 1) Use explicitly provided token
+  // 2) Fall back to registered Clerk token provider
+  let token: string | null = providedToken || null;
+
+
+
+  if (!token && _tokenProvider) {
+    try {
+      token = await _tokenProvider();
+    } catch (e) {
+      console.error(`[fetchApi] ${path} | provider ERROR:`, e);
     }
   }
 
@@ -58,10 +76,13 @@ async function fetchApi<T>(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
+
+
   const response = await fetch(url, { ...options, headers });
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: response.statusText }));
+    console.error(`[fetchApi] ${path} | FAILED ${response.status}: ${error.detail}`);
     throw new Error(error.detail || `API Error: ${response.status}`);
   }
 
@@ -141,12 +162,8 @@ export const transactionsApi = {
 
     const url = `${API_BASE}/transactions/upload-csv`;
     let token: string | null = null;
-    if (typeof window !== "undefined") {
-      // @ts-ignore
-      const clerk = window.Clerk;
-      if (clerk?.session) {
-        token = await clerk.session.getToken();
-      }
+    if (_tokenProvider) {
+      try { token = await _tokenProvider(); } catch { /* ignore */ }
     }
 
     const headers: Record<string, string> = {};
@@ -255,7 +272,7 @@ export const chatApi = {
 export const forecastApi = {
   get: (monthsAhead = 6, scenario = "base") =>
     fetchApi<ForecastResponse>(
-      `/forecasting?months_ahead=${monthsAhead}&scenario=${scenario}`
+      `/forecasting/?months_ahead=${monthsAhead}&scenario=${scenario}`
     ),
 };
 
@@ -287,6 +304,64 @@ export const reportsApi = {
     if (startDate) query.set("start_date", startDate);
     if (endDate) query.set("end_date", endDate);
     return fetchApi<ReportSummary>(`/reports/summary?${query}`);
+  },
+
+  /** Trigger a CSV file download of transactions. */
+  exportCsv: async (startDate?: string, endDate?: string) => {
+    const query = new URLSearchParams();
+    if (startDate) query.set("start_date", startDate);
+    if (endDate) query.set("end_date", endDate);
+
+    const url = `${API_BASE}/reports/export/csv?${query}`;
+    let token: string | null = null;
+    if (_tokenProvider) {
+      try { token = await _tokenProvider(); } catch { /* ignore */ }
+    }
+
+    const headers: Record<string, string> = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    const resp = await fetch(url, { headers });
+    if (!resp.ok) throw new Error(`Export failed: ${resp.status}`);
+
+    const blob = await resp.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = resp.headers.get("Content-Disposition")?.match(/filename="?(.+?)"?$/)?.[1]
+      || `transactions_export.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(a.href);
+  },
+
+  /** Trigger a PDF financial report download. */
+  exportPdf: async (startDate?: string, endDate?: string) => {
+    const query = new URLSearchParams();
+    if (startDate) query.set("start_date", startDate);
+    if (endDate) query.set("end_date", endDate);
+
+    const url = `${API_BASE}/reports/export/pdf?${query}`;
+    let token: string | null = null;
+    if (_tokenProvider) {
+      try { token = await _tokenProvider(); } catch { /* ignore */ }
+    }
+
+    const headers: Record<string, string> = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    const resp = await fetch(url, { headers });
+    if (!resp.ok) throw new Error(`Export failed: ${resp.status}`);
+
+    const blob = await resp.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = resp.headers.get("Content-Disposition")?.match(/filename="?(.+?)"?$/)?.[1]
+      || `financial_report.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(a.href);
   },
 };
 
@@ -363,6 +438,37 @@ export const settingsApi = {
     fetchApi<void>(`/settings/team/${memberId}`, {
       method: "DELETE",
     }),
+  getAlertSettings: () =>
+    fetchApi<{
+      low_cash_threshold: number;
+      high_expense_threshold: number;
+      anomaly_sensitivity: number;
+      email_enabled: boolean;
+      email_addresses: string[];
+      slack_enabled: boolean;
+      slack_webhook_url: string | null;
+    }>("/settings/alerts"),
+  updateAlertSettings: (data: {
+    low_cash_threshold?: number;
+    high_expense_threshold?: number;
+    anomaly_sensitivity?: number;
+    email_enabled?: boolean;
+    email_addresses?: string[];
+    slack_enabled?: boolean;
+    slack_webhook_url?: string;
+  }) =>
+    fetchApi<{
+      low_cash_threshold: number;
+      high_expense_threshold: number;
+      anomaly_sensitivity: number;
+      email_enabled: boolean;
+      email_addresses: string[];
+      slack_enabled: boolean;
+      slack_webhook_url: string | null;
+    }>("/settings/alerts", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
 };
 
 
@@ -417,52 +523,81 @@ export const api = {
   // compat — the token is actually resolved internally by fetchApi.
 
   getDashboard: (_token?: string | null) =>
-    dashboardApi.getSummary(),
+    fetchApi<DashboardSummary>(`/dashboard/summary?months=6`, {}, _token),
 
   getAlerts: (_unreadOnly?: boolean, _token?: string | null) =>
-    alertsApi.list(_unreadOnly),
+    fetchApi<Alert[]>(
+      `/alerts${_unreadOnly ? "?unread_only=true" : ""}`,
+      {},
+      _token
+    ),
 
   dismissAlert: (id: string | number, _token?: string | null) =>
-    alertsApi.dismiss(String(id)),
+    fetchApi<void>(`/alerts/${id}/dismiss`, { method: "POST" }, _token),
 
   getTransactions: (
     page?: number,
     perPage?: number,
     search?: string,
     _token?: string | null,
-  ) =>
-    transactionsApi.list({ page, per_page: perPage, search: search || undefined }),
+  ) => {
+    const query = new URLSearchParams();
+    if (page) query.set("page", String(page));
+    if (perPage) query.set("per_page", String(perPage));
+    if (search) query.set("search", search);
+    return fetchApi<PaginatedTransactions>(`/transactions?${query}`, {}, _token);
+  },
 
   createTransaction: (
     data: TransactionCreate,
     _token?: string | null,
   ) =>
-    transactionsApi.create(data),
+    fetchApi<Transaction>("/transactions", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }, _token),
 
-  uploadCSV: (file: File, _token?: string | null) =>
-    transactionsApi.uploadCsv(file),
+  uploadCSV: async (file: File, _token?: string | null) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const url = `${API_BASE}/transactions/upload-csv`;
+    const headers: Record<string, string> = {};
+    if (_token) headers["Authorization"] = `Bearer ${_token}`;
+    const resp = await fetch(url, { method: "POST", headers, body: formData });
+    return resp.json();
+  },
 
   getBudgets: (_token?: string | null) =>
-    budgetsApi.list(),
+    fetchApi<Budget[]>(`/budgets`, {}, _token),
 
   createBudget: (
     data: { category: string; limit_amount?: number; monthly_limit?: number; period?: string; month?: string; alert_threshold?: number },
     _token?: string | null,
   ) =>
-    budgetsApi.create({
-      category: data.category,
-      monthly_limit: data.limit_amount ?? data.monthly_limit ?? 0,
-      alert_threshold: data.alert_threshold,
-      month: data.period ?? data.month,
-    }),
+    fetchApi<Budget>("/budgets", {
+      method: "POST",
+      body: JSON.stringify({
+        category: data.category,
+        monthly_limit: data.limit_amount ?? data.monthly_limit ?? 0,
+        alert_threshold: data.alert_threshold,
+        month: data.period ?? data.month,
+      }),
+    }, _token),
 
   getForecast: (
     scenario?: string,
     months?: number,
     _token?: string | null,
   ) =>
-    forecastApi.get(months, scenario),
+    fetchApi<ForecastResponse>(
+      `/forecasting/?months_ahead=${months}&scenario=${scenario}`,
+      {},
+      _token
+    ),
 
   sendChat: (message: string, _token?: string | null) =>
-    chatApi.send({ message }),
+    fetchApi<ChatResponse>("/chat", {
+      method: "POST",
+      body: JSON.stringify({ message }),
+    }, _token),
 };

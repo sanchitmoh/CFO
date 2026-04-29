@@ -4,10 +4,10 @@ Creates the "Luna Bakery" demo workspace with realistic financial data.
 Run: python seed_demo.py
 """
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import random
 
-from database import engine, Base, AsyncSessionLocal
+from database import engine, AsyncSessionLocal
 from models import (
     Workspace, User, Transaction, Budget, Alert, Goal,
     IndustryBenchmark, AlertRule,
@@ -34,9 +34,15 @@ VENDORS = {
 
 
 async def seed():
-    # Create tables
+    # L-003: Run migrations instead of create_all
+    from alembic.config import Config as AlembicConfig
+    from alembic import command as alembic_command
+
+    alembic_cfg = AlembicConfig("alembic.ini")
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(
+            lambda sync_conn: alembic_command.upgrade(alembic_cfg, "head")
+        )
 
     async with AsyncSessionLocal() as db:
         # ── Workspace ─────────────────────────────────────────────
@@ -60,7 +66,7 @@ async def seed():
         await db.flush()
 
         # ── 12 months of transactions ─────────────────────────────
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         transactions = []
 
         for month_offset in range(12):

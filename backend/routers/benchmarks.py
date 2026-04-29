@@ -2,17 +2,17 @@
 AI CFO — Industry Benchmarks Router (Feature C)
 Compare workspace metrics against industry averages.
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import get_db
+from dependencies import get_rls_db
 from auth import get_current_user
 from models import User, Transaction, TransactionType, IndustryBenchmark, Workspace
 from schemas import BenchmarkInsight
-from cache import cache_get, cache_set, make_cache_key
+from cache import cache_get, cache_set, make_versioned_cache_key
 
 router = APIRouter()
 
@@ -20,14 +20,14 @@ router = APIRouter()
 @router.get("/", response_model=list[BenchmarkInsight])
 async def get_benchmarks(
     user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_rls_db),
 ):
     """
     Compare the workspace's financial metrics against industry benchmarks.
     Returns insights for each available metric.
     """
     ws_id = user.workspace_id
-    cache_key = make_cache_key("benchmarks", str(ws_id))
+    cache_key = await make_versioned_cache_key("benchmarks", str(ws_id))
 
     cached = await cache_get(cache_key)
     if cached:
@@ -39,7 +39,7 @@ async def get_benchmarks(
     industry = workspace.industry if workspace else "general_smb"
 
     # Get last 12 months of data
-    cutoff = datetime.utcnow() - timedelta(days=365)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=365)
 
     totals = await db.execute(
         select(

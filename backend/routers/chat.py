@@ -1,99 +1,45 @@
 """
 AI CFO — Chat Router
-AI assistant with financial context from workspace data.
+AI assistant with intent-gated RAG context and hardened prompts.
 Sessions are UUID-identified, workspace-scoped, and user-owned.
 Includes both blocking and streaming (SSE) endpoints.
+
+RAG Pipeline (replaces legacy _build_context):
+  1. Intent detection → route to relevant context fetchers only
+  2. Semantic search via pgvector embeddings
+  3. Confidence scoring injected into system prompt
+  4. Sliding window history compression
+  5. Hallucination guards + citation requirements
 """
 import json
 import uuid
-from datetime import datetime, timedelta
+import logging
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 import openai
 
-from database import get_db
+from dependencies import get_rls_db
 from auth import get_current_user
-from models import User, Transaction, TransactionType, ChatMessage, ChatSession
+from models import User, ChatMessage, ChatSession
 from schemas import ChatRequest, ChatResponse, ChatSessionOut
 from config import settings
 from telemetry import openai_traced
+from services.chat_service import (
+    build_context,
+    compute_confidence,
+    compress_history,
+    build_system_prompt,
+)
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
 # ── Helpers ────────────────────────────────────────────────────────
-
-
-async def _build_context(db: AsyncSession, ws_id: uuid.UUID) -> str:
-    """Build financial context summary for the AI prompt."""
-    cutoff = datetime.utcnow() - timedelta(days=90)
-
-    totals = await db.execute(
-        select(
-            Transaction.type,
-            func.sum(Transaction.amount),
-            func.count(Transaction.id),
-        )
-        .where(and_(Transaction.workspace_id == ws_id, Transaction.date >= cutoff))
-        .group_by(Transaction.type)
-    )
-
-    income = 0.0
-    expenses = 0.0
-    txn_count = 0
-    for row in totals:
-        if row[0] == TransactionType.income:
-            income = float(row[1] or 0)
-        else:
-            expenses = float(row[1] or 0)
-        txn_count += int(row[2] or 0)
-
-    # Top 5 expense categories
-    cats_q = await db.execute(
-        select(Transaction.category, func.sum(Transaction.amount))
-        .where(
-            and_(
-                Transaction.workspace_id == ws_id,
-                Transaction.type == TransactionType.expense,
-                Transaction.date >= cutoff,
-            )
-        )
-        .group_by(Transaction.category)
-        .order_by(func.sum(Transaction.amount).desc())
-        .limit(5)
-    )
-    top_cats = [f"  - {r[0]}: ${float(r[1]):,.2f}" for r in cats_q]
-
-    net = income - expenses
-    burn_rate = expenses / 3 if expenses else 0
-
-    # ── Semantic RAG context (ADVANCE-005) ────────────────────────
-    rag_context = ""
-    try:
-        from services.embedding_service import get_relevant_transactions
-        relevant = await get_relevant_transactions(
-            db, ws_id, "recent financial activity summary", top_k=5
-        )
-        if relevant:
-            rag_lines = [f"  - {t.description}: ${float(t.amount):,.2f} ({t.category})" for t in relevant]
-            rag_context = f"\nSemanticly Relevant Transactions:\n{chr(10).join(rag_lines)}\n"
-    except Exception:
-        pass  # Embedding service not available — degrade gracefully
-
-    return f"""Financial Summary (Last 90 Days):
-- Total Income: ${income:,.2f}
-- Total Expenses: ${expenses:,.2f}
-- Net Cash Flow: ${net:,.2f}
-- Monthly Burn Rate: ${burn_rate:,.2f}
-- Runway: {net / burn_rate:.1f} months (if burn stays constant)
-- Transaction Count: {txn_count}
-Top Expense Categories:
-{chr(10).join(top_cats) if top_cats else '  No expense data available'}
-{rag_context}"""
 
 
 async def _get_or_create_session(
@@ -133,16 +79,65 @@ async def _get_or_create_session(
     return session
 
 
-def _build_system_prompt(context: str) -> str:
-    """Build the system prompt with financial context."""
-    return f"""You are an AI CFO assistant. You help small business owners understand 
-their finances, make data-driven decisions, and optimize spending.
+async def _prepare_messages(
+    db: AsyncSession,
+    user: User,
+    session: ChatSession,
+    user_message: str,
+) -> tuple[list[dict], str, dict]:
+    """Build the OpenAI messages array with intent-gated context and compressed history.
 
-Here is the user's current financial data:
-{context}
+    Returns:
+        (messages, confidence_level, metadata) — ready for OpenAI API call.
+    """
+    ws_id = user.workspace_id
 
-Be concise, specific, and actionable. Use the actual numbers above. 
-If the user asks about data you don't have, say so honestly."""
+    # ── 1. Intent-gated context retrieval ─────────────────────────
+    context, metadata = await build_context(db, ws_id, user_message)
+    confidence_level, confidence_note = compute_confidence(metadata)
+
+    # ── 2. Hardened system prompt ─────────────────────────────────
+    system_prompt = build_system_prompt(
+        context=context,
+        confidence_level=confidence_level,
+        confidence_note=confidence_note,
+        metadata=metadata,
+    )
+
+    # ── 3. Fetch & compress history ───────────────────────────────
+    history_q = await db.execute(
+        select(ChatMessage)
+        .where(
+            and_(
+                ChatMessage.workspace_id == ws_id,
+                ChatMessage.session_id == session.id,
+            )
+        )
+        .order_by(ChatMessage.created_at.desc())
+        .limit(20)  # fetch more than we need, compression will trim
+    )
+    history = list(reversed(list(history_q.scalars())))
+
+    history_dicts = [
+        {"role": msg.role, "content": msg.content} for msg in history
+    ]
+    compressed = compress_history(history_dicts)
+
+    # ── 4. Assemble messages ──────────────────────────────────────
+    messages = [{"role": "system", "content": system_prompt}]
+    messages.extend(compressed)
+    messages.append({"role": "user", "content": user_message})
+
+    logger.info(
+        "Chat context built: intents=%s confidence=%s rag_matches=%d history_msgs=%d→%d",
+        metadata.get("intents", []),
+        confidence_level,
+        metadata.get("rag_matches", 0),
+        len(history_dicts),
+        len(compressed),
+    )
+
+    return messages, confidence_level, metadata
 
 
 # ── Endpoints ──────────────────────────────────────────────────────
@@ -152,30 +147,17 @@ If the user asks about data you don't have, say so honestly."""
 async def chat(
     req: ChatRequest,
     user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_rls_db),
 ):
-    """Send a message to the AI CFO assistant."""
+    """Send a message to the AI CFO assistant.
+
+    Uses intent-gated RAG context, confidence-scored prompts,
+    and sliding window history compression.
+    """
     session = await _get_or_create_session(db, user, req.session_id)
-    context = await _build_context(db, user.workspace_id)
-
-    # ── Get conversation history (last 10 messages) ───────────────
-    history_q = await db.execute(
-        select(ChatMessage)
-        .where(
-            and_(
-                ChatMessage.workspace_id == user.workspace_id,
-                ChatMessage.session_id == session.id,
-            )
-        )
-        .order_by(ChatMessage.created_at.desc())
-        .limit(10)
+    messages, confidence, metadata = await _prepare_messages(
+        db, user, session, req.message,
     )
-    history = list(reversed(list(history_q.scalars())))
-
-    messages = [{"role": "system", "content": _build_system_prompt(context)}]
-    for msg in history:
-        messages.append({"role": msg.role, "content": msg.content})
-    messages.append({"role": "user", "content": req.message})
 
     # ── Call OpenAI (with custom tracing) ──────────────────────────
     try:
@@ -188,7 +170,6 @@ async def chat(
                 max_tokens=800,
             )
             reply = completion.choices[0].message.content or "I couldn't generate a response."
-            confidence = "high"
 
             # Record token usage in the trace span
             if span and completion.usage:
@@ -227,15 +208,17 @@ async def chat(
 
     await db.commit()
 
+    # Build dynamic sources from metadata
+    intents = metadata.get("intents", [])
+    sources = ["Financial data from your workspace"]
+    if metadata.get("rag_matches", 0) > 0:
+        sources.append(f"{metadata['rag_matches']} semantically matched transactions")
+
     return ChatResponse(
         reply=reply,
         session_id=session.id,
-        sources=["Financial data from your workspace"],
-        suggested_actions=[
-            "View expense breakdown",
-            "Check budget status",
-            "Run a forecast",
-        ],
+        sources=sources,
+        suggested_actions=_suggest_actions(intents),
         confidence=confidence,
     )
 
@@ -244,12 +227,12 @@ async def chat(
 async def chat_stream(
     req: ChatRequest,
     user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_rls_db),
 ):
     """Stream AI CFO response via Server-Sent Events (ADVANCE-002).
 
     SSE event format (JSON-framed for rich metadata):
-        data: {"type":"meta","session_id":"...","sources":[...]}
+        data: {"type":"meta","session_id":"...","confidence":"high","intents":[...]}
         data: {"type":"token","content":"Hello"}
         data: {"type":"token","content":" world"}
         data: {"type":"done","session_id":"..."}
@@ -259,26 +242,9 @@ async def chat_stream(
         const reader = res.body.getReader();
     """
     session = await _get_or_create_session(db, user, req.session_id)
-    context = await _build_context(db, user.workspace_id)
-
-    # Get conversation history (last 10 messages)
-    history_q = await db.execute(
-        select(ChatMessage)
-        .where(
-            and_(
-                ChatMessage.workspace_id == user.workspace_id,
-                ChatMessage.session_id == session.id,
-            )
-        )
-        .order_by(ChatMessage.created_at.desc())
-        .limit(10)
+    messages, confidence, metadata = await _prepare_messages(
+        db, user, session, req.message,
     )
-    history = list(reversed(list(history_q.scalars())))
-
-    messages = [{"role": "system", "content": _build_system_prompt(context)}]
-    for msg in history:
-        messages.append({"role": msg.role, "content": msg.content})
-    messages.append({"role": "user", "content": req.message})
 
     # Save user message immediately
     db.add(ChatMessage(
@@ -300,11 +266,17 @@ async def chat_stream(
         """Yield JSON-framed SSE events as OpenAI returns tokens."""
         full_reply = []
 
-        # ── Meta event: session info at stream start ──────────────
+        # ── Meta event: session info + confidence at stream start ─
+        sources = ["Financial data from your workspace"]
+        if metadata.get("rag_matches", 0) > 0:
+            sources.append(f"{metadata['rag_matches']} semantically matched transactions")
+
         meta = json.dumps({
             "type": "meta",
             "session_id": session_id_str,
-            "sources": ["Financial data from your workspace"],
+            "confidence": confidence,
+            "intents": metadata.get("intents", []),
+            "sources": sources,
         })
         yield f"data: {meta}\n\n"
 
@@ -354,7 +326,7 @@ async def chat_stream(
                 session_id=uuid.UUID(session_id_str),
                 role="assistant",
                 content="".join(full_reply),
-                confidence="high" if len(full_reply) > 1 else "low",
+                confidence=confidence,
             ))
             await bg_db.commit()
 
@@ -370,10 +342,34 @@ async def chat_stream(
     )
 
 
+def _suggest_actions(intents: list[str]) -> list[str]:
+    """Generate contextual suggested actions based on detected intents."""
+    suggestions = {
+        "balance": ["View expense breakdown", "Run a forecast"],
+        "category_spend": ["Set category budgets", "Compare to last month"],
+        "budgets": ["Adjust budget limits", "View overspend alerts"],
+        "burn_rate": ["View cash runway", "Identify cost-cutting areas"],
+        "flagged_transactions": ["Review all flagged items", "Set up alerts"],
+        "search": ["Narrow search by category", "Export results"],
+    }
+    actions = []
+    for intent in intents:
+        actions.extend(suggestions.get(intent, []))
+    if not actions:
+        actions = [
+            "View expense breakdown",
+            "Check budget status",
+            "Run a forecast",
+        ]
+    # Deduplicate while preserving order
+    seen = set()
+    return [a for a in actions if not (a in seen or seen.add(a))][:4]
+
+
 @router.get("/sessions", response_model=list[ChatSessionOut])
 async def list_sessions(
     user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_rls_db),
 ):
     """List all chat sessions for the current user's workspace."""
     result = await db.execute(
@@ -388,7 +384,7 @@ async def list_sessions(
 async def chat_history(
     session_id: uuid.UUID,
     user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_rls_db),
 ):
     """Get chat history for a session (workspace-scoped)."""
     # Verify session ownership

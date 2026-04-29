@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { reportsApi } from "@/lib/api";
 import {
   FileText,
   Download,
@@ -75,17 +76,33 @@ export default function ReportsPage() {
 
   const activeReport = REPORTS.find((r) => r.id === selected)!;
 
-  const handleExport = (format: ExportFormat) => {
+  const handleExport = async (format: ExportFormat) => {
     if (format === "email") {
       setShowEmail(true);
       return;
     }
+
     setExportStatus("loading");
-    // Simulate export generation
-    setTimeout(() => {
+
+    // Compute date range from selected month
+    const startDate = `${period}-01`;
+    const endMonth = new Date(startDate);
+    endMonth.setMonth(endMonth.getMonth() + 1);
+    const endDate = endMonth.toISOString().slice(0, 10);
+
+    try {
+      if (format === "pdf") {
+        await reportsApi.exportPdf(startDate, endDate);
+      } else {
+        await reportsApi.exportCsv(startDate, endDate);
+      }
       setExportStatus("done");
       setTimeout(() => setExportStatus("idle"), 3000);
-    }, 1800);
+    } catch (err) {
+      console.error("Export failed:", err);
+      setExportStatus("error");
+      setTimeout(() => setExportStatus("idle"), 3000);
+    }
   };
 
   const handleEmailSend = () => {

@@ -14,6 +14,7 @@ import {
   Download,
   Settings,
   ChevronDown,
+  AlertTriangle,
 } from "lucide-react";
 
 interface AuditEntry {
@@ -48,96 +49,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   settings: "var(--text-muted)",
 };
 
-const DEMO_ENTRIES: AuditEntry[] = [
-  {
-    id: 1,
-    timestamp: "2025-01-15T14:34:00Z",
-    user: "admin@lunabakery.com",
-    action: "Budget Updated",
-    category: "budget",
-    detail: "Marketing budget changed",
-    before: "$80,000",
-    after: "$100,000",
-  },
-  {
-    id: 2,
-    timestamp: "2025-01-15T11:20:00Z",
-    user: "cfo@lunabakery.com",
-    action: "Forecast Run",
-    category: "forecast",
-    detail: "3-month baseline forecast generated. Scenario: base",
-  },
-  {
-    id: 3,
-    timestamp: "2025-01-14T16:55:00Z",
-    user: "admin@lunabakery.com",
-    action: "Alert Dismissed",
-    category: "alert",
-    detail: "Low cash warning dismissed (Balance: $45,200)",
-  },
-  {
-    id: 4,
-    timestamp: "2025-01-14T09:30:00Z",
-    user: "accountant@lunabakery.com",
-    action: "CSV Uploaded",
-    category: "upload",
-    detail: "Bank statement imported: 87 transactions from Jan 2025",
-  },
-  {
-    id: 5,
-    timestamp: "2025-01-13T17:00:00Z",
-    user: "cfo@lunabakery.com",
-    action: "Report Exported",
-    category: "export",
-    detail: "1-Page Business Summary exported as PDF",
-  },
-  {
-    id: 6,
-    timestamp: "2025-01-13T10:15:00Z",
-    user: "admin@lunabakery.com",
-    action: "Budget Created",
-    category: "budget",
-    detail: "New budget created for Operations",
-    before: "—",
-    after: "$25,000",
-  },
-  {
-    id: 7,
-    timestamp: "2025-01-12T14:40:00Z",
-    user: "admin@lunabakery.com",
-    action: "Alert Threshold Updated",
-    category: "settings",
-    detail: "Low cash threshold changed",
-    before: "$5,000",
-    after: "$10,000",
-  },
-  {
-    id: 8,
-    timestamp: "2025-01-12T09:00:00Z",
-    user: "accountant@lunabakery.com",
-    action: "CSV Uploaded",
-    category: "upload",
-    detail: "QuickBooks export imported: 42 transactions",
-  },
-  {
-    id: 9,
-    timestamp: "2025-01-11T15:20:00Z",
-    user: "cfo@lunabakery.com",
-    action: "Forecast Run",
-    category: "forecast",
-    detail: "6-month scenario analysis generated. Scenario: pessimistic (-20% revenue)",
-  },
-  {
-    id: 10,
-    timestamp: "2025-01-10T11:00:00Z",
-    user: "admin@lunabakery.com",
-    action: "Budget Updated",
-    category: "budget",
-    detail: "Payroll budget adjusted",
-    before: "$45,000",
-    after: "$52,000",
-  },
-];
+
 
 function fmtDate(ts: string) {
   const d = new Date(ts);
@@ -151,12 +63,16 @@ function fmtDate(ts: string) {
 }
 
 export default function AuditPage() {
-  const [entries, setEntries] = useState<AuditEntry[]>(DEMO_ENTRIES);
+  const [entries, setEntries] = useState<AuditEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [userFilter, setUserFilter] = useState("all");
   const [expanded, setExpanded] = useState<number | null>(null);
 
   const loadAuditLog = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
       const data = await auditApi.list({ days: 90 });
       if (data?.items?.length) {
@@ -174,7 +90,9 @@ export default function AuditPage() {
         );
       }
     } catch {
-      // API unavailable — keep demo data
+      setError("Unable to load audit trail. Please check your connection and try again.");
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -192,6 +110,13 @@ export default function AuditPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
+      {error && (
+        <div className="glass p-4 flex items-center gap-3 animate-fade-up" style={{ borderColor: "var(--danger)44", background: "var(--danger-soft)" }}>
+          <AlertTriangle size={18} style={{ color: "var(--danger)", flexShrink: 0 }} />
+          <p className="text-sm" style={{ color: "var(--danger)" }}>{error}</p>
+          <button onClick={loadAuditLog} className="ml-auto text-xs font-medium px-3 py-1.5 rounded-lg" style={{ background: "var(--danger)", color: "#fff" }}>Retry</button>
+        </div>
+      )}
       {/* Header */}
       <div className="animate-fade-up">
         <h1 className="text-2xl font-bold" style={{ color: "var(--text)" }}>

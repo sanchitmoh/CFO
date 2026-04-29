@@ -7,7 +7,7 @@ import hashlib
 import hmac
 import logging
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 import uuid
 
@@ -272,7 +272,7 @@ async def sync_transactions(
 
     # Update sync cursor and timestamp
     plaid_item.sync_cursor = cursor
-    plaid_item.last_synced_at = datetime.utcnow()
+    plaid_item.last_synced_at = datetime.now(timezone.utc)
     await db.commit()
 
     logger.info(

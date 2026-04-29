@@ -35,48 +35,7 @@ const STATUS_META: Record<
   completed: { label: "Completed", color: "var(--accent)", bg: "var(--accent-soft)", icon: CheckCircle },
 };
 
-const DEMO_GOALS: Goal[] = [
-  {
-    id: 1,
-    title: "Build Emergency Fund",
-    target_amount: 50000,
-    current_amount: 32000,
-    category: "savings",
-    deadline: "2025-06-30",
-    status: "on_track",
-    notes: "Targeting 3 months of operating expenses",
-  },
-  {
-    id: 2,
-    title: "Reduce Monthly Burn Rate",
-    target_amount: 4000,
-    current_amount: 5600,
-    category: "cost_reduction",
-    deadline: "2025-03-31",
-    status: "at_risk",
-    notes: "Need to cut marketing and overhead",
-  },
-  {
-    id: 3,
-    title: "Hit $35K MRR",
-    target_amount: 35000,
-    current_amount: 28000,
-    category: "revenue",
-    deadline: "2025-04-30",
-    status: "on_track",
-    notes: "Growing 12% MoM currently",
-  },
-  {
-    id: 4,
-    title: "Gross Margin > 65%",
-    target_amount: 65,
-    current_amount: 62,
-    category: "profitability",
-    deadline: "2025-06-30",
-    status: "on_track",
-    notes: "Currently at 62%, trending up",
-  },
-];
+
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("en-US", {
@@ -86,7 +45,9 @@ const fmt = (n: number) =>
   }).format(n);
 
 export default function GoalsPage() {
-  const [goals, setGoals] = useState<Goal[]>(DEMO_GOALS);
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [expanded, setExpanded] = useState<number | string | null>(null);
   const [form, setForm] = useState({
@@ -98,9 +59,11 @@ export default function GoalsPage() {
   });
 
   const loadGoals = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
       const data = await goalsApi.list();
-      if (data && Array.isArray(data) && data.length > 0) {
+      if (data && Array.isArray(data)) {
         setGoals(
           data.map((g: any) => ({
             id: g.id,
@@ -115,7 +78,9 @@ export default function GoalsPage() {
         );
       }
     } catch {
-      // API unavailable — keep demo data
+      setError("Unable to load goals. Please check your connection and try again.");
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -168,6 +133,13 @@ export default function GoalsPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
+      {error && (
+        <div className="glass p-4 flex items-center gap-3 animate-fade-up" style={{ borderColor: "var(--danger)44", background: "var(--danger-soft)" }}>
+          <AlertCircle size={18} style={{ color: "var(--danger)", flexShrink: 0 }} />
+          <p className="text-sm" style={{ color: "var(--danger)" }}>{error}</p>
+          <button onClick={loadGoals} className="ml-auto text-xs font-medium px-3 py-1.5 rounded-lg" style={{ background: "var(--danger)", color: "#fff" }}>Retry</button>
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-start justify-between animate-fade-up">
         <div>

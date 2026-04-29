@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { api } from "@/lib/api";
+import { useState, useRef, useEffect } from "react";
+import { api, settingsApi } from "@/lib/api";
 import {
   Upload,
   CheckCircle,
@@ -36,15 +36,31 @@ export default function SettingsPage() {
   const [uploadError, setUploadError] = useState("");
 
   const [alertSettings, setAlertSettings] = useState<AlertSettings>({
-    emailEnabled: true,
+    emailEnabled: false,
     emailAddress: "",
     slackEnabled: false,
     slackWebhook: "",
-    lowCashThreshold: 10000,
-    overspendPercent: 20,
-    revenueDrop: 15,
+    lowCashThreshold: 5000,
+    overspendPercent: 10000,
+    revenueDrop: 2.5,
   });
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Load existing alert settings from backend on mount
+  useEffect(() => {
+    settingsApi.getAlertSettings().then((data) => {
+      setAlertSettings({
+        emailEnabled: data.email_enabled,
+        emailAddress: (data.email_addresses ?? []).join(", "),
+        slackEnabled: data.slack_enabled,
+        slackWebhook: data.slack_webhook_url ?? "",
+        lowCashThreshold: data.low_cash_threshold,
+        overspendPercent: data.high_expense_threshold,
+        revenueDrop: data.anomaly_sensitivity,
+      });
+    }).catch(() => {/* keep defaults on first-time user */});
+  }, []);
 
   const handleFile = async (file: File) => {
     if (!file.name.endsWith(".csv")) {
@@ -76,10 +92,29 @@ export default function SettingsPage() {
     if (file) handleFile(file);
   };
 
-  const saveAlerts = () => {
-    // In production: POST /api/settings/alerts
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+  const saveAlerts = async () => {
+    setSaving(true);
+    try {
+      const emails = alertSettings.emailAddress
+        .split(",")
+        .map((e) => e.trim())
+        .filter(Boolean);
+      await settingsApi.updateAlertSettings({
+        low_cash_threshold: alertSettings.lowCashThreshold,
+        high_expense_threshold: alertSettings.overspendPercent,
+        anomaly_sensitivity: alertSettings.revenueDrop,
+        email_enabled: alertSettings.emailEnabled,
+        email_addresses: emails,
+        slack_enabled: alertSettings.slackEnabled,
+        slack_webhook_url: alertSettings.slackWebhook || undefined,
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch {
+      /* toast error in production */
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (

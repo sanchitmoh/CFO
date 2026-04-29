@@ -1,7 +1,7 @@
 """ADVANCE-004: Enable Row-Level Security on critical tenant-scoped tables.
 
 Phase 1 (critical): transactions, budgets, alerts, chat_sessions, chat_messages
-Phase 2 (later):    goals, alert_rules, forecast_results, audit_logs, users
+Phase 2 (security hardening): users, goals, alert_rules, forecast_results, audit_logs, file_uploads, plaid_items
 
 Revision ID: 001_enable_rls
 Revises:
@@ -11,17 +11,25 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "001_enable_rls"
-down_revision = None
+down_revision = "000_baseline_schema"
 branch_labels = None
 depends_on = None
 
-# ── Critical tables for Phase 1 ────────────────────────────────────
+# ── All tenant-scoped tables requiring RLS ─────────────────────────
 CRITICAL_TABLES = [
     "transactions",
     "budgets",
     "alerts",
     "chat_sessions",
     "chat_messages",
+    # SEC-FIX: Add missing tables to prevent cross-tenant data access
+    "users",
+    "goals",
+    "alert_rules",
+    "forecast_results",
+    "audit_logs",
+    "file_uploads",
+    "plaid_items",
 ]
 
 

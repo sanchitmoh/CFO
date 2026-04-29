@@ -3,18 +3,18 @@ AI CFO — Budgets Router
 CRUD for category budgets with spend tracking.
 """
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import get_db, get_db_with_rls
+from dependencies import get_rls_db
 from auth import get_current_user
 from models import User, Budget, Transaction, TransactionType
 from schemas import BudgetCreate, BudgetOut
 from services.audit_service import log_action
-from cache import cache_delete
+from cache import invalidate_workspace_cache
 
 router = APIRouter()
 
@@ -47,10 +47,10 @@ def _budget_to_out(budget: Budget) -> BudgetOut:
 async def list_budgets(
     month: str | None = None,
     user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_rls_db),
 ):
     """List all budgets for the workspace, optionally filtered by month."""
-    current_month = month or datetime.utcnow().strftime("%Y-%m")
+    current_month = month or datetime.now(timezone.utc).strftime("%Y-%m")
 
     query = select(Budget).where(
         and_(
@@ -93,10 +93,10 @@ async def list_budgets(
 async def create_budget(
     data: BudgetCreate,
     user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_rls_db),
 ):
     """Create a new budget category for a month."""
-    month = data.month or datetime.utcnow().strftime("%Y-%m")
+    month = data.month or datetime.now(timezone.utc).strftime("%Y-%m")
 
     # Check for duplicate
     existing = await db.execute(
@@ -126,7 +126,7 @@ async def create_budget(
     await db.commit()
     await db.refresh(budget)
 
-    await cache_delete(f"ws:{user.workspace_id}:dashboard:*")
+    await invalidate_workspace_cache(str(user.workspace_id))
     await log_action(db, user, "budget.create", "budget", budget.id,
                      new_value={"category": data.category, "limit": data.monthly_limit})
 
@@ -138,7 +138,7 @@ async def update_budget(
     budget_id: uuid.UUID,
     data: BudgetCreate,
     user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_rls_db),
 ):
     """Update a budget limit or threshold."""
     result = await db.execute(
@@ -157,7 +157,7 @@ async def update_budget(
     await db.commit()
     await db.refresh(budget)
 
-    await cache_delete(f"ws:{user.workspace_id}:dashboard:*")
+    await invalidate_workspace_cache(str(user.workspace_id))
     await log_action(db, user, "budget.update", "budget", budget.id,
                      old_value={"limit": old_limit},
                      new_value={"limit": data.monthly_limit})
@@ -169,7 +169,7 @@ async def update_budget(
 async def delete_budget(
     budget_id: uuid.UUID,
     user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_rls_db),
 ):
     """Delete a budget."""
     result = await db.execute(
@@ -184,4 +184,4 @@ async def delete_budget(
     await log_action(db, user, "budget.delete", "budget", budget.id)
     await db.delete(budget)
     await db.commit()
-    await cache_delete(f"ws:{user.workspace_id}:dashboard:*")
+    await invalidate_workspace_cache(str(user.workspace_id))

@@ -2,7 +2,7 @@
 AI CFO — Calculator Service
 Affordability analysis: "Can I afford this?" with AI-powered suggestions.
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,7 +17,7 @@ async def check_affordability(
     req: AffordabilityRequest,
 ) -> AffordabilityResponse:
     """Analyze whether the business can afford a proposed expense."""
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     three_months_ago = now - timedelta(days=90)
 
     # ── Get last 3 months of income & expenses ───────────────────

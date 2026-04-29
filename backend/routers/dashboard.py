@@ -2,10 +2,12 @@
 AI CFO — Dashboard Router
 Uses dashboard_service for aggregated data with caching.
 """
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import get_db
+from dependencies import get_rls_db
 from auth import get_current_user
 from models import User
 from schemas import DashboardSummary
@@ -18,7 +20,7 @@ router = APIRouter()
 async def dashboard_summary(
     months: int = Query(6, ge=1, le=24),
     user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_rls_db),
 ):
     """Get the aggregated dashboard summary for the current workspace."""
     return await get_dashboard_summary(db, user.workspace_id, months)
@@ -27,7 +29,7 @@ async def dashboard_summary(
 @router.get("/investor-summary")
 async def investor_summary(
     user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_rls_db),
 ):
     """
     Read-only investor view: health score, key metrics, revenue trend, KPIs.
@@ -46,6 +48,7 @@ async def investor_summary(
 
     # Revenue delta (mock MoM for now — would need previous month)
     revenue_delta = "+12%"  # TODO: compute from actual monthly data
+    now = datetime.now(timezone.utc)
 
     health_score = summary.health_score if hasattr(summary, "health_score") else 72
     health_label = (
@@ -93,8 +96,12 @@ async def investor_summary(
             },
         ],
         "revenue_trend": [
-            {"month": p.month, "revenue": p.income, "expenses": p.expenses}
-            for p in (summary.cash_flow_trend or [])
+            {
+                "month": datetime(2000, ((now.month - len(summary.monthly_income) + i) % 12) + 1, 1).strftime("%b"),
+                "revenue": summary.monthly_income[i] if i < len(summary.monthly_income) else 0,
+                "expenses": summary.monthly_expenses[i] if i < len(summary.monthly_expenses) else 0,
+            }
+            for i in range(min(len(summary.monthly_income), len(summary.monthly_expenses)))
         ],
         "kpis": [
             {"label": "Gross Margin", "value": f"{gross_margin}%", "trend": "up" if gross_margin > 50 else "down", "change": ""},

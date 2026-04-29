@@ -10,6 +10,7 @@ import {
   Flame,
   ArrowUpRight,
   ArrowDownRight,
+  AlertTriangle,
 } from "lucide-react";
 import {
   AreaChart,
@@ -41,66 +42,7 @@ interface KPI {
   change: string;
 }
 
-const DEMO_METRICS: Metric[] = [
-  {
-    label: "Monthly Revenue",
-    value: "$28,000",
-    delta: "+12%",
-    positive: true,
-    icon: TrendingUp,
-    color: "var(--accent)",
-    bg: "var(--accent-soft)",
-    note: "Month-over-month",
-  },
-  {
-    label: "Burn Rate",
-    value: "$5,600/mo",
-    delta: "+8%",
-    positive: false,
-    icon: Flame,
-    color: "var(--danger)",
-    bg: "var(--danger-soft)",
-    note: "Rising — watch closely",
-  },
-  {
-    label: "Cash Runway",
-    value: "8 months",
-    delta: "Healthy",
-    positive: true,
-    icon: Clock,
-    color: "var(--warning)",
-    bg: "var(--warning-soft)",
-    note: "At current burn rate",
-  },
-  {
-    label: "Cash Balance",
-    value: "$45,200",
-    delta: "",
-    positive: true,
-    icon: DollarSign,
-    color: "var(--info)",
-    bg: "var(--info-soft)",
-    note: "As of Jan 15, 2025",
-  },
-];
 
-const DEMO_REVENUE_TREND = [
-  { month: "Aug", revenue: 18000, expenses: 14000 },
-  { month: "Sep", revenue: 19500, expenses: 15200 },
-  { month: "Oct", revenue: 21000, expenses: 16400 },
-  { month: "Nov", revenue: 23500, expenses: 17800 },
-  { month: "Dec", revenue: 25800, expenses: 19200 },
-  { month: "Jan", revenue: 28000, expenses: 21600 },
-];
-
-const DEMO_KPIS: KPI[] = [
-  { label: "Gross Margin", value: "62%", trend: "up", change: "+3pp" },
-  { label: "MRR Growth", value: "12% MoM", trend: "up", change: "↑ 2pp" },
-  { label: "Burn Multiple", value: "0.77×", trend: "up", change: "Efficient" },
-  { label: "Revenue / Expense", value: "1.30×", trend: "up", change: "Positive" },
-  { label: "Health Score", value: "72/100", trend: "neutral", change: "Good" },
-  { label: "Top Expense", value: "Payroll", trend: "neutral", change: "45% of burn" },
-];
 
 const ICON_MAP: Record<string, React.ElementType> = {
   "Monthly Revenue": TrendingUp,
@@ -124,13 +66,17 @@ const fmt = (n: number) =>
   }).format(n);
 
 export default function InvestorPage() {
-  const [metrics, setMetrics] = useState<Metric[]>(DEMO_METRICS);
-  const [revenueTrend, setRevenueTrend] = useState(DEMO_REVENUE_TREND);
-  const [kpis, setKpis] = useState<KPI[]>(DEMO_KPIS);
-  const [healthScore, setHealthScore] = useState(72);
-  const [healthLabel, setHealthLabel] = useState("Good");
+  const [metrics, setMetrics] = useState<Metric[]>([]);
+  const [revenueTrend, setRevenueTrend] = useState<{ month: string; revenue: number; expenses: number }[]>([]);
+  const [kpis, setKpis] = useState<KPI[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [healthScore, setHealthScore] = useState(0);
+  const [healthLabel, setHealthLabel] = useState("—");
 
   const loadInvestorData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
       const data = await investorApi.getSummary();
       if (data) {
@@ -155,7 +101,11 @@ export default function InvestorPage() {
           setHealthScore(hs.overall_score);
           setHealthLabel(hs.overall_score >= 71 ? "Good" : hs.overall_score >= 41 ? "Caution" : "Critical");
         }
-      } catch { /* keep defaults */ }
+      } catch {
+        setError("Unable to load investor data. Please check your connection and try again.");
+      }
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -164,6 +114,13 @@ export default function InvestorPage() {
   }, [loadInvestorData]);
   return (
     <div className="max-w-5xl mx-auto space-y-6">
+      {error && (
+        <div className="glass p-4 flex items-center gap-3 animate-fade-up" style={{ borderColor: "var(--danger)44", background: "var(--danger-soft)" }}>
+          <AlertTriangle size={18} style={{ color: "var(--danger)", flexShrink: 0 }} />
+          <p className="text-sm" style={{ color: "var(--danger)" }}>{error}</p>
+          <button onClick={loadInvestorData} className="ml-auto text-xs font-medium px-3 py-1.5 rounded-lg" style={{ background: "var(--danger)", color: "#fff" }}>Retry</button>
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-start justify-between animate-fade-up">
         <div>

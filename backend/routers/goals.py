@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import get_db
+from dependencies import get_rls_db
 from auth import get_current_user
 from models import User, Goal, GoalStatus
 from schemas import GoalCreate, GoalUpdate, GoalOut
@@ -42,7 +42,7 @@ def _goal_to_out(goal: Goal) -> GoalOut:
 async def list_goals(
     status_filter: str | None = None,
     user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_rls_db),
 ):
     """List all goals for the workspace."""
     query = select(Goal).where(Goal.workspace_id == user.workspace_id)
@@ -58,7 +58,7 @@ async def list_goals(
 async def create_goal(
     data: GoalCreate,
     user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_rls_db),
 ):
     """Create a new financial goal."""
     goal = Goal(
@@ -84,7 +84,7 @@ async def update_goal(
     goal_id: uuid.UUID,
     data: GoalUpdate,
     user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_rls_db),
 ):
     """Update a goal's progress or status."""
     result = await db.execute(
@@ -127,7 +127,7 @@ async def update_goal(
 async def delete_goal(
     goal_id: uuid.UUID,
     user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_rls_db),
 ):
     """Delete a goal."""
     result = await db.execute(

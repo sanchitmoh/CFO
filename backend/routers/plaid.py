@@ -10,7 +10,8 @@ from pydantic import BaseModel
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import get_db, get_db_context
+from database import get_db_context
+from dependencies import get_rls_db
 from auth import get_current_user
 from models import User, PlaidItem
 from services.plaid_service import (
@@ -20,7 +21,7 @@ from services.plaid_service import (
     sync_transactions,
 )
 from services.audit_service import log_action
-from cache import cache_delete
+from cache import invalidate_workspace_cache
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +96,7 @@ async def plaid_webhook(
                         "Background sync for %s: %s", item_id, stats
                     )
                     # Invalidate dashboard cache for this workspace
-                    await cache_delete(f"ws:{plaid_item.workspace_id}:*")
+                    await invalidate_workspace_cache(str(plaid_item.workspace_id))
                 else:
                     logger.warning("Plaid item not found: %s", item_id)
 
@@ -127,7 +128,7 @@ async def get_link_token(
 async def exchange_token(
     data: ExchangeTokenRequest,
     user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_rls_db),
 ):
     """Exchange a Plaid public token for an access token after Link flow.
 
@@ -151,7 +152,7 @@ async def exchange_token(
 
         # Trigger initial sync
         stats = await sync_transactions(db, plaid_item)
-        await cache_delete(f"ws:{user.workspace_id}:*")
+        await invalidate_workspace_cache(str(user.workspace_id))
 
         return {
             "item_id": plaid_item.item_id,
@@ -170,7 +171,7 @@ async def exchange_token(
 @router.get("/accounts")
 async def list_plaid_accounts(
     user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_rls_db),
 ):
     """List all connected Plaid accounts for the workspace."""
     result = await db.execute(

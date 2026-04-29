@@ -8,7 +8,8 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Query
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import get_db, get_db_context
+from database import get_db_context
+from dependencies import get_rls_db
 from auth import get_current_user
 from models import User
 from services.embedding_service import (
@@ -39,7 +40,7 @@ class SemanticSearchResult(BaseModel):
 async def semantic_search(
     data: SemanticSearchRequest,
     user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_rls_db),
 ):
     """Search transactions using natural language.
 
@@ -74,7 +75,7 @@ async def semantic_search(
 async def backfill_embeddings(
     background_tasks: BackgroundTasks,
     user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_rls_db),
 ):
     """Trigger a background job to embed all un-embedded transactions.
 

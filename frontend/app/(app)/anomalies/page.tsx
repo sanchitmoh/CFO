@@ -23,63 +23,7 @@ interface Anomaly {
   status: "flagged" | "reviewed" | "dismissed";
 }
 
-const DEMO_ANOMALIES: Anomaly[] = [
-  {
-    id: 1,
-    transaction_id: 101,
-    date: "2025-01-15",
-    description: "Flour Supplier - Premium Mills",
-    amount: 4200,
-    category: "Raw Materials",
-    anomaly_score: 0.92,
-    reason: "This charge of ₹4,200 is 3.2× higher than your average monthly spend with this vendor (₹1,312). Possible duplicate or pricing error.",
-    status: "flagged",
-  },
-  {
-    id: 2,
-    transaction_id: 102,
-    date: "2025-01-18",
-    description: "Meta Ads - Campaign Boost",
-    amount: 12000,
-    category: "Marketing",
-    anomaly_score: 0.85,
-    reason: "Marketing spend this week ($12,000) exceeds 3 standard deviations from your weekly average ($2,800). Unusual spike detected.",
-    status: "flagged",
-  },
-  {
-    id: 3,
-    transaction_id: 103,
-    date: "2025-01-20",
-    description: "Utility Bill - Electric Co",
-    amount: 3800,
-    category: "Utilities",
-    anomaly_score: 0.78,
-    reason: "Utility charge is 2.7× the category average. Could indicate a meter reading error or unusual consumption.",
-    status: "flagged",
-  },
-  {
-    id: 4,
-    transaction_id: 104,
-    date: "2025-01-10",
-    description: "Packaging Supplies - BoxCo",
-    amount: 890,
-    category: "Operations",
-    anomaly_score: 0.72,
-    reason: "Same vendor charged twice within 7 days. Possible duplicate payment. Previous charge: $890 on Jan 3.",
-    status: "reviewed",
-  },
-  {
-    id: 5,
-    transaction_id: 105,
-    date: "2025-01-08",
-    description: "New Vendor - CloudServ Ltd",
-    amount: 2500,
-    category: "Software",
-    anomaly_score: 0.74,
-    reason: "First-time transaction from an unknown vendor above your $1,000 threshold. Verify this is an authorized purchase.",
-    status: "dismissed",
-  },
-];
+
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("en-US", {
@@ -109,15 +53,19 @@ const scoreLabel = (score: number) => {
 type StatusFilter = "all" | "flagged" | "reviewed" | "dismissed";
 
 export default function AnomaliesPage() {
-  const [anomalies, setAnomalies] = useState<Anomaly[]>(DEMO_ANOMALIES);
+  const [anomalies, setAnomalies] = useState<Anomaly[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<StatusFilter>("all");
   const [expanded, setExpanded] = useState<number | null>(null);
   const [scanning, setScanning] = useState(false);
 
   const loadAnomalies = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
       const data = await anomalyApi.list();
-      if (data && data.length > 0) {
+      if (data && Array.isArray(data)) {
         setAnomalies(data.map((a: any, i: number) => ({
           id: a.id || i + 1,
           transaction_id: a.transaction_id || i + 100,
@@ -131,7 +79,9 @@ export default function AnomaliesPage() {
         })));
       }
     } catch {
-      // API unavailable — keep demo data
+      setError("Unable to load anomalies. Please check your connection and try again.");
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -186,6 +136,13 @@ export default function AnomaliesPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
+      {error && (
+        <div className="glass p-4 flex items-center gap-3 animate-fade-up" style={{ borderColor: "var(--danger)44", background: "var(--danger-soft)" }}>
+          <AlertTriangle size={18} style={{ color: "var(--danger)", flexShrink: 0 }} />
+          <p className="text-sm" style={{ color: "var(--danger)" }}>{error}</p>
+          <button onClick={loadAnomalies} className="ml-auto text-xs font-medium px-3 py-1.5 rounded-lg" style={{ background: "var(--danger)", color: "#fff" }}>Retry</button>
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-start justify-between animate-fade-up">
         <div>
@@ -193,7 +150,7 @@ export default function AnomaliesPage() {
             Anomaly Detection
           </h1>
           <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
-            ML-powered detection of unusual financial patterns — powered by Isolation Forest
+            Statistical detection of unusual financial patterns — powered by adaptive Z-Score analysis
           </p>
         </div>
         <button
@@ -235,11 +192,11 @@ export default function AnomaliesPage() {
         <TrendingUp size={20} style={{ color: "var(--info)", marginTop: 2, flexShrink: 0 }} />
         <div>
           <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
-            Isolation Forest Algorithm Active
+            Adaptive Z-Score Analysis Active
           </p>
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-            Analyzing transaction amount, category, day of week, vendor name, and rolling averages.
-            Transactions scoring above 0.7 are flagged for review. Anomalies are suggestions — not automatic actions.
+            Analyzing per-category spend variance with auto-calibrated thresholds based on your data volume.
+            Transactions exceeding the calibrated threshold are flagged for review. Anomalies are suggestions — not automatic actions.
           </p>
         </div>
       </div>

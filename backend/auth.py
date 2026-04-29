@@ -2,26 +2,31 @@
 AI CFO — Clerk JWT Authentication
 Validates Clerk-issued JWTs using JWKS. No custom passwords.
 
-Security hardening (SEC-001):
+Security hardening:
 - Algorithm pinned to RS256 (prevents algorithm confusion attacks)
 - JWKS cache with TTL (prevents stale-key + availability issues)
-- Rate limiting on failed auth attempts (prevents brute-force/replay)
+- SEC-001: Redis-backed distributed rate limiting (works across workers/deploys)
+- SEC-006: Advisory-lock provisioning (prevents duplicate workspace race)
 """
 import time
 import asyncio
-from datetime import datetime
-from collections import defaultdict
+import hashlib
+import logging
+from datetime import datetime, timezone
 
 from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, text
 import httpx
 from jose import jwt, JWTError
 
 from config import settings
 from database import get_db
 from models import User, Workspace, UserRole
+from cache import get_redis
+
+logger = logging.getLogger(__name__)
 
 security = HTTPBearer(auto_error=False)
 
@@ -98,35 +103,75 @@ def _find_key(jwks: dict, kid: str) -> dict | None:
     return None
 
 
-# ── Rate limiter for failed auth attempts ─────────────────────────
-# Tracks per-IP failure counts with a sliding window.
-_auth_failures: dict[str, list[float]] = defaultdict(list)
+# ── SEC-001: Redis-backed rate limiter for failed auth attempts ───
+# Uses Redis sorted sets with timestamps as scores for a sliding window.
+# Works across all workers/processes and survives deploys.
+# SEC-FIX: Strengthened rate limiting with exponential backoff
 AUTH_RATE_LIMIT_WINDOW = 60      # seconds
-AUTH_RATE_LIMIT_MAX_FAILURES = 10  # max failures per IP per window
+AUTH_RATE_LIMIT_MAX_FAILURES = 5  # max failures per IP per window (reduced from 10)
+AUTH_RATE_LIMIT_LOCKOUT_DURATION = 900  # 15 minutes lockout after exceeding limit
 
 
-def _check_rate_limit(client_ip: str) -> None:
+async def _check_rate_limit(client_ip: str) -> None:
     """
     Block IPs that have exceeded the failure threshold within the window.
-    Prevents brute-force and replay attacks against the auth endpoint.
+    Uses Redis sorted set for distributed rate limiting.
+    Gracefully degrades (skips check) if Redis is unavailable.
+    
+    SEC-FIX: Added lockout mechanism for repeated failures.
     """
-    now = time.monotonic()
-    # Prune old entries
-    _auth_failures[client_ip] = [
-        ts for ts in _auth_failures[client_ip]
-        if now - ts < AUTH_RATE_LIMIT_WINDOW
-    ]
-    if len(_auth_failures[client_ip]) >= AUTH_RATE_LIMIT_MAX_FAILURES:
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Too many authentication failures. Try again later.",
-            headers={"Retry-After": str(AUTH_RATE_LIMIT_WINDOW)},
-        )
+    try:
+        r = await get_redis()
+        
+        # Check if IP is in lockout
+        lockout_key = f"ratelimit:lockout:{client_ip}"
+        is_locked = await r.get(lockout_key)
+        if is_locked:
+            ttl = await r.ttl(lockout_key)
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=f"Account temporarily locked due to too many failed attempts. Try again in {ttl} seconds.",
+                headers={"Retry-After": str(ttl)},
+            )
+        
+        key = f"ratelimit:auth:{client_ip}"
+        now = time.time()
+        window_start = now - AUTH_RATE_LIMIT_WINDOW
+
+        # Remove expired entries
+        await r.zremrangebyscore(key, "-inf", window_start)
+
+        # Count failures in current window
+        failure_count = await r.zcard(key)
+
+        if failure_count >= AUTH_RATE_LIMIT_MAX_FAILURES:
+            # Trigger lockout
+            await r.setex(lockout_key, AUTH_RATE_LIMIT_LOCKOUT_DURATION, "1")
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=f"Too many authentication failures. Account locked for {AUTH_RATE_LIMIT_LOCKOUT_DURATION // 60} minutes.",
+                headers={"Retry-After": str(AUTH_RATE_LIMIT_LOCKOUT_DURATION)},
+            )
+    except HTTPException:
+        raise  # Re-raise our own 429
+    except Exception:
+        # Redis down — degrade gracefully, don't block auth
+        logger.warning("Rate limiter unavailable (Redis down), skipping check")
 
 
-def _record_auth_failure(client_ip: str) -> None:
-    """Record a failed auth attempt for rate-limit tracking."""
-    _auth_failures[client_ip].append(time.monotonic())
+async def _record_auth_failure(client_ip: str) -> None:
+    """Record a failed auth attempt in Redis sorted set."""
+    try:
+        r = await get_redis()
+        key = f"ratelimit:auth:{client_ip}"
+        now = time.time()
+        # Use timestamp + random suffix as member to avoid dedup
+        member = f"{now}:{id(object())}"
+        await r.zadd(key, {member: now})
+        # Set key TTL so it auto-cleans even without explicit prune
+        await r.expire(key, AUTH_RATE_LIMIT_WINDOW * 2)
+    except Exception:
+        logger.warning("Failed to record auth failure in Redis")
 
 
 async def verify_clerk_token(token: str) -> dict:
@@ -203,11 +248,11 @@ async def _extract_clerk_id(
     """
     client_ip = request.client.host if request.client else "unknown"
 
-    # Check rate limit BEFORE doing any work
-    _check_rate_limit(client_ip)
+    # Check rate limit BEFORE doing any work (now async/Redis-backed)
+    await _check_rate_limit(client_ip)
 
     if credentials is None:
-        _record_auth_failure(client_ip)
+        await _record_auth_failure(client_ip)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication required",
@@ -217,12 +262,12 @@ async def _extract_clerk_id(
     try:
         payload = await verify_clerk_token(credentials.credentials)
     except HTTPException:
-        _record_auth_failure(client_ip)
+        await _record_auth_failure(client_ip)
         raise
 
     clerk_id = payload.get("sub")
     if not clerk_id:
-        _record_auth_failure(client_ip)
+        await _record_auth_failure(client_ip)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token: missing subject",
@@ -254,7 +299,7 @@ async def get_current_user(
         )
 
     # Update last login
-    user.last_login_at = datetime.utcnow()
+    user.last_login_at = datetime.now(timezone.utc)
     await db.commit()
 
     if not user.is_active:
@@ -275,21 +320,38 @@ async def provision_user_and_workspace(
     Provision dependency — creates workspace + user on first call,
     returns existing user on subsequent calls (idempotent).
 
+    SEC-006: Uses PostgreSQL advisory lock keyed on clerk_id to serialize
+    concurrent first-login attempts, preventing orphaned workspaces.
+
     Returns (user, was_created) so callers know if this was a new provision.
     Used ONLY by the onboarding/provision endpoint.
     """
     clerk_id, payload = await _extract_clerk_id(request, credentials)
 
-    # Check if user already exists (idempotent)
+    # Fast path — check if user already exists (no lock needed)
     result = await db.execute(select(User).where(User.clerk_id == clerk_id))
     user = result.scalar_one_or_none()
 
     if user is not None:
-        user.last_login_at = datetime.utcnow()
+        user.last_login_at = datetime.now(timezone.utc)
         await db.commit()
         return user, False
 
-    # First-time provisioning — create workspace + user
+    # SEC-006: Acquire advisory lock to serialize provisioning for this clerk_id.
+    # This prevents two simultaneous SSO redirects from both creating workspaces.
+    # The lock is automatically released when the transaction commits/rollbacks.
+    lock_key = int(hashlib.sha256(clerk_id.encode()).hexdigest()[:15], 16)
+    await db.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": lock_key})
+
+    # Re-check after acquiring lock (another request may have provisioned)
+    result = await db.execute(select(User).where(User.clerk_id == clerk_id))
+    user = result.scalar_one_or_none()
+    if user is not None:
+        user.last_login_at = datetime.now(timezone.utc)
+        await db.commit()
+        return user, False
+
+    # First-time provisioning — create workspace + user (now serialized)
     email = payload.get("email", payload.get("email_addresses", [{}])[0].get("email_address", ""))
     full_name = payload.get("name", payload.get("first_name", "User"))
     if isinstance(full_name, dict):

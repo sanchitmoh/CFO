@@ -3,13 +3,13 @@ AI CFO — Alerts Router
 CRUD for system and user-generated alerts.
 """
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select, func, and_, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import get_db, get_db_with_rls
+from dependencies import get_rls_db
 from auth import get_current_user
 from models import User, Alert, AlertSeverity
 from schemas import AlertOut
@@ -23,7 +23,7 @@ async def list_alerts(
     severity: str | None = None,
     limit: int = Query(50, ge=1, le=200),
     user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_rls_db),
 ):
     """List alerts for the workspace."""
     ws_id = user.workspace_id
@@ -46,7 +46,7 @@ async def list_alerts(
 @router.get("/count")
 async def alert_count(
     user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_rls_db),
 ):
     """Get count of unread alerts."""
     result = await db.execute(
@@ -66,7 +66,7 @@ async def alert_count(
 async def mark_read(
     alert_id: uuid.UUID,
     user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_rls_db),
 ):
     """Mark a single alert as read."""
     result = await db.execute(
@@ -86,7 +86,7 @@ async def mark_read(
 @router.put("/read-all")
 async def mark_all_read(
     user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_rls_db),
 ):
     """Mark all alerts as read."""
     await db.execute(
@@ -107,7 +107,7 @@ async def mark_all_read(
 async def dismiss_alert(
     alert_id: uuid.UUID,
     user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_rls_db),
 ):
     """Dismiss an alert permanently."""
     result = await db.execute(
@@ -120,6 +120,6 @@ async def dismiss_alert(
         raise HTTPException(status_code=404, detail="Alert not found")
 
     alert.is_dismissed = True
-    alert.dismissed_at = datetime.utcnow()
+    alert.dismissed_at = datetime.now(timezone.utc)
     await db.commit()
     return {"status": "ok"}

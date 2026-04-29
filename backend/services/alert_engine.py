@@ -4,7 +4,7 @@ Checks alert rules against current financial data and generates alerts.
 Designed to be called as a background task after data mutations.
 """
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,7 +25,7 @@ async def run_alert_engine(db: AsyncSession, workspace_id) -> int:
       2. Revenue drop (current month income < 70% of prior month avg)
       3. High single expense (any transaction > 3× the category average)
     """
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     alerts_created = 0
 
     try:
@@ -111,3 +111,38 @@ async def run_alert_engine(db: AsyncSession, workspace_id) -> int:
         await db.rollback()
 
     return alerts_created
+
+
+async def run_all_workspace_alerts() -> dict[str, int]:
+    """EXT-002: Evaluate alert rules for ALL active workspaces.
+
+    Designed to be called by APScheduler on a periodic interval so that
+    alerts (e.g. "cash runway below 2 months") fire even when no user
+    action triggers them.
+    """
+    from database import get_db_context
+    from models import Workspace
+
+    results: dict[str, int] = {}
+
+    async with get_db_context() as db:
+        ws_q = await db.execute(select(Workspace.id))
+        workspace_ids = [row[0] for row in ws_q]
+
+    logger.info("Scheduled alert sweep starting for %d workspaces", len(workspace_ids))
+
+    for ws_id in workspace_ids:
+        try:
+            async with get_db_context() as db:
+                count = await run_alert_engine(db, ws_id)
+                results[str(ws_id)] = count
+        except Exception:
+            logger.exception("Scheduled alert sweep failed for workspace %s", ws_id)
+            results[str(ws_id)] = -1
+
+    total = sum(v for v in results.values() if v > 0)
+    logger.info(
+        "Scheduled alert sweep complete: %d workspaces, %d total alerts created",
+        len(workspace_ids), total,
+    )
+    return results

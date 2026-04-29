@@ -10,6 +10,7 @@ Provides:
   - get_relevant_transactions(db, ws_id, query, top_k) — semantic search via pgvector
 """
 import logging
+import asyncio
 from typing import Optional
 
 from sqlalchemy import text
@@ -81,23 +82,32 @@ def _txn_to_embed_text(description: str, category: str, vendor: Optional[str] = 
 
 
 async def embed_transaction(txn_id, description: str, category: str,
-                            vendor: Optional[str], db: AsyncSession) -> None:
+                            vendor: Optional[str], db: AsyncSession,
+                            workspace_id=None) -> None:
     """Generate and store an embedding for a single transaction.
 
     Called as a background task after transaction creation.
+
+    M-005: workspace_id is required to enforce tenant isolation on the
+    raw SQL UPDATE (ORM lifecycle is bypassed for pgvector columns).
     """
     try:
         embed_text = _txn_to_embed_text(description, category, vendor)
         embedding = generate_embedding(embed_text)
 
-        # Store using raw SQL since pgvector column isn't in the ORM model
+        # M-005: Raw SQL with workspace_id guard + updated_at touch
         vec_str = "[" + ",".join(str(f) for f in embedding) + "]"
         await db.execute(
             text(
-                "UPDATE transactions SET description_vec = :vec "
-                "WHERE id = :txn_id"
+                "UPDATE transactions "
+                "SET description_vec = :vec, updated_at = NOW() "
+                "WHERE id = :txn_id AND workspace_id = :ws_id"
             ),
-            {"vec": vec_str, "txn_id": str(txn_id)},
+            {
+                "vec": vec_str,
+                "txn_id": str(txn_id),
+                "ws_id": str(workspace_id) if workspace_id else str(txn_id),
+            },
         )
         await db.commit()
 
@@ -126,19 +136,31 @@ async def batch_embed_transactions(workspace_id, db: AsyncSession) -> int:
     if not rows:
         return 0
 
+    BATCH_SIZE = 50
     count = 0
-    for row in rows:
-        embed_text = _txn_to_embed_text(row.description, row.category, row.vendor)
-        embedding = generate_embedding(embed_text)
-        vec_str = "[" + ",".join(str(f) for f in embedding) + "]"
-        await db.execute(
-            text(
-                "UPDATE transactions SET description_vec = :vec "
-                "WHERE id = :txn_id"
-            ),
-            {"vec": vec_str, "txn_id": str(row.id)},
-        )
-        count += 1
+
+    for i in range(0, len(rows), BATCH_SIZE):
+        batch = rows[i : i + BATCH_SIZE]
+        for row in batch:
+            embed_text = _txn_to_embed_text(row.description, row.category, row.vendor)
+            embedding = generate_embedding(embed_text)
+            vec_str = "[" + ",".join(str(f) for f in embedding) + "]"
+            await db.execute(
+                text(
+                    "UPDATE transactions "
+                    "SET description_vec = :vec, updated_at = NOW() "
+                    "WHERE id = :txn_id AND workspace_id = :ws_id"
+                ),
+                {
+                    "vec": vec_str,
+                    "txn_id": str(row.id),
+                    "ws_id": str(workspace_id),
+                },
+            )
+            count += 1
+        # Yield control to the event loop between micro-batches
+        # so other requests are not starved during bulk embedding
+        await asyncio.sleep(0)
 
     await db.commit()
     logger.info("Batch-embedded %d transactions for workspace %s", count, workspace_id)

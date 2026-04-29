@@ -7,14 +7,14 @@ Weights adjust based on business stage:
   - Growth: Revenue growth emphasis
   - Mature: Budget discipline + growth balance
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models import Transaction, TransactionType, Budget
 from schemas import HealthScoreResponse, ScoreComponent
-from cache import cache_get, cache_set, make_cache_key
+from cache import cache_get, cache_set, make_versioned_cache_key
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -121,13 +121,13 @@ async def compute_health_score(
     Args:
         stage_override: "early", "growth", or "mature". Auto-detected if None.
     """
-    cache_key = make_cache_key("health_score", str(workspace_id))
+    cache_key = await make_versioned_cache_key("health_score", str(workspace_id))
 
     cached = await cache_get(cache_key)
     if cached:
         return HealthScoreResponse(**cached)
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     three_months = now - timedelta(days=90)
 
     # ── Income / expense totals ──────────────────────────────────

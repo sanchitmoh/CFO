@@ -1,13 +1,21 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useAuth } from "@clerk/nextjs";
 import Sidebar from "@/components/Sidebar";
-import { onboardingApi } from "@/lib/api";
+import { onboardingApi, setTokenProvider } from "@/lib/api";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { isLoaded, isSignedIn } = useUser();
+  const { getToken } = useAuth();
   const provisionedRef = useRef(false);
+
+  // ⚡ Register Clerk's getToken SYNCHRONOUSLY during render.
+  // This MUST happen before children mount, not in useEffect (which
+  // fires bottom-up — children's effects run before parent's).
+  if (isLoaded && isSignedIn) {
+    setTokenProvider(getToken);
+  }
 
   // Provision workspace + user on first authenticated render.
   // Idempotent — the backend returns "already_exists" on subsequent calls.

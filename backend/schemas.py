@@ -4,8 +4,9 @@ All request/response models aligned with frontend types.ts contracts.
 """
 import uuid
 from datetime import datetime, date
-from typing import Optional
-from pydantic import BaseModel, EmailStr
+from typing import Optional, List
+from pydantic import BaseModel, EmailStr, Field, field_validator, constr
+from decimal import Decimal
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -30,17 +31,179 @@ class ProfileUpdate(BaseModel):
 
 class InviteRequest(BaseModel):
     email: EmailStr
-    full_name: str
-    role: str = "viewer"
+    full_name: constr(min_length=1, max_length=255) = Field(..., description="Full name of the invitee")  # type: ignore
+    role: str = Field("viewer", pattern="^(owner|admin|cfo|accountant|investor|employee|viewer)$")
 
 
 class RoleUpdateRequest(BaseModel):
-    role: str
+    role: str = Field(..., pattern="^(owner|admin|cfo|accountant|investor|employee|viewer)$")
 
 
 # ═══════════════════════════════════════════════════════════════════
 # WORKSPACE
 # ═══════════════════════════════════════════════════════════════════
+
+class AlertSettingsUpdate(BaseModel):
+    """Payload for PUT /api/settings/alerts — all fields optional for partial update."""
+    low_cash_threshold: Optional[float] = None
+    high_expense_threshold: Optional[float] = None
+    anomaly_sensitivity: Optional[float] = None  # z-score multiplier
+
+
+# ═══════════════════════════════════════════════════════════════════
+# PASSWORD POLICY (COMPLIANCE-003)
+# ═══════════════════════════════════════════════════════════════════
+
+class PasswordValidationRequest(BaseModel):
+    """Request to validate a password against current policy."""
+    password: str = Field(..., min_length=1, max_length=256)
+    user_info: Optional[dict] = Field(None, description="Optional user info to check against")
+
+
+class PasswordValidationResponse(BaseModel):
+    """Response from password validation."""
+    is_valid: bool
+    errors: List[str]
+    warnings: List[str]
+    strength_score: int = Field(..., ge=0, le=100)
+
+
+class PasswordPolicyInfo(BaseModel):
+    """Current password policy configuration."""
+    enabled: bool
+    requirements: dict
+
+
+class PasswordPolicyUpdateRequest(BaseModel):
+    """Request to update password policy settings (admin only)."""
+    enabled: Optional[bool] = None
+    min_length: Optional[int] = Field(None, ge=1, le=256)
+    max_length: Optional[int] = Field(None, ge=8, le=512)
+    require_uppercase: Optional[bool] = None
+    require_lowercase: Optional[bool] = None
+    require_numbers: Optional[bool] = None
+    require_special_chars: Optional[bool] = None
+    min_special_chars: Optional[int] = Field(None, ge=0, le=10)
+    prevent_common_passwords: Optional[bool] = None
+    prevent_user_info: Optional[bool] = None
+    email_enabled: Optional[bool] = None
+    email_addresses: Optional[list[str]] = None
+    slack_enabled: Optional[bool] = None
+    slack_webhook_url: Optional[str] = None
+
+
+class AlertSettingsOut(BaseModel):
+    """Response for GET /api/settings/alerts."""
+    low_cash_threshold: float = 5000.0
+    high_expense_threshold: float = 10000.0
+    anomaly_sensitivity: float = 2.5
+    email_enabled: bool = False
+
+
+# ═══════════════════════════════════════════════════════════════════
+# GDPR/CCPA COMPLIANCE (COMPLIANCE-004)
+# ═══════════════════════════════════════════════════════════════════
+
+class DataExportRequest(BaseModel):
+    """Request for GDPR Article 20 data export."""
+    format: Optional[str] = Field("json", pattern="^(json|csv)$")
+    include_metadata: Optional[bool] = True
+    email_delivery: Optional[bool] = False  # Future: email the export file
+
+
+class DataExportResponse(BaseModel):
+    """Response for data export request."""
+    export_id: uuid.UUID
+    status: str = "completed"
+    format: str
+    file_size_bytes: int
+    created_at: datetime
+    expires_at: datetime
+    download_url: Optional[str] = None  # Future: signed URL for download
+
+
+class DataDeletionRequest(BaseModel):
+    """Request for GDPR Article 17 data deletion."""
+    confirmation_text: str = Field(..., description="Must match 'DELETE MY DATA' exactly")
+    reason: Optional[str] = Field(None, max_length=500, description="Optional reason for deletion")
+    
+    @field_validator('confirmation_text')
+    @classmethod
+    def validate_confirmation(cls, v):
+        if v != "DELETE MY DATA":
+            raise ValueError("Confirmation text must be exactly 'DELETE MY DATA'")
+        return v
+
+
+class DataDeletionResponse(BaseModel):
+    """Response for data deletion request."""
+    deletion_id: uuid.UUID
+    status: str = "scheduled"  # scheduled | in_progress | completed | failed
+    scheduled_at: datetime
+    grace_period_ends_at: Optional[datetime] = None
+    message: str
+
+
+class ConsentRequest(BaseModel):
+    """Request to update user consent preferences."""
+    data_processing: bool = Field(..., description="Consent to data processing")
+    analytics: Optional[bool] = Field(True, description="Consent to analytics")
+    marketing: Optional[bool] = Field(False, description="Consent to marketing communications")
+    third_party_sharing: Optional[bool] = Field(False, description="Consent to third-party data sharing")
+
+
+class ConsentResponse(BaseModel):
+    """Current user consent status."""
+    user_id: uuid.UUID
+    data_processing: bool
+    analytics: bool
+    marketing: bool
+    third_party_sharing: bool
+    consent_date: datetime
+    last_updated: datetime
+    ip_address_hash: Optional[str] = None  # Hashed IP for audit trail
+
+
+class ConsentWithdrawalRequest(BaseModel):
+    """Request to withdraw consent."""
+    consent_types: List[str] = Field(..., description="Types of consent to withdraw")
+    reason: Optional[str] = Field(None, max_length=500, description="Optional reason for withdrawal")
+
+
+class RetentionPolicyInfo(BaseModel):
+    """Information about data retention policies."""
+    policy_name: str
+    description: str
+    retention_days: int
+    applies_to: List[str]  # List of data types this policy applies to
+    last_cleanup: Optional[datetime] = None
+    next_cleanup: Optional[datetime] = None
+
+
+class RetentionPolicyResponse(BaseModel):
+    """Response with all retention policies."""
+    policies: List[RetentionPolicyInfo]
+    total_policies: int
+    cleanup_enabled: bool
+
+
+class ComplianceStatusResponse(BaseModel):
+    """Overall compliance status for the user/workspace."""
+    user_id: uuid.UUID
+    workspace_id: uuid.UUID
+    gdpr_compliant: bool
+    ccpa_compliant: bool
+    data_export_available: bool
+    data_deletion_available: bool
+    consent_management_active: bool
+    retention_policies_active: bool
+    last_export: Optional[datetime] = None
+    consent_status: Optional[ConsentResponse] = None
+    email_addresses: list[str] = []
+    slack_enabled: bool = False
+    slack_webhook_url: Optional[str] = None
+    model_config = {"from_attributes": True}
+
 
 class WorkspaceOut(BaseModel):
     id: uuid.UUID
@@ -48,6 +211,7 @@ class WorkspaceOut(BaseModel):
     industry: str
     currency: str
     is_demo: bool
+    alert_config: Optional[dict] = None
     model_config = {"from_attributes": True}
 
 
@@ -62,14 +226,26 @@ class WorkspaceUpdate(BaseModel):
 # ═══════════════════════════════════════════════════════════════════
 
 class TransactionCreate(BaseModel):
-    date: datetime
-    description: str
-    amount: float
-    category: str
-    type: str  # income | expense
-    account: str = "Main Account"
-    vendor: Optional[str] = None
-    notes: Optional[str] = None
+    date: datetime = Field(..., description="Transaction date")
+    description: constr(min_length=1, max_length=500) = Field(..., description="Transaction description")  # type: ignore
+    amount: float = Field(..., gt=0, le=999999999.99, description="Transaction amount (must be positive)")
+    category: constr(min_length=1, max_length=100) = Field(..., description="Transaction category")  # type: ignore
+    type: str = Field(..., pattern="^(income|expense)$", description="Transaction type")
+    account: constr(max_length=100) = Field("Main Account", description="Account name")  # type: ignore
+    vendor: Optional[constr(max_length=200)] = None  # type: ignore
+    notes: Optional[constr(max_length=2000)] = None  # type: ignore
+    
+    @field_validator('date')
+    @classmethod
+    def validate_date(cls, v: datetime) -> datetime:
+        """Ensure date is not in the far future or past."""
+        from datetime import timezone
+        now = datetime.now(timezone.utc)
+        if v.year < 1900 or v.year > 2100:
+            raise ValueError("Date must be between 1900 and 2100")
+        if v > now.replace(year=now.year + 1):
+            raise ValueError("Date cannot be more than 1 year in the future")
+        return v
 
 
 class TransactionOut(BaseModel):
@@ -140,10 +316,10 @@ class ExpenseBreakdownItem(BaseModel):
 # ═══════════════════════════════════════════════════════════════════
 
 class BudgetCreate(BaseModel):
-    category: str
-    monthly_limit: float
-    alert_threshold: float = 0.8
-    month: Optional[str] = None  # YYYY-MM, defaults to current
+    category: constr(min_length=1, max_length=100) = Field(..., description="Budget category")  # type: ignore
+    monthly_limit: float = Field(..., gt=0, le=999999999.99, description="Monthly budget limit")
+    alert_threshold: float = Field(0.8, ge=0.0, le=1.0, description="Alert threshold (0.0-1.0)")
+    month: Optional[str] = Field(None, pattern=r"^\d{4}-\d{2}$", description="Month in YYYY-MM format")
 
 
 class BudgetOut(BaseModel):
@@ -163,9 +339,9 @@ class BudgetOut(BaseModel):
 # ═══════════════════════════════════════════════════════════════════
 
 class GoalCreate(BaseModel):
-    title: str
-    target_value: float
-    metric_type: str  # revenue | savings | expense_reduction
+    title: constr(min_length=1, max_length=255) = Field(..., description="Goal title")  # type: ignore
+    target_value: float = Field(..., gt=0, le=999999999.99, description="Target value")
+    metric_type: str = Field(..., pattern="^(revenue|savings|expense_reduction)$", description="Metric type")
     deadline: Optional[date] = None
 
 
@@ -254,7 +430,7 @@ class ForecastResponse(BaseModel):
 # ═══════════════════════════════════════════════════════════════════
 
 class ChatRequest(BaseModel):
-    message: str
+    message: constr(min_length=1, max_length=2000) = Field(..., description="Chat message")  # type: ignore
     session_id: Optional[uuid.UUID] = None
 
 
@@ -336,6 +512,21 @@ class ReportSummary(BaseModel):
     transaction_count: int
     expense_by_category: list[CategorySummary]
     top_vendors: list[dict]
+
+
+# ═══════════════════════════════════════════════════════════════════
+# FILE UPLOADS (FILE-001)
+# ═══════════════════════════════════════════════════════════════════
+
+class FileUploadOut(BaseModel):
+    id: uuid.UUID
+    filename: str
+    file_size: int
+    row_count: int
+    error_count: int
+    status: str
+    created_at: datetime
+    model_config = {"from_attributes": True}
 
 
 # ═══════════════════════════════════════════════════════════════════

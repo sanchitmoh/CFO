@@ -12,9 +12,9 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 from alembic import context
 
-# Import our app's config, models, and the SSL fix
+# Import our app's config, models, and Base
 from config import settings
-from database import Base, _fix_neon_url
+from database import Base
 
 # This import ensures all models are registered on Base.metadata
 import models  # noqa: F401
@@ -29,8 +29,9 @@ if config.config_file_name is not None:
 # Target metadata for autogenerate
 target_metadata = Base.metadata
 
-# Get cleaned URL + connect args
-_clean_url, _connect_args = _fix_neon_url(settings.DATABASE_URL)
+# EXT-004: Get cleaned URL + connect args from Settings properties
+_clean_url = settings.database_url_for_asyncpg
+_connect_args = settings.database_connect_args
 
 
 def run_migrations_offline() -> None:

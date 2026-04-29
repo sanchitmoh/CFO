@@ -7,12 +7,74 @@ we detect the user's intent and fetch only the relevant data slices.
 """
 import re
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models import Transaction, TransactionType, Budget
+
+
+# ═══════════════════════════════════════════════════════════════════
+# SEC-001 — Input / Output Sanitization
+# ═══════════════════════════════════════════════════════════════════
+
+_CONTROL_CHAR_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+_HTML_TAG_RE = re.compile(r"<[^>]+>")
+# SEC-FIX: Enhanced prompt delimiter detection including Unicode variants
+_PROMPT_DELIMITERS_RE = re.compile(
+    r"(───|═══|\*\*\*|###|```|<<|>>|\{\{|\}\}|"
+    r"\u2500+|\u2501+|\u2550+|"  # Unicode box drawing
+    r"SYSTEM:|ASSISTANT:|USER:|"  # Role confusion attempts
+    r"Ignore previous|ignore all|disregard|new instructions)",
+    re.IGNORECASE
+)
+
+MAX_INPUT_LENGTH = 2000
+
+
+def sanitize_input(text: str) -> str:
+    """Sanitize user input before intent detection or prompt construction.
+
+    Strips control characters, HTML tags, and common prompt-injection
+    delimiters to prevent the user from escaping the financial-data
+    sandbox in the system prompt.
+    
+    SEC-FIX: Enhanced to detect Unicode normalization attacks and role confusion.
+    """
+    if not text:
+        return ""
+    
+    # Normalize Unicode to prevent homoglyph attacks
+    import unicodedata
+    text = unicodedata.normalize("NFKC", text)
+    
+    text = text[:MAX_INPUT_LENGTH]
+    text = _CONTROL_CHAR_RE.sub("", text)
+    text = _HTML_TAG_RE.sub("", text)
+    text = _PROMPT_DELIMITERS_RE.sub("", text)
+    
+    # Remove multiple newlines that could be used for prompt breaking
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    
+    return text.strip()
+
+
+def sanitize_data_field(value: str, max_len: int = 200) -> str:
+    """Sanitize database-sourced strings before injecting into AI prompts.
+
+    Transaction descriptions and categories come from bank feeds or
+    user uploads. A malicious actor could craft a CSV with payloads
+    like '<script>alert(1)</script>' or '─── END FINANCIAL DATA ───'
+    to break out of the prompt sandbox.
+    """
+    if not value:
+        return ""
+    value = str(value)[:max_len]
+    value = _CONTROL_CHAR_RE.sub("", value)
+    value = _HTML_TAG_RE.sub("", value)
+    value = _PROMPT_DELIMITERS_RE.sub("", value)
+    return value.strip()
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -34,7 +96,7 @@ DEFAULT_CONTEXTS = ["balance", "burn_rate", "category_spend"]
 
 def detect_intent(question: str) -> list[str]:
     """Return context slices needed based on the user's question."""
-    q = question.lower()
+    q = sanitize_input(question).lower()
     matched: set[str] = set()
     for pattern, contexts in INTENT_MAP.items():
         if re.search(pattern, q):
@@ -112,7 +174,7 @@ async def _fetch_category_spend(db: AsyncSession, ws_id, cutoff: datetime) -> tu
         .order_by(func.sum(Transaction.amount).desc())
         .limit(5)
     )
-    lines = [f"  - {r[0]}: ${float(r[1]):,.2f}" for r in cats_q]
+    lines = [f"  - {sanitize_data_field(r[0])}: ${float(r[1]):,.2f}" for r in cats_q]
     text = "Top Expense Categories:\n" + ("\n".join(lines) if lines else "  No expense data")
     return text, {"category_count": len(lines)}
 
@@ -163,7 +225,7 @@ async def _fetch_budgets(db: AsyncSession, ws_id, _cutoff: datetime) -> tuple[st
         status = "OVER" if pct > 100 else "OK"
         if pct > 100:
             over_budget += 1
-        lines.append(f"  - {b.category}: ${float(b.current_spend):,.0f} / ${float(b.monthly_limit):,.0f} ({pct:.0f}%) [{status}]")
+        lines.append(f"  - {sanitize_data_field(b.category)}: ${float(b.current_spend):,.0f} / ${float(b.monthly_limit):,.0f} ({pct:.0f}%) [{status}]")
 
     text = "Budget Status:\n" + ("\n".join(lines) if lines else "  No budgets configured")
     return text, {"budget_count": len(lines), "over_budget": over_budget}
@@ -181,7 +243,7 @@ async def _fetch_revenue_detail(db: AsyncSession, ws_id, cutoff: datetime) -> tu
         .group_by(Transaction.category)
         .order_by(func.sum(Transaction.amount).desc())
     )
-    lines = [f"  - {r[0]}: ${float(r[1]):,.2f} ({r[2]} transactions)" for r in rev_q]
+    lines = [f"  - {sanitize_data_field(r[0])}: ${float(r[1]):,.2f} ({r[2]} transactions)" for r in rev_q]
     text = "Revenue Breakdown:\n" + ("\n".join(lines) if lines else "  No income data")
     return text, {"revenue_sources": len(lines)}
 
@@ -196,7 +258,7 @@ async def _fetch_flagged(db: AsyncSession, ws_id, _cutoff: datetime) -> tuple[st
         .limit(5)
     )
     lines = [
-        f"  - {t.date.strftime('%Y-%m-%d')}: {t.description} — ${float(t.amount):,.2f} (score: {t.anomaly_score:.1f})"
+        f"  - {t.date.strftime('%Y-%m-%d')}: {sanitize_data_field(t.description)} — ${float(t.amount):,.2f} (score: {t.anomaly_score:.1f})"
         for t in flagged_q.scalars()
     ]
     text = "Recent Anomalies:\n" + ("\n".join(lines) if lines else "  No anomalies flagged")
@@ -229,7 +291,8 @@ async def build_context(
     relevant transactions for the user's question.
     """
     needed = detect_intent(question)
-    cutoff = datetime.utcnow() - timedelta(days=90)
+    safe_question = sanitize_input(question)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=90)
 
     sections: list[str] = []
     metadata: dict = {"intents": needed}
@@ -248,15 +311,15 @@ async def build_context(
         from services.embedding_service import get_relevant_transactions
 
         rag_results = await get_relevant_transactions(
-            db, ws_id, question, top_k=5
+            db, ws_id, safe_question, top_k=5
         )
         if rag_results:
             rag_lines = []
             for row in rag_results:
                 date_str = row.date.strftime("%Y-%m-%d") if hasattr(row.date, "strftime") else str(row.date)
                 rag_lines.append(
-                    f"  - {date_str}: {row.description} — "
-                    f"${float(row.amount):,.2f} ({row.category}) "
+                    f"  - {date_str}: {sanitize_data_field(row.description)} — "
+                    f"${float(row.amount):,.2f} ({sanitize_data_field(row.category)}) "
                     f"[relevance: {float(row.similarity):.2f}]"
                 )
             sections.append(
@@ -296,3 +359,123 @@ def compute_confidence(metadata: dict) -> tuple[str, str]:
             f"Acknowledge this limitation clearly in your response. "
             f"Preface uncertain projections with caveats."
         )
+
+
+# ═══════════════════════════════════════════════════════════════════
+# ML-003 — Token Management & History Compression
+# ═══════════════════════════════════════════════════════════════════
+
+MAX_HISTORY_MESSAGES = 10
+MAX_CONTEXT_TOKENS = 4000
+
+
+def estimate_tokens(text: str) -> int:
+    """Rough token estimation (~4 chars per token for English)."""
+    return len(text) // 4
+
+
+def compress_history(
+    messages: list[dict[str, str]],
+    max_messages: int = MAX_HISTORY_MESSAGES,
+    max_tokens: int = MAX_CONTEXT_TOKENS,
+) -> list[dict[str, str]]:
+    """Sliding window with summarization for chat history.
+
+    Keeps the most recent `max_messages` messages. If the total token
+    count still exceeds `max_tokens`, summarize the older messages
+    into a single system message and keep the last 4 verbatim.
+    """
+    if not messages:
+        return []
+
+    # Step 1: Sliding window — keep last N messages
+    trimmed = messages[-max_messages:]
+
+    # Step 2: Check token budget
+    total = sum(estimate_tokens(m.get("content", "")) for m in trimmed)
+    if total <= max_tokens:
+        return trimmed
+
+    # Step 3: Summarize older messages, keep last 4 verbatim
+    if len(trimmed) <= 4:
+        return trimmed
+
+    older = trimmed[:-4]
+    recent = trimmed[-4:]
+
+    # Build a condensed summary of the older exchange
+    summary_parts = []
+    for m in older:
+        role = m.get("role", "user")
+        content = m.get("content", "")
+        # Truncate each message to a reasonable length
+        snippet = content[:200] + "..." if len(content) > 200 else content
+        summary_parts.append(f"[{role}]: {snippet}")
+
+    summary_text = "\n".join(summary_parts)
+    summary_msg = {
+        "role": "system",
+        "content": (
+            f"[Earlier conversation summary — {len(older)} messages condensed]:\n"
+            f"{summary_text}"
+        ),
+    }
+
+    return [summary_msg] + recent
+
+
+# ═══════════════════════════════════════════════════════════════════
+# ML-004 — Hardened System Prompt Builder
+# ═══════════════════════════════════════════════════════════════════
+
+def build_system_prompt(
+    context: str,
+    confidence_level: str,
+    confidence_note: str,
+    metadata: dict,
+) -> str:
+    """Build a grounded, confidence-aware system prompt with guardrails.
+
+    Unlike the old static prompt, this version:
+    - Injects data confidence levels
+    - Requires citation of data points
+    - Adds explicit hallucination guards
+    - Labels forecast confidence by time horizon
+    - Includes financial disclaimer
+    """
+    txn_count = metadata.get("txn_count", 0)
+    months = metadata.get("months_of_data", 0)
+    intents = metadata.get("intents", [])
+    rag_matches = metadata.get("rag_matches", 0)
+
+    data_days = months * 30 if months else max(txn_count // 2, 1)
+
+    low_data_warning = ""
+    if data_days < 30:
+        low_data_warning = (
+            "\n⚠️ WARNING: Less than 30 days of data available. "
+            "Answers may be unreliable. State this clearly.\n"
+        )
+
+    return f"""You are an AI CFO assistant for a small business. You help owners understand their finances, make data-driven decisions, and optimize spending.
+
+RULES — YOU MUST FOLLOW THESE WITHOUT EXCEPTION:
+1. NEVER invent or guess numbers. If the data below doesn't contain the answer, say exactly: "I don't have enough data to answer this accurately."
+2. ALWAYS cite which data point you used. Example: "Based on your 90-day income of $X..."
+3. For projections beyond 3 months, prefix with: "This is a low-confidence estimate based on limited history."
+4. You are NOT a licensed financial advisor. If giving strategic advice, add: "Consider consulting a qualified financial advisor for major decisions."
+5. When comparing periods, state the exact date ranges being compared.
+6. If asked about data you don't have (e.g., individual invoices, payroll details), say so explicitly rather than making assumptions.
+
+DATA CONFIDENCE: {confidence_level.upper()} ({data_days} days of transaction history, {txn_count} transactions)
+{confidence_note}
+{low_data_warning}
+CONTEXT RETRIEVED FOR: {', '.join(intents) if intents else 'general overview'}
+SEMANTIC MATCHES: {rag_matches} relevant transactions found
+
+─── FINANCIAL DATA ───
+{context}
+─── END FINANCIAL DATA ───
+
+Respond concisely and use the actual numbers above. Format currency values consistently. Use bullet points for clarity when listing multiple items."""
+

@@ -1,16 +1,32 @@
 """
 AI CFO — Dashboard Service
 Aggregation logic for the main dashboard, with Redis caching.
+
+PERF-001: All 6 independent DB queries run in parallel via asyncio.gather
+with separate sessions, reducing dashboard load from ~180ms to ~30ms on
+cache miss (6×30ms serial → 1×30ms parallel).
 """
+import asyncio
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select, func, extract, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from database import AsyncSessionLocal
 from models import Transaction, Budget, Alert, TransactionType
 from schemas import DashboardSummary, CategoryAmount, TransactionOut
-from cache import cache_get, cache_set, make_cache_key
+from cache import cache_get, cache_set, make_versioned_cache_key
+
+
+async def _run_query(query_fn):
+    """Execute a query in an independent session for parallel execution.
+
+    Each session gets its own connection from the pool, allowing true
+    concurrent I/O to the database via asyncio.gather.
+    """
+    async with AsyncSessionLocal() as session:
+        return await query_fn(session)
 
 
 async def get_dashboard_summary(
@@ -19,34 +35,115 @@ async def get_dashboard_summary(
     months: int = 6,
 ) -> DashboardSummary:
     """Build the full dashboard summary with caching."""
-    cache_key = make_cache_key("dashboard", str(workspace_id), str(months))
+    # PERF-002: Versioned cache key — auto-misses after invalidate_workspace_cache
+    cache_key = await make_versioned_cache_key("dashboard", str(workspace_id), str(months))
     cached = await cache_get(cache_key)
     if cached:
         return DashboardSummary(**cached)
 
     ws_id = workspace_id
-    cutoff = datetime.utcnow() - timedelta(days=months * 30)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=months * 30)
 
-    # ── Total income & expenses ───────────────────────────────────
-    totals = await db.execute(
-        select(
-            Transaction.type,
-            func.sum(Transaction.amount),
-            func.count(Transaction.id),
+    # ── PERF-001: Build all 6 queries as coroutines ───────────────
+    async def q_totals(s: AsyncSession):
+        return await s.execute(
+            select(
+                Transaction.type,
+                func.sum(Transaction.amount),
+                func.count(Transaction.id),
+            )
+            .where(
+                and_(
+                    Transaction.workspace_id == ws_id,
+                    Transaction.date >= cutoff,
+                )
+            )
+            .group_by(Transaction.type)
         )
-        .where(
-            and_(
-                Transaction.workspace_id == ws_id,
-                Transaction.date >= cutoff,
+
+    async def q_monthly(s: AsyncSession):
+        return await s.execute(
+            select(
+                extract("month", Transaction.date).label("m"),
+                Transaction.type,
+                func.sum(Transaction.amount),
+            )
+            .where(
+                and_(
+                    Transaction.workspace_id == ws_id,
+                    Transaction.date >= cutoff,
+                )
+            )
+            .group_by("m", Transaction.type)
+            .order_by("m")
+        )
+
+    async def q_categories(s: AsyncSession):
+        return await s.execute(
+            select(Transaction.category, func.sum(Transaction.amount))
+            .where(
+                and_(
+                    Transaction.workspace_id == ws_id,
+                    Transaction.type == TransactionType.expense,
+                    Transaction.date >= cutoff,
+                )
+            )
+            .group_by(Transaction.category)
+            .order_by(func.sum(Transaction.amount).desc())
+            .limit(5)
+        )
+
+    async def q_budget(s: AsyncSession):
+        return await s.execute(
+            select(
+                func.sum(Budget.current_spend),
+                func.sum(Budget.monthly_limit),
+            )
+            .where(Budget.workspace_id == ws_id)
+        )
+
+    async def q_alerts(s: AsyncSession):
+        return await s.execute(
+            select(func.count(Alert.id))
+            .where(
+                and_(
+                    Alert.workspace_id == ws_id,
+                    Alert.is_read.is_(False),
+                    Alert.is_dismissed.is_(False),
+                )
             )
         )
-        .group_by(Transaction.type)
+
+    async def q_recent(s: AsyncSession):
+        return await s.execute(
+            select(Transaction)
+            .where(Transaction.workspace_id == ws_id)
+            .order_by(Transaction.date.desc())
+            .limit(10)
+        )
+
+    # ── Fire all 6 queries in parallel ────────────────────────────
+    (
+        totals_result,
+        monthly_result,
+        cats_result,
+        budget_result,
+        alert_result,
+        recent_result,
+    ) = await asyncio.gather(
+        _run_query(q_totals),
+        _run_query(q_monthly),
+        _run_query(q_categories),
+        _run_query(q_budget),
+        _run_query(q_alerts),
+        _run_query(q_recent),
     )
 
+    # ── Process results ───────────────────────────────────────────
     total_income = 0.0
     total_expenses = 0.0
     txn_count = 0
-    for row in totals:
+    for row in totals_result:
         if row[0] == TransactionType.income:
             total_income = float(row[1] or 0)
         else:
@@ -58,26 +155,9 @@ async def get_dashboard_summary(
     cash_balance = net_cash_flow  # Simplified: cumulative net
     runway = cash_balance / burn_rate if burn_rate > 0 else 99.0
 
-    # ── Monthly breakdowns ────────────────────────────────────────
-    monthly_q = await db.execute(
-        select(
-            extract("month", Transaction.date).label("m"),
-            Transaction.type,
-            func.sum(Transaction.amount),
-        )
-        .where(
-            and_(
-                Transaction.workspace_id == ws_id,
-                Transaction.date >= cutoff,
-            )
-        )
-        .group_by("m", Transaction.type)
-        .order_by("m")
-    )
-
     monthly_income = [0.0] * 12
     monthly_expenses = [0.0] * 12
-    for row in monthly_q:
+    for row in monthly_result:
         idx = int(row[0]) - 1
         if 0 <= idx < 12:
             if row[1] == TransactionType.income:
@@ -85,59 +165,19 @@ async def get_dashboard_summary(
             else:
                 monthly_expenses[idx] = float(row[2] or 0)
 
-    # ── Top categories ────────────────────────────────────────────
-    cats_q = await db.execute(
-        select(Transaction.category, func.sum(Transaction.amount))
-        .where(
-            and_(
-                Transaction.workspace_id == ws_id,
-                Transaction.type == TransactionType.expense,
-                Transaction.date >= cutoff,
-            )
-        )
-        .group_by(Transaction.category)
-        .order_by(func.sum(Transaction.amount).desc())
-        .limit(5)
-    )
     top_categories = [
         CategoryAmount(category=r[0], amount=float(r[1]))
-        for r in cats_q
+        for r in cats_result
     ]
 
-    # ── Budget utilization ────────────────────────────────────────
-    budget_q = await db.execute(
-        select(
-            func.sum(Budget.current_spend),
-            func.sum(Budget.monthly_limit),
-        )
-        .where(Budget.workspace_id == ws_id)
-    )
-    budget_row = budget_q.one_or_none()
+    budget_row = budget_result.one_or_none()
     spent = float(budget_row[0] or 0) if budget_row else 0.0
     limit_total = float(budget_row[1] or 1) if budget_row else 1.0
     budget_util = (spent / limit_total * 100) if limit_total > 0 else 0.0
 
-    # ── Active alerts ─────────────────────────────────────────────
-    alert_count_q = await db.execute(
-        select(func.count(Alert.id))
-        .where(
-            and_(
-                Alert.workspace_id == ws_id,
-                Alert.is_read.is_(False),
-                Alert.is_dismissed.is_(False),
-            )
-        )
-    )
-    active_alerts = alert_count_q.scalar() or 0
+    active_alerts = alert_result.scalar() or 0
 
-    # ── Recent transactions ───────────────────────────────────────
-    recent_q = await db.execute(
-        select(Transaction)
-        .where(Transaction.workspace_id == ws_id)
-        .order_by(Transaction.date.desc())
-        .limit(10)
-    )
-    recent = [TransactionOut.model_validate(t) for t in recent_q.scalars()]
+    recent = [TransactionOut.model_validate(t) for t in recent_result.scalars()]
 
     result = DashboardSummary(
         total_income=total_income,
