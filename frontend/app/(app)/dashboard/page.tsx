@@ -17,17 +17,34 @@ import {
   Clock,
 } from "lucide-react";
 import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
+  ComposedChart, Bar, Line,
+  AreaChart, Area,
+  XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, Legend, ReferenceLine,
+  PieChart, Pie, Cell,
 } from "recharts";
+
+const fmtShort = (n: number) =>
+  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 1, notation: "compact" }).format(n);
+
+const DashTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div style={{ background: "rgba(15,20,35,0.95)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.08)",
+      borderRadius: 12, padding: "12px 16px", minWidth: 180, boxShadow: "0 8px 32px rgba(0,0,0,0.4)" }}>
+      <p style={{ color: "#8B95A8", fontSize: 11, fontWeight: 600, marginBottom: 8 }}>{label}</p>
+      {payload.map((p: any) => (
+        <div key={p.dataKey} style={{ display: "flex", justifyContent: "space-between", gap: 20, marginBottom: 3 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ width: 7, height: 7, borderRadius: "50%", background: p.color }} />
+            <span style={{ color: "#A0ABBE", fontSize: 11 }}>{p.name}</span>
+          </div>
+          <span style={{ color: "#E8ECF4", fontSize: 11, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{fmt(p.value)}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("en-US", {
@@ -88,11 +105,15 @@ export default function DashboardPage() {
   ];
 
   const cashFlowData =
-    data.monthly_income?.map((inc, i) => ({
-      month: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][i],
-      income: inc,
-      expenses: data.monthly_expenses?.[i] ?? 0,
-    })) ?? [];
+    data.monthly_income?.map((inc, i) => {
+      const exp = data.monthly_expenses?.[i] ?? 0;
+      return {
+        month: `Month ${i + 1}`,
+        income: inc,
+        expenses: exp,
+        net: inc - exp,
+      };
+    }).filter(d => d.income > 0 || d.expenses > 0) ?? [];
 
   const categoryData =
     data.top_categories?.map((c) => ({ name: c.category, value: c.amount })) ?? [];
@@ -136,30 +157,35 @@ export default function DashboardPage() {
 
         {/* Cash Flow Chart */}
         <div className="lg:col-span-2 glass p-6 animate-fade-up delay-3">
-          <h3 className="text-sm font-semibold mb-4" style={{ color: "var(--text)" }}>Cash Flow Trend (6 months)</h3>
+          <h3 className="text-sm font-semibold mb-1" style={{ color: "var(--text)" }}>Cash Flow Trend</h3>
+          <p className="text-xs mb-4" style={{ color: "var(--text-dim)" }}>{cashFlowData.length} months with activity</p>
           {cashFlowData.length > 0 ? (
             <ResponsiveContainer width="100%" height={240}>
-              <AreaChart data={cashFlowData}>
+              <ComposedChart data={cashFlowData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="incomeGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#00E5CC" stopOpacity={0.3} />
+                    <stop offset="0%" stopColor="#00E5CC" stopOpacity={0.15} />
                     <stop offset="100%" stopColor="#00E5CC" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="expenseGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#FF4D6A" stopOpacity={0.3} />
+                    <stop offset="0%" stopColor="#FF4D6A" stopOpacity={0.15} />
                     <stop offset="100%" stopColor="#FF4D6A" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1E2A42" />
-                <XAxis dataKey="month" tick={{ fill: "#7A8BA7", fontSize: 11 }} />
-                <YAxis tick={{ fill: "#7A8BA7", fontSize: 11 }} tickFormatter={(v) => `$${(v/1000).toFixed(0)}K`} />
-                <Tooltip
-                  contentStyle={{ background: "#141A2B", border: "1px solid #1E2A42", borderRadius: 8, color: "#E8ECF4", fontSize: 12 }}
-                  formatter={(v) => fmt(Number(v ?? 0))}
-                />
-                <Area type="monotone" dataKey="income" name="Income" stroke="#00E5CC" fill="url(#incomeGrad)" strokeWidth={2} />
-                <Area type="monotone" dataKey="expenses" name="Expenses" stroke="#FF4D6A" fill="url(#expenseGrad)" strokeWidth={2} />
-              </AreaChart>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+                <XAxis dataKey="month" tick={{ fill: "#6B7A8D", fontSize: 10 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: "#6B7A8D", fontSize: 10 }} axisLine={false} tickLine={false}
+                  tickFormatter={(v) => fmtShort(v)} width={60} />
+                <Tooltip content={<DashTooltip />} cursor={{ stroke: "rgba(255,255,255,0.06)" }} />
+                <Legend wrapperStyle={{ fontSize: 10, paddingTop: 8 }}
+                  formatter={(v: string) => <span style={{ color: "#8B95A8" }}>{v}</span>} />
+                <Bar dataKey="income" name="Income" fill="#00E5CC" radius={[3,3,0,0]} barSize={14} fillOpacity={0.85} />
+                <Bar dataKey="expenses" name="Expenses" fill="#FF4D6A" radius={[3,3,0,0]} barSize={14} fillOpacity={0.85} />
+                <Line type="monotone" dataKey="net" name="Net" stroke="#3B82F6" strokeWidth={2.5}
+                  dot={{ r: 3, fill: "#3B82F6", strokeWidth: 0 }}
+                  activeDot={{ r: 5, fill: "#3B82F6", stroke: "#fff", strokeWidth: 2 }} />
+                <ReferenceLine y={0} stroke="rgba(255,255,255,0.08)" strokeDasharray="3 3" />
+              </ComposedChart>
             </ResponsiveContainer>
           ) : (
             <div className="flex items-center justify-center" style={{ height: 240, color: "var(--text-dim)" }}>

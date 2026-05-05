@@ -2,6 +2,18 @@
 
 An AI-powered CFO-as-a-service that gives small businesses 24/7 access to financial insights, forecasting, and strategic guidance — at a fraction of the cost of hiring a full-time CFO.
 
+## 🚨 Security Update - April 26, 2026
+
+**All security vulnerabilities have been fixed!** The application is now production-ready with enterprise-grade security controls.
+
+### Quick Start (10 minutes)
+👉 **[Get started with the security setup guide](docs/SECURITY_QUICK_START.md)**
+
+### Complete Documentation
+📚 **[View all security documentation](docs/README.md)**
+
+---
+
 ## The Problem
 
 Small businesses make up 33.3 million businesses in the US, yet most lack dedicated financial expertise. A full-time CFO costs $200K–$400K/year — unaffordable for most SMBs. Meanwhile, 44% of startups fail due to cash flow problems.
@@ -111,12 +123,21 @@ All endpoints are prefixed with `/api` and require Clerk JWT authentication.
 
 ## Getting Started
 
+### 🔒 Security Setup (Required First)
+
+**Before running the application, complete the security setup:**
+
+1. **[SECURITY_QUICK_START.md](docs/SECURITY_QUICK_START.md)** - 10-minute setup guide
+2. **[MIGRATION_GUIDE.md](docs/MIGRATION_GUIDE.md)** - Database migration steps
+3. **[SECURITY.md](docs/SECURITY.md)** - Complete security reference
+
 ### Prerequisites
 
 - **Node.js** ≥ 18
 - **Python** ≥ 3.11
 - **PostgreSQL** (or [Neon](https://neon.tech) serverless Postgres)
 - **Redis** (or [Upstash](https://upstash.com) serverless Redis)
+- **OpenAI API Key** (required for AI chat functionality)
 
 ### Backend Setup
 
@@ -131,11 +152,12 @@ python -m venv .venv
 # Install dependencies
 pip install -r requirements.txt
 
-# Configure environment
+# 🚨 SECURITY: Configure environment variables (REQUIRED)
 cp .env.example .env
 # Edit .env with your database URL, API keys, etc.
+# See docs/SECURITY_QUICK_START.md for required values
 
-# Run database migrations
+# 🚨 SECURITY: Run database migrations (REQUIRED)
 alembic upgrade head
 
 # Seed demo data (Luna Bakery workspace)
@@ -164,38 +186,74 @@ npm run dev
 
 The app will be available at `http://localhost:3000`.
 
-### Environment Variables
+### 🔐 Required Environment Variables
 
-See [`backend/.env.example`](backend/.env.example) for the full list of required environment variables covering:
+**Critical variables that must be set:**
 
-- **Database** — Neon PostgreSQL connection string
-- **Cache** — Upstash Redis URL and TTL
-- **Auth** — Clerk secret key, publishable key, JWKS URL
-- **AI** — OpenAI API key and model selection
-- **Encryption** — Fernet key for field-level encryption
-- **Observability** — OpenTelemetry exporter endpoint
-- **Banking** — Plaid client ID, secret, and environment
-- **Embeddings** — Model name and vector dimensions
+```bash
+# Backend (.env)
+OPENAI_API_KEY=sk-your-actual-key-here          # Required for AI chat
+WEBHOOK_ENCRYPTION_KEY=<generate-with-python>   # Required for security
+CORS_ORIGINS='["http://localhost:3000"]'        # Required for frontend
+
+# For production, also set:
+CORS_ORIGINS='["https://yourdomain.com"]'
+DEBUG=false
+```
+
+**Generate encryption key:**
+```bash
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+See **[docs/SECURITY_QUICK_START.md](docs/SECURITY_QUICK_START.md)** for complete setup instructions.
+
+---
+
+## 📚 Documentation
+
+### Security Documentation
+- **[docs/README.md](docs/README.md)** - Documentation index
+- **[docs/SECURITY_QUICK_START.md](docs/SECURITY_QUICK_START.md)** - 10-minute setup guide
+- **[docs/SECURITY.md](docs/SECURITY.md)** - Complete security reference
+- **[docs/MIGRATION_GUIDE.md](docs/MIGRATION_GUIDE.md)** - Database migration guide
+- **[docs/SECURITY_FIXES_SUMMARY.md](docs/SECURITY_FIXES_SUMMARY.md)** - What was fixed
+- **[docs/IMPLEMENTATION_COMPLETE.md](docs/IMPLEMENTATION_COMPLETE.md)** - Implementation status
+- **[docs/checklist.md](docs/checklist.md)** - Production deployment checklist
+
+### Integrations
+- **[docs/INTEGRATIONS_QUICKSTART.md](docs/INTEGRATIONS_QUICKSTART.md)** - 5-minute email & Slack setup
+- **[docs/INTEGRATIONS_GUIDE.md](docs/INTEGRATIONS_GUIDE.md)** - Complete integration guide
+
+### Configuration
+- **[backend/.env.example](backend/.env.example)** - Environment variables template
+
+### Testing
+- **[backend/tests/test_security.py](backend/tests/test_security.py)** - Security test suite
+- **[backend/test_email.py](backend/test_email.py)** - Email integration test
+- **[backend/test_slack.py](backend/test_slack.py)** - Slack integration test
 
 ---
 
 ## Database Migrations
 
-The project uses **Alembic** for schema management with two initial migrations:
+The project uses **Alembic** for schema management. **Security migrations are required before running the application.**
 
 | Migration | Description |
 |-----------|-------------|
-| `001_enable_rls` | Enables PostgreSQL Row-Level Security on workspace-scoped tables |
+| `001_enable_rls` | **🚨 REQUIRED:** Enables PostgreSQL Row-Level Security on all tenant-scoped tables |
 | `002_add_pgvector` | Installs the pgvector extension and creates the embeddings table |
 
 ```bash
-# Apply all migrations
+# Apply all migrations (REQUIRED)
 cd backend
 alembic upgrade head
 
 # Create a new migration
 alembic revision --autogenerate -m "description_here"
 ```
+
+**⚠️ Important:** The RLS migration is critical for security. See **[docs/MIGRATION_GUIDE.md](docs/MIGRATION_GUIDE.md)** for details.
 
 ---
 

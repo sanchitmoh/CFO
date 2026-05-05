@@ -24,11 +24,14 @@ async def sync_user(
     """
     Sync endpoint — called after Clerk sign-in.
     Provisions workspace + user on first call, no-ops on subsequent calls.
+    
+    CODE-002: Returns opaque status only. Internal UUIDs not exposed to prevent enumeration.
+    Frontend should use Clerk's user.id (sub claim) as the external identifier.
     """
     user, was_created = result
     return {
         "status": "provisioned" if was_created else "synced",
-        "user_id": str(user.id),
-        "workspace_id": str(user.workspace_id),
+        "email": user.email,
+        "full_name": user.full_name,
     }
 

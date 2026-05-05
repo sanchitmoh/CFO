@@ -15,7 +15,7 @@ from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import settings
-from crypto import encrypt_value, decrypt_value
+from crypto import encrypt_value, decrypt_value, DecryptionError
 from models import PlaidItem, Transaction, TransactionType
 
 logger = logging.getLogger(__name__)
@@ -208,7 +208,15 @@ async def sync_transactions(
     Returns: {"added": N, "modified": N, "removed": N}
     """
     client = _get_plaid_client()
-    access_token = decrypt_value(plaid_item.access_token_encrypted)
+    try:
+        access_token = decrypt_value(plaid_item.access_token_encrypted)
+    except DecryptionError:
+        logger.error(
+            "Cannot decrypt access token for Plaid item %s — "
+            "encryption key may have changed since the token was stored",
+            plaid_item.item_id,
+        )
+        raise
 
     from plaid.model.transactions_sync_request import TransactionsSyncRequest
 

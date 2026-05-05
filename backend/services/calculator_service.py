@@ -17,8 +17,16 @@ async def check_affordability(
     req: AffordabilityRequest,
 ) -> AffordabilityResponse:
     """Analyze whether the business can afford a proposed expense."""
-    now = datetime.now(timezone.utc)
-    three_months_ago = now - timedelta(days=90)
+    # ── Anchor to latest transaction date (not wall-clock) ─────────
+    # HIGH-002: Historical CSV imports may have dates far in the past.
+    # Using now() as anchor would exclude all data.
+    latest_row = await db.execute(
+        select(func.max(Transaction.date))
+        .where(Transaction.workspace_id == workspace_id)
+    )
+    latest_date = latest_row.scalar()
+    anchor = latest_date if latest_date else datetime.now(timezone.utc)
+    three_months_ago = anchor - timedelta(days=90)
 
     # ── Get last 3 months of income & expenses ───────────────────
     totals = await db.execute(
@@ -38,6 +46,24 @@ async def check_affordability(
         else:
             expense_3m = float(row[1] or 0)
 
+    # ── Early return: no transaction data ─────────────────────────
+    has_data = income_3m > 0 or expense_3m > 0
+    if not has_data:
+        return AffordabilityResponse(
+            can_afford=False,
+            current_runway_months=0.0,
+            projected_runway_months=0.0,
+            current_balance_3m=0.0,
+            projected_balance_3m=-req.amount if req.frequency == "one_time" else -req.amount * 3,
+            break_even_revenue=None,
+            ai_suggestion=(
+                f"📊 Insufficient data to evaluate '{req.expense_name}'. "
+                f"We need at least 1 month of transaction history to provide "
+                f"an accurate affordability analysis. Please connect a bank account "
+                f"or upload transactions first."
+            ),
+        )
+
     net_3m = income_3m - expense_3m
     monthly_burn = expense_3m / 3 if expense_3m > 0 else 0
     monthly_income = income_3m / 3
@@ -51,16 +77,19 @@ async def check_affordability(
         extra_3m = req.amount
 
     projected_3m = net_3m - extra_3m
-    current_runway = net_3m / monthly_burn if monthly_burn > 0 else 99.0
+    # When there's no burn, runway is effectively unlimited — cap at a
+    # reasonable display value rather than leaking a raw sentinel.
+    current_runway = net_3m / monthly_burn if monthly_burn > 0 else min(net_3m / 1, 99.0) if net_3m > 0 else 0.0
     new_burn = monthly_burn + (extra_3m / 3)
-    projected_runway = net_3m / new_burn if new_burn > 0 else 99.0
+    projected_runway = net_3m / new_burn if new_burn > 0 else 0.0
 
     can_afford = projected_runway >= 3.0 and projected_3m > 0
 
     # ── Break-even revenue ───────────────────────────────────────
     break_even = None
     if not can_afford and monthly_income > 0:
-        break_even = (new_burn - monthly_income) * 3
+        raw = (new_burn - monthly_income) * 3
+        break_even = max(raw, 0)  # guard against negative break-even
 
     # ── AI Suggestion ────────────────────────────────────────────
     if can_afford and projected_runway > 6:
@@ -75,11 +104,18 @@ async def check_affordability(
             f"offsetting revenue."
         )
     else:
-        suggestion = (
-            f"🚫 '{req.expense_name}' would reduce your runway to {projected_runway:.1f} months. "
-            f"We recommend deferring this expense or increasing revenue by "
-            f"${break_even:,.2f} over 3 months to break even."
-        )
+        if break_even is not None and break_even > 0:
+            suggestion = (
+                f"🚫 '{req.expense_name}' would reduce your runway to {projected_runway:.1f} months. "
+                f"We recommend deferring this expense or increasing revenue by "
+                f"${break_even:,.2f} over 3 months to break even."
+            )
+        else:
+            suggestion = (
+                f"🚫 '{req.expense_name}' would reduce your runway to {projected_runway:.1f} months. "
+                f"Without recurring income, this expense is not sustainable. "
+                f"We recommend establishing revenue before committing to this cost."
+            )
 
     return AffordabilityResponse(
         can_afford=can_afford,

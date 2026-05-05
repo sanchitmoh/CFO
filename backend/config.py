@@ -34,11 +34,15 @@ class Settings(BaseSettings):
     # ── Encryption (field-level for webhooks, API keys) ──
     # SEC-FIX: Generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
     WEBHOOK_ENCRYPTION_KEY: str = ""  # Fernet key — REQUIRED in production
+    # CRIT-004: Per-deployment KDF salt — REQUIRED when using PBKDF2 fallback
+    # Generate with: python -c "import os, base64; print(base64.urlsafe_b64encode(os.urandom(32)).decode())"
+    KEY_DERIVATION_SALT: str = ""
 
     # ── Observability (OpenTelemetry) ──
     OTEL_ENABLED: bool = False
     OTEL_SERVICE_NAME: str = "ai-cfo-backend"
     OTEL_EXPORTER_OTLP_ENDPOINT: str = "http://localhost:4317"  # gRPC
+    OTEL_INSECURE: bool = False  # HIGH-009: Default to secure (TLS) connections
 
     # ── Plaid (ADVANCE-003) ──
     PLAID_CLIENT_ID: str = ""
@@ -54,11 +58,33 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "./uploads"        # local storage root
     MAX_UPLOAD_SIZE_MB: int = 10         # max file size in MB
 
+    # ── Email Configuration ──
+    EMAIL_PROVIDER: str = "smtp"  # sendgrid | aws_ses | smtp
+    SENDGRID_API_KEY: str | None = None
+    AWS_ACCESS_KEY_ID: str | None = None
+    AWS_SECRET_ACCESS_KEY: str | None = None
+    AWS_REGION: str = "us-east-1"
+    SMTP_HOST: str = "localhost"
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str | None = None
+    SMTP_PASSWORD: str | None = None
+    SMTP_USE_TLS: bool = True
+    EMAIL_FROM_ADDRESS: str = "noreply@example.com"
+    EMAIL_FROM_NAME: str = "AI CFO Platform"
+
+    # ── Slack Configuration ──
+    SLACK_WEBHOOK_URL: str | None = None
+    SLACK_BOT_TOKEN: str | None = None
+    SLACK_ENABLED: bool = False
+    SLACK_DEFAULT_CHANNEL: str = "#general"
+    SLACK_SIGNING_SECRET: str | None = None
+
     # ── App ──
     # SEC-FIX: CRITICAL - Must override CORS_ORIGINS in production!
     # Default to permissive dev origins — MUST override in production
     # Set via env: CORS_ORIGINS='["https://app.yourdomain.com"]'
     # WARNING: Leaving localhost origins in production will break the frontend
+    # CONFIG-001: Startup check will warn if localhost origins in production
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:3001"]
     DEBUG: bool = False
 

@@ -1,0 +1,760 @@
+Transaction_ID,Date,Month,Year,Quarter,Company,Counterparty,Category,Subcategory,Type,Amount_INR,Payment_Method,Status,Invoice_ID,Notes,Customer_Segment,Is_Recurring,Anomaly_Flag
+TXN-01041,2023-01-01,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,CloudPeak AB,Revenue,Subscription - Enterprise,Credit,83247.04,Bank Transfer,Pending,INV-01041,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01010,2023-01-02,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Cloud Hosting (AWS),COGS,Cloud Hosting (AWS),Debit,64940.38,Credit Card,Completed,INV-01010,Monthly Cloud Hosting (AWS) cost,N/A,Yes,No
+TXN-01012,2023-01-03,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,CDN Costs,COGS,CDN Costs,Debit,41075.71,Credit Card,Completed,INV-01012,Monthly CDN Costs cost,N/A,Yes,No
+TXN-01031,2023-01-03,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Research Subscriptions,R&D,Research Subscriptions,Debit,68112.43,Wire Transfer,Completed,EXP-01031,R&D expense - Research Subscriptions [REVIEW REQUIRED],N/A,No,No
+TXN-01040,2023-01-03,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,BlueStar Media,Revenue,Subscription - Starter,Credit,5687.53,Cheque,Completed,INV-01040,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01062,2023-01-03,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Dev Tools,R&D,Dev Tools,Debit,255677.94,Credit Card,Completed,EXP-01062,R&D expense - Dev Tools [REVIEW REQUIRED],N/A,No,No
+TXN-01037,2023-01-04,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Nexus Dynamics,Revenue,Subscription - Starter,Credit,7138.48,Wire Transfer,Completed,INV-01037,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01064,2023-01-04,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Security Audits,R&D,Security Audits,Debit,474077.67,Credit Card,Completed,EXP-01064,R&D expense - Security Audits [REVIEW REQUIRED],N/A,No,No
+TXN-01032,2023-01-05,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Dev Tools,R&D,Dev Tools,Debit,454490.33,Credit Card,Completed,EXP-01032,R&D expense - Dev Tools [REVIEW REQUIRED],N/A,No,No
+TXN-01042,2023-01-06,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Cloud Hosting (AWS),COGS,Cloud Hosting (AWS),Debit,70165.22,Cheque,Completed,INV-01042,Monthly Cloud Hosting (AWS) cost,N/A,Yes,No
+TXN-01044,2023-01-06,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,CDN Costs,COGS,CDN Costs,Debit,73658.79,Cheque,Completed,INV-01044,Monthly CDN Costs cost,N/A,Yes,No
+TXN-01007,2023-01-07,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Brightwave Inc,Revenue,Subscription - Pro,Credit,16742.82,Wire Transfer,Completed,INV-01007,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01039,2023-01-07,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,DataStream GmbH,Revenue,Subscription - Pro,Credit,22407.7,Credit Card,Completed,INV-01039,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01043,2023-01-07,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Cloud Hosting (GCP),COGS,Cloud Hosting (GCP),Debit,46566.67,Cheque,Completed,INV-01043,Monthly Cloud Hosting (GCP) cost,N/A,Yes,No
+TXN-01059,2023-01-07,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Utilities,Operations,Utilities,Debit,418606.47,Wire Transfer,Completed,EXP-01059,Operations expense - Utilities [REVIEW REQUIRED],N/A,No,No
+TXN-01009,2023-01-08,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,TechNova India,Revenue,Subscription - Pro,Credit,24030.09,Wire Transfer,Completed,INV-01009,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01002,2023-01-09,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,FuturePath Co,Revenue,Subscription - Starter,Credit,7035.23,Credit Card,Completed,INV-01002,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01060,2023-01-10,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Legal & Compliance,Operations,Legal & Compliance,Debit,162733.45,Cheque,Completed,EXP-01060,Operations expense - Legal & Compliance [REVIEW REQUIRED],N/A,No,No
+TXN-01063,2023-01-10,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Testing Infrastructure,R&D,Testing Infrastructure,Debit,174878.46,Cash,Completed,EXP-01063,R&D expense - Testing Infrastructure [REVIEW REQUIRED],N/A,Yes,No
+TXN-01003,2023-01-12,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,GlobalEdge Ltd,Revenue,Subscription - Pro,Credit,16939.05,Cash,Completed,INV-01003,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01004,2023-01-13,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Client_01,Revenue,Subscription - Starter,Credit,6918.93,Bank Transfer,Completed,INV-01004,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01045,2023-01-13,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Third-party APIs,COGS,Third-party APIs,Debit,15140.1,UPI,Completed,INV-01045,Monthly Third-party APIs cost,N/A,Yes,No
+TXN-01025,2023-01-15,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Events & Conferences,Marketing,Events & Conferences,Debit,352310.11,Cash,Completed,EXP-01025,Marketing expense - Events & Conferences [REVIEW REQUIRED],N/A,No,No
+TXN-01033,2023-01-17,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,SkyBridge Pvt Ltd,Revenue,Subscription - Pro,Credit,20448.41,Cheque,Completed,INV-01033,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01056,2023-01-17,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Affiliate Payouts,Marketing,Affiliate Payouts,Debit,61994.49,Credit Card,Completed,EXP-01056,Marketing expense - Affiliate Payouts [REVIEW REQUIRED],N/A,Yes,No
+TXN-01001,2023-01-19,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Acme Corp,Revenue,Subscription - Enterprise,Credit,57635.25,UPI,Completed,INV-01001,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01013,2023-01-19,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Third-party APIs,COGS,Third-party APIs,Debit,74353.85,Wire Transfer,Completed,INV-01013,Monthly Third-party APIs cost,N/A,Yes,No
+TXN-01034,2023-01-19,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,GlobalEdge Ltd,Revenue,Subscription - Starter,Credit,4256.1,Credit Card,Completed,INV-01034,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01058,2023-01-19,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Google Ads,Marketing,Google Ads,Debit,242204.94,Cash,Completed,EXP-01058,Marketing expense - Google Ads [REVIEW REQUIRED],N/A,Yes,No
+TXN-01000,2023-01-20,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Pinnacle Tech,Revenue,Subscription - Pro,Credit,13218.04,Bank Transfer,Completed,INV-01000,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01057,2023-01-20,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Content Marketing,Marketing,Content Marketing,Debit,410851.26,Bank Transfer,Completed,EXP-01057,Marketing expense - Content Marketing [REVIEW REQUIRED],N/A,Yes,No
+TXN-01061,2023-01-20,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Insurance,Operations,Insurance,Debit,338636.77,Cash,Completed,EXP-01061,Operations expense - Insurance [REVIEW REQUIRED],N/A,Yes,No
+TXN-01014,2023-01-21,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Payment Gateway Fees,COGS,Payment Gateway Fees,Debit,35454.06,Cheque,Completed,INV-01014,Monthly Payment Gateway Fees cost,N/A,Yes,No
+TXN-01015,2023-01-21,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Support Tools License,COGS,Support Tools License,Debit,40716.07,Cheque,Completed,INV-01015,Monthly Support Tools License cost,N/A,Yes,No
+TXN-01024,2023-01-21,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,LinkedIn Ads,Marketing,LinkedIn Ads,Debit,51447.49,Credit Card,Completed,EXP-01024,Marketing expense - LinkedIn Ads [REVIEW REQUIRED],N/A,No,No
+TXN-01038,2023-01-21,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Pinnacle Tech,Revenue,Subscription - Pro,Credit,23229.88,Wire Transfer,Completed,INV-01038,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01005,2023-01-23,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,DataStream GmbH,Revenue,Subscription - Enterprise,Credit,86188.17,Bank Transfer,Completed,INV-01005,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01047,2023-01-23,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Support Tools License,COGS,Support Tools License,Debit,33541.2,Wire Transfer,Completed,INV-01047,Monthly Support Tools License cost,N/A,Yes,No
+TXN-01008,2023-01-24,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Vertex Analytics,Revenue,Subscription - Enterprise,Credit,53691.09,Credit Card,Completed,INV-01008,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01026,2023-01-24,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,SEO Tools,Marketing,SEO Tools,Debit,354040.65,Bank Transfer,Completed,EXP-01026,Marketing expense - SEO Tools [REVIEW REQUIRED],N/A,No,No
+TXN-01027,2023-01-24,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Insurance,Operations,Insurance,Debit,322367.93,UPI,Completed,EXP-01027,Operations expense - Insurance [REVIEW REQUIRED],N/A,Yes,No
+TXN-01036,2023-01-24,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Horizon Enterprises,Revenue,Subscription - Starter,Credit,5113.91,Cash,Completed,INV-01036,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01029,2023-01-25,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Software Subscriptions,Operations,Software Subscriptions,Debit,104261.45,Cash,Completed,EXP-01029,Operations expense - Software Subscriptions [REVIEW REQUIRED],N/A,Yes,No
+TXN-01011,2023-01-26,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Cloud Hosting (GCP),COGS,Cloud Hosting (GCP),Debit,68417.17,UPI,Completed,INV-01011,Monthly Cloud Hosting (GCP) cost,N/A,Yes,No
+TXN-01030,2023-01-26,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Testing Infrastructure,R&D,Testing Infrastructure,Debit,106402.04,UPI,Completed,EXP-01030,R&D expense - Testing Infrastructure [REVIEW REQUIRED],N/A,Yes,No
+TXN-01046,2023-01-26,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Payment Gateway Fees,COGS,Payment Gateway Fees,Debit,75223.67,Cheque,Completed,INV-01046,Monthly Payment Gateway Fees cost,N/A,Yes,No
+TXN-01028,2023-01-27,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Office Rent,Operations,Office Rent,Debit,309051.12,Wire Transfer,Completed,EXP-01028,Operations expense - Office Rent [REVIEW REQUIRED],N/A,Yes,No
+TXN-01006,2023-01-28,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Zephyr Solutions,Revenue,Subscription - Starter,Credit,7092.27,Bank Transfer,Completed,INV-01006,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01035,2023-01-28,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Vertex Analytics,Revenue,Subscription - Enterprise,Credit,112433.6,UPI,Completed,INV-01035,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01016,2023-01-30,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Engineering Salaries,Debit,100005.06,Bank Transfer,Completed,PAY-01016,Payroll - Engineering Salaries,N/A,Yes,No
+TXN-01017,2023-01-30,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Sales Salaries,Debit,98870.61,Bank Transfer,Completed,PAY-01017,Payroll - Sales Salaries,N/A,Yes,No
+TXN-01018,2023-01-30,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Marketing Salaries,Debit,310746.14,Bank Transfer,Completed,PAY-01018,Payroll - Marketing Salaries,N/A,Yes,No
+TXN-01019,2023-01-30,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,CS Salaries,Debit,238642.05,Bank Transfer,Completed,PAY-01019,Payroll - CS Salaries,N/A,Yes,No
+TXN-01020,2023-01-30,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Management Salaries,Debit,311454.83,Bank Transfer,Completed,PAY-01020,Payroll - Management Salaries,N/A,Yes,No
+TXN-01021,2023-01-30,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Contractor Payments,Debit,199951.84,Bank Transfer,Completed,PAY-01021,Payroll - Contractor Payments,N/A,Yes,No
+TXN-01022,2023-01-30,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Bonuses,Debit,254236.52,Bank Transfer,Completed,PAY-01022,Payroll - Bonuses,N/A,Yes,No
+TXN-01023,2023-01-30,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,PF/Benefits,Debit,176698.76,Bank Transfer,Completed,PAY-01023,Payroll - PF/Benefits,N/A,Yes,No
+TXN-01048,2023-01-30,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Engineering Salaries,Debit,398397.94,Bank Transfer,Completed,PAY-01048,Payroll - Engineering Salaries,N/A,Yes,No
+TXN-01049,2023-01-30,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Sales Salaries,Debit,244518.91,Bank Transfer,Completed,PAY-01049,Payroll - Sales Salaries,N/A,Yes,No
+TXN-01050,2023-01-30,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Marketing Salaries,Debit,301442.9,Bank Transfer,Completed,PAY-01050,Payroll - Marketing Salaries,N/A,Yes,No
+TXN-01051,2023-01-30,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,CS Salaries,Debit,104178.89,Bank Transfer,Completed,PAY-01051,Payroll - CS Salaries,N/A,Yes,No
+TXN-01052,2023-01-30,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Management Salaries,Debit,153847.74,Bank Transfer,Completed,PAY-01052,Payroll - Management Salaries,N/A,Yes,No
+TXN-01053,2023-01-30,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Contractor Payments,Debit,389048.28,Bank Transfer,Completed,PAY-01053,Payroll - Contractor Payments,N/A,Yes,No
+TXN-01054,2023-01-30,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Bonuses,Debit,252713.1,Bank Transfer,Completed,PAY-01054,Payroll - Bonuses,N/A,Yes,No
+TXN-01055,2023-01-30,2023-01,2023,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,PF/Benefits,Debit,239768.32,Bank Transfer,Completed,PAY-01055,Payroll - PF/Benefits,N/A,Yes,No
+TXN-01066,2023-03-01,2023-03,2023,Q1,NovaTech SaaS Pvt Ltd,Client_03,Revenue,Subscription - Starter,Credit,4369.19,UPI,Completed,INV-01066,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01075,2023-03-01,2023-03,2023,Q1,NovaTech SaaS Pvt Ltd,Support Tools License,COGS,Support Tools License,Debit,72292.05,Credit Card,Completed,INV-01075,Monthly Support Tools License cost,N/A,Yes,No
+TXN-01070,2023-03-08,2023-03,2023,Q1,NovaTech SaaS Pvt Ltd,Cloud Hosting (AWS),COGS,Cloud Hosting (AWS),Debit,28654.97,Wire Transfer,Completed,INV-01070,Monthly Cloud Hosting (AWS) cost,N/A,Yes,No
+TXN-01073,2023-03-08,2023-03,2023,Q1,NovaTech SaaS Pvt Ltd,Third-party APIs,COGS,Third-party APIs,Debit,63716.04,Credit Card,Completed,INV-01073,Monthly Third-party APIs cost,N/A,Yes,No
+TXN-01086,2023-03-09,2023-03,2023,Q1,NovaTech SaaS Pvt Ltd,PR Agency,Marketing,PR Agency,Debit,252254.26,UPI,Completed,EXP-01086,Marketing expense - PR Agency [REVIEW REQUIRED],N/A,No,No
+TXN-01087,2023-03-09,2023-03,2023,Q1,NovaTech SaaS Pvt Ltd,Insurance,Operations,Insurance,Debit,501960.92,Bank Transfer,Completed,EXP-01087,Operations expense - Insurance [REVIEW REQUIRED],N/A,Yes,No
+TXN-01090,2023-03-11,2023-03,2023,Q1,NovaTech SaaS Pvt Ltd,Research Subscriptions,R&D,Research Subscriptions,Debit,52065.31,Wire Transfer,Completed,EXP-01090,R&D expense - Research Subscriptions [REVIEW REQUIRED],N/A,Yes,No
+TXN-01069,2023-03-12,2023-03,2023,Q1,NovaTech SaaS Pvt Ltd,GlobalEdge Ltd,Revenue,Subscription - Enterprise,Credit,43346.31,Bank Transfer,Completed,INV-01069,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01072,2023-03-14,2023-03,2023,Q1,NovaTech SaaS Pvt Ltd,CDN Costs,COGS,CDN Costs,Debit,72468.76,Cash,Completed,INV-01072,Monthly CDN Costs cost,N/A,Yes,No
+TXN-01088,2023-03-14,2023-03,2023,Q1,NovaTech SaaS Pvt Ltd,Office Rent,Operations,Office Rent,Debit,394473.86,Cash,Completed,EXP-01088,Operations expense - Office Rent [REVIEW REQUIRED],N/A,Yes,No
+TXN-01091,2023-03-14,2023-03,2023,Q1,NovaTech SaaS Pvt Ltd,Security Audits,R&D,Security Audits,Debit,344754.58,UPI,Completed,EXP-01091,R&D expense - Security Audits [REVIEW REQUIRED],N/A,No,No
+TXN-01084,2023-03-15,2023-03,2023,Q1,NovaTech SaaS Pvt Ltd,Google Ads,Marketing,Google Ads,Debit,565348.4,UPI,Completed,EXP-01084,Marketing expense - Google Ads [REVIEW REQUIRED],N/A,No,No
+TXN-01093,2023-03-15,2023-03,2023,Q1,NovaTech SaaS Pvt Ltd,Government / Tax Authority,Tax,GST Payment,Debit,134637.54,Bank Transfer,Completed,TAX-01093,Quarterly tax payment - GST Payment,N/A,Yes,No
+TXN-01094,2023-03-15,2023-03,2023,Q1,NovaTech SaaS Pvt Ltd,Government / Tax Authority,Tax,TDS Payment,Debit,81161.48,Bank Transfer,Completed,TAX-01094,Quarterly tax payment - TDS Payment,N/A,Yes,No
+TXN-01095,2023-03-15,2023-03,2023,Q1,NovaTech SaaS Pvt Ltd,Government / Tax Authority,Tax,Advance Tax,Debit,123149.33,Bank Transfer,Completed,TAX-01095,Quarterly tax payment - Advance Tax,N/A,Yes,No
+TXN-01096,2023-03-15,2023-03,2023,Q1,NovaTech SaaS Pvt Ltd,Government / Tax Authority,Tax,Income Tax,Debit,30069.01,Bank Transfer,Completed,TAX-01096,Quarterly tax payment - Income Tax,N/A,Yes,No
+TXN-01065,2023-03-17,2023-03,2023,Q1,NovaTech SaaS Pvt Ltd,SkyBridge Pvt Ltd,Revenue,Subscription - Enterprise,Credit,108233.03,Cheque,Completed,INV-01065,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01068,2023-03-18,2023-03,2023,Q1,NovaTech SaaS Pvt Ltd,BlueStar Media,Revenue,Subscription - Starter,Credit,4300.98,Bank Transfer,Completed,INV-01068,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01085,2023-03-22,2023-03,2023,Q1,NovaTech SaaS Pvt Ltd,SEO Tools,Marketing,SEO Tools,Debit,364535.23,Credit Card,Completed,EXP-01085,Marketing expense - SEO Tools [REVIEW REQUIRED],N/A,No,No
+TXN-01092,2023-03-22,2023-03,2023,Q1,NovaTech SaaS Pvt Ltd,Testing Infrastructure,R&D,Testing Infrastructure,Debit,304559.13,Cheque,Completed,EXP-01092,R&D expense - Testing Infrastructure [REVIEW REQUIRED],N/A,Yes,No
+TXN-01067,2023-03-23,2023-03,2023,Q1,NovaTech SaaS Pvt Ltd,Client_01,Revenue,Subscription - Enterprise,Credit,75346.84,Cheque,Completed,INV-01067,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01089,2023-03-23,2023-03,2023,Q1,NovaTech SaaS Pvt Ltd,Travel & Expenses,Operations,Travel & Expenses,Debit,185563.95,Cheque,Completed,EXP-01089,Operations expense - Travel & Expenses [REVIEW REQUIRED],N/A,Yes,No
+TXN-01071,2023-03-25,2023-03,2023,Q1,NovaTech SaaS Pvt Ltd,Cloud Hosting (GCP),COGS,Cloud Hosting (GCP),Debit,21681.59,Cash,Completed,INV-01071,Monthly Cloud Hosting (GCP) cost,N/A,Yes,No
+TXN-01074,2023-03-26,2023-03,2023,Q1,NovaTech SaaS Pvt Ltd,Payment Gateway Fees,COGS,Payment Gateway Fees,Debit,78453.39,Credit Card,Completed,INV-01074,Monthly Payment Gateway Fees cost,N/A,Yes,No
+TXN-01076,2023-03-30,2023-03,2023,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Engineering Salaries,Debit,307797.57,Bank Transfer,Completed,PAY-01076,Payroll - Engineering Salaries,N/A,Yes,No
+TXN-01077,2023-03-30,2023-03,2023,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Sales Salaries,Debit,166264.91,Bank Transfer,Completed,PAY-01077,Payroll - Sales Salaries,N/A,Yes,No
+TXN-01078,2023-03-30,2023-03,2023,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Marketing Salaries,Debit,375785.56,Bank Transfer,Completed,PAY-01078,Payroll - Marketing Salaries,N/A,Yes,No
+TXN-01079,2023-03-30,2023-03,2023,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,CS Salaries,Debit,330782.3,Bank Transfer,Completed,PAY-01079,Payroll - CS Salaries,N/A,Yes,No
+TXN-01080,2023-03-30,2023-03,2023,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Management Salaries,Debit,352422.41,Bank Transfer,Completed,PAY-01080,Payroll - Management Salaries,N/A,Yes,No
+TXN-01081,2023-03-30,2023-03,2023,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Contractor Payments,Debit,333762.26,Bank Transfer,Completed,PAY-01081,Payroll - Contractor Payments,N/A,Yes,No
+TXN-01082,2023-03-30,2023-03,2023,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Bonuses,Debit,143382.0,Bank Transfer,Completed,PAY-01082,Payroll - Bonuses,N/A,Yes,No
+TXN-01083,2023-03-30,2023-03,2023,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,PF/Benefits,Debit,325581.08,Bank Transfer,Completed,PAY-01083,Payroll - PF/Benefits,N/A,Yes,No
+TXN-01120,2023-04-01,2023-04,2023,Q2,NovaTech SaaS Pvt Ltd,SEO Tools,Marketing,SEO Tools,Debit,428708.46,UPI,Completed,EXP-01120,Marketing expense - SEO Tools [REVIEW REQUIRED],N/A,No,No
+TXN-01102,2023-04-02,2023-04,2023,Q2,NovaTech SaaS Pvt Ltd,FuturePath Co,Revenue,Subscription - Starter,Credit,4703.55,Cash,Completed,INV-01102,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01098,2023-04-03,2023-04,2023,Q2,NovaTech SaaS Pvt Ltd,Client_03,Revenue,Subscription - Starter,Credit,5135.15,Credit Card,Completed,INV-01098,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01126,2023-04-03,2023-04,2023,Q2,NovaTech SaaS Pvt Ltd,Dev Tools,R&D,Dev Tools,Debit,343677.64,Cheque,Completed,EXP-01126,R&D expense - Dev Tools [REVIEW REQUIRED],N/A,Yes,No
+TXN-01124,2023-04-06,2023-04,2023,Q2,NovaTech SaaS Pvt Ltd,Security Audits,R&D,Security Audits,Debit,82070.28,Bank Transfer,Completed,EXP-01124,R&D expense - Security Audits [REVIEW REQUIRED],N/A,No,No
+TXN-01121,2023-04-08,2023-04,2023,Q2,NovaTech SaaS Pvt Ltd,Travel & Expenses,Operations,Travel & Expenses,Debit,361208.52,Cheque,Completed,EXP-01121,Operations expense - Travel & Expenses [REVIEW REQUIRED],N/A,Yes,No
+TXN-01109,2023-04-09,2023-04,2023,Q2,NovaTech SaaS Pvt Ltd,Support Tools License,COGS,Support Tools License,Debit,69591.09,Cash,Completed,INV-01109,Monthly Support Tools License cost,N/A,Yes,No
+TXN-01118,2023-04-14,2023-04,2023,Q2,NovaTech SaaS Pvt Ltd,LinkedIn Ads,Marketing,LinkedIn Ads,Debit,270753.32,UPI,Completed,EXP-01118,Marketing expense - LinkedIn Ads [REVIEW REQUIRED],N/A,No,No
+TXN-01104,2023-04-15,2023-04,2023,Q2,NovaTech SaaS Pvt Ltd,Cloud Hosting (AWS),COGS,Cloud Hosting (AWS),Debit,64091.25,Cash,Completed,INV-01104,Monthly Cloud Hosting (AWS) cost,N/A,Yes,No
+TXN-01099,2023-04-16,2023-04,2023,Q2,NovaTech SaaS Pvt Ltd,DataStream GmbH,Revenue,Subscription - Starter,Credit,7226.25,Cash,Completed,INV-01099,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01105,2023-04-17,2023-04,2023,Q2,NovaTech SaaS Pvt Ltd,Cloud Hosting (GCP),COGS,Cloud Hosting (GCP),Debit,67975.42,Cheque,Completed,INV-01105,Monthly Cloud Hosting (GCP) cost,N/A,Yes,No
+TXN-01103,2023-04-18,2023-04,2023,Q2,NovaTech SaaS Pvt Ltd,Nexus Dynamics,Revenue,Subscription - Starter,Credit,5825.85,Cash,Completed,INV-01103,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01106,2023-04-18,2023-04,2023,Q2,NovaTech SaaS Pvt Ltd,CDN Costs,COGS,CDN Costs,Debit,68987.0,Cheque,Completed,INV-01106,Monthly CDN Costs cost,N/A,Yes,No
+TXN-01123,2023-04-20,2023-04,2023,Q2,NovaTech SaaS Pvt Ltd,Legal & Compliance,Operations,Legal & Compliance,Debit,508376.35,Cash,Completed,EXP-01123,Operations expense - Legal & Compliance [REVIEW REQUIRED],N/A,Yes,No
+TXN-01122,2023-04-22,2023-04,2023,Q2,NovaTech SaaS Pvt Ltd,Miscellaneous,Operations,Miscellaneous,Debit,151611.38,Wire Transfer,Completed,EXP-01122,Operations expense - Miscellaneous [REVIEW REQUIRED],N/A,No,No
+TXN-01100,2023-04-23,2023-04,2023,Q2,NovaTech SaaS Pvt Ltd,BlueStar Media,Revenue,Subscription - Starter,Credit,5821.66,Wire Transfer,Completed,INV-01100,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01107,2023-04-24,2023-04,2023,Q2,NovaTech SaaS Pvt Ltd,Third-party APIs,COGS,Third-party APIs,Debit,73318.53,Cheque,Completed,INV-01107,Monthly Third-party APIs cost,N/A,Yes,No
+TXN-01101,2023-04-25,2023-04,2023,Q2,NovaTech SaaS Pvt Ltd,CloudPeak AB,Revenue,Subscription - Pro,Credit,20528.75,Bank Transfer,Completed,INV-01101,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01108,2023-04-25,2023-04,2023,Q2,NovaTech SaaS Pvt Ltd,Payment Gateway Fees,COGS,Payment Gateway Fees,Debit,44254.53,Credit Card,Completed,INV-01108,Monthly Payment Gateway Fees cost,N/A,Yes,No
+TXN-01119,2023-04-25,2023-04,2023,Q2,NovaTech SaaS Pvt Ltd,PR Agency,Marketing,PR Agency,Debit,225010.54,Cash,Completed,EXP-01119,Marketing expense - PR Agency [REVIEW REQUIRED],N/A,Yes,No
+TXN-01125,2023-04-25,2023-04,2023,Q2,NovaTech SaaS Pvt Ltd,Testing Infrastructure,R&D,Testing Infrastructure,Debit,193441.96,Cheque,Completed,EXP-01125,R&D expense - Testing Infrastructure [REVIEW REQUIRED],N/A,No,No
+TXN-01097,2023-04-26,2023-04,2023,Q2,NovaTech SaaS Pvt Ltd,CoreLogic Systems,Revenue,Subscription - Pro,Credit,20783.15,Wire Transfer,Completed,INV-01097,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01110,2023-04-28,2023-04,2023,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Engineering Salaries,Debit,219608.96,Bank Transfer,Completed,PAY-01110,Payroll - Engineering Salaries,N/A,Yes,No
+TXN-01111,2023-04-28,2023-04,2023,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Sales Salaries,Debit,133736.05,Bank Transfer,Completed,PAY-01111,Payroll - Sales Salaries,N/A,Yes,No
+TXN-01112,2023-04-28,2023-04,2023,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Marketing Salaries,Debit,203955.41,Bank Transfer,Completed,PAY-01112,Payroll - Marketing Salaries,N/A,Yes,No
+TXN-01113,2023-04-28,2023-04,2023,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,CS Salaries,Debit,299740.7,Bank Transfer,Completed,PAY-01113,Payroll - CS Salaries,N/A,Yes,No
+TXN-01114,2023-04-28,2023-04,2023,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Management Salaries,Debit,132072.75,Bank Transfer,Completed,PAY-01114,Payroll - Management Salaries,N/A,Yes,No
+TXN-01115,2023-04-28,2023-04,2023,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Contractor Payments,Debit,167546.64,Bank Transfer,Completed,PAY-01115,Payroll - Contractor Payments,N/A,Yes,No
+TXN-01116,2023-04-28,2023-04,2023,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Bonuses,Debit,362559.39,Bank Transfer,Completed,PAY-01116,Payroll - Bonuses,N/A,Yes,No
+TXN-01117,2023-04-28,2023-04,2023,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,PF/Benefits,Debit,78202.18,Bank Transfer,Completed,PAY-01117,Payroll - PF/Benefits,N/A,Yes,No
+TXN-01157,2023-05-02,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Dev Tools,R&D,Dev Tools,Debit,209563.61,UPI,Completed,EXP-01157,R&D expense - Dev Tools [REVIEW REQUIRED],N/A,No,No
+TXN-01159,2023-05-03,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Research Subscriptions,R&D,Research Subscriptions,Debit,131265.46,Credit Card,Completed,EXP-01159,R&D expense - Research Subscriptions [REVIEW REQUIRED],N/A,Yes,No
+TXN-01161,2023-05-03,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,DataStream GmbH,Revenue,Subscription - Pro,Credit,14041.74,Credit Card,Completed,INV-01161,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01127,2023-05-04,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Brightwave Inc,Revenue,Subscription - Starter,Credit,6485.34,Cash,Pending,INV-01127,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01131,2023-05-04,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Client_05,Revenue,Subscription - Enterprise,Credit,88032.93,Cash,Completed,INV-01131,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01171,2023-05-06,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,CDN Costs,COGS,CDN Costs,Debit,74544.73,Cash,Completed,INV-01171,Monthly CDN Costs cost,N/A,Yes,No
+TXN-01138,2023-05-07,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Cloud Hosting (GCP),COGS,Cloud Hosting (GCP),Debit,26819.59,UPI,Completed,INV-01138,Monthly Cloud Hosting (GCP) cost,N/A,Yes,No
+TXN-01152,2023-05-08,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,LinkedIn Ads,Marketing,LinkedIn Ads,Debit,178190.23,Bank Transfer,Completed,EXP-01152,Marketing expense - LinkedIn Ads [REVIEW REQUIRED],N/A,Yes,No
+TXN-01164,2023-05-09,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Client_05,Revenue,Subscription - Starter,Credit,5700.56,Credit Card,Completed,INV-01164,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01167,2023-05-09,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Client_03,Revenue,Subscription - Enterprise,Credit,65785.73,Bank Transfer,Completed,INV-01167,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01188,2023-05-09,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Insurance,Operations,Insurance,Debit,282067.85,Cheque,Completed,EXP-01188,Operations expense - Insurance [REVIEW REQUIRED],N/A,No,No
+TXN-01129,2023-05-10,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,GlobalEdge Ltd,Revenue,Subscription - Starter,Credit,7858.88,Cash,Completed,INV-01129,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01155,2023-05-10,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Insurance,Operations,Insurance,Debit,411335.54,Bank Transfer,Completed,EXP-01155,Operations expense - Insurance [REVIEW REQUIRED],N/A,Yes,No
+TXN-01162,2023-05-10,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Horizon Enterprises,Revenue,Subscription - Pro,Credit,18108.86,Wire Transfer,Completed,INV-01162,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01165,2023-05-10,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,TechNova India,Revenue,Subscription - Starter,Credit,7170.51,Cheque,Completed,INV-01165,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01185,2023-05-10,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Affiliate Payouts,Marketing,Affiliate Payouts,Debit,429438.63,Cheque,Completed,EXP-01185,Marketing expense - Affiliate Payouts [REVIEW REQUIRED],N/A,No,No
+TXN-01192,2023-05-10,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Sequoia Capital India,Financing,Investor Funding,Credit,50000000,Wire Transfer,Completed,FIN-01192,Series A Funding Round,N/A,No,No
+TXN-01139,2023-05-11,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,CDN Costs,COGS,CDN Costs,Debit,66859.1,UPI,Completed,INV-01139,Monthly CDN Costs cost,N/A,Yes,No
+TXN-01174,2023-05-11,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Support Tools License,COGS,Support Tools License,Debit,41542.63,Wire Transfer,Completed,INV-01174,Monthly Support Tools License cost,N/A,Yes,No
+TXN-01151,2023-05-12,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Affiliate Payouts,Marketing,Affiliate Payouts,Debit,379150.25,Cheque,Completed,EXP-01151,Marketing expense - Affiliate Payouts [REVIEW REQUIRED],N/A,No,No
+TXN-01190,2023-05-14,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Dev Tools,R&D,Dev Tools,Debit,560431.77,UPI,Completed,EXP-01190,R&D expense - Dev Tools [REVIEW REQUIRED],N/A,No,No
+TXN-01187,2023-05-15,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Office Rent,Operations,Office Rent,Debit,90208.37,Bank Transfer,Completed,EXP-01187,Operations expense - Office Rent [REVIEW REQUIRED],N/A,Yes,No
+TXN-01137,2023-05-16,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Cloud Hosting (AWS),COGS,Cloud Hosting (AWS),Debit,36865.78,UPI,Completed,INV-01137,Monthly Cloud Hosting (AWS) cost,N/A,Yes,No
+TXN-01173,2023-05-16,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Payment Gateway Fees,COGS,Payment Gateway Fees,Debit,77988.59,UPI,Completed,INV-01173,Monthly Payment Gateway Fees cost,N/A,Yes,No
+TXN-01141,2023-05-17,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Payment Gateway Fees,COGS,Payment Gateway Fees,Debit,51126.42,Credit Card,Completed,INV-01141,Monthly Payment Gateway Fees cost,N/A,Yes,No
+TXN-01183,2023-05-17,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Google Ads,Marketing,Google Ads,Debit,177669.51,Bank Transfer,Completed,EXP-01183,Marketing expense - Google Ads [REVIEW REQUIRED],N/A,No,No
+TXN-01189,2023-05-17,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Security Audits,R&D,Security Audits,Debit,394341.31,Wire Transfer,Completed,EXP-01189,R&D expense - Security Audits [REVIEW REQUIRED],N/A,Yes,No
+TXN-01166,2023-05-18,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,SkyBridge Pvt Ltd,Revenue,Subscription - Enterprise,Credit,61779.7,Cheque,Completed,INV-01166,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01186,2023-05-18,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Utilities,Operations,Utilities,Debit,260705.43,Bank Transfer,Completed,EXP-01186,Operations expense - Utilities [REVIEW REQUIRED],N/A,No,No
+TXN-01136,2023-05-19,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Horizon Enterprises,Revenue,Subscription - Starter,Credit,5115.71,Cash,Completed,INV-01136,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01158,2023-05-19,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Security Audits,R&D,Security Audits,Debit,81091.44,Wire Transfer,Completed,EXP-01158,R&D expense - Security Audits [REVIEW REQUIRED],N/A,Yes,No
+TXN-01191,2023-05-19,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Research Subscriptions,R&D,Research Subscriptions,Debit,387085.95,Cash,Completed,EXP-01191,R&D expense - Research Subscriptions [REVIEW REQUIRED],N/A,No,No
+TXN-01128,2023-05-20,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,TechNova India,Revenue,Subscription - Pro,Credit,21969.68,Wire Transfer,Completed,INV-01128,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01134,2023-05-20,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Client_03,Revenue,Subscription - Pro,Credit,18782.71,Cash,Completed,INV-01134,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01154,2023-05-20,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Legal & Compliance,Operations,Legal & Compliance,Debit,194313.52,UPI,Completed,EXP-01154,Operations expense - Legal & Compliance [REVIEW REQUIRED],N/A,Yes,No
+TXN-01132,2023-05-21,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,CloudPeak AB,Revenue,Subscription - Pro,Credit,20599.78,UPI,Completed,INV-01132,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01133,2023-05-21,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Acme Corp,Revenue,Subscription - Pro,Credit,13372.01,Cheque,Completed,INV-01133,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01170,2023-05-21,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Cloud Hosting (GCP),COGS,Cloud Hosting (GCP),Debit,45582.55,Cheque,Completed,INV-01170,Monthly Cloud Hosting (GCP) cost,N/A,Yes,No
+TXN-01130,2023-05-23,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,FuturePath Co,Revenue,Subscription - Pro,Credit,21295.19,Wire Transfer,Completed,INV-01130,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01140,2023-05-23,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Third-party APIs,COGS,Third-party APIs,Debit,72220.8,UPI,Completed,INV-01140,Monthly Third-party APIs cost,N/A,Yes,No
+TXN-01153,2023-05-23,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Content Marketing,Marketing,Content Marketing,Debit,241643.58,Credit Card,Completed,EXP-01153,Marketing expense - Content Marketing [REVIEW REQUIRED],N/A,Yes,No
+TXN-01156,2023-05-23,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Miscellaneous,Operations,Miscellaneous,Debit,170306.25,Credit Card,Completed,EXP-01156,Operations expense - Miscellaneous [REVIEW REQUIRED],N/A,No,No
+TXN-01142,2023-05-24,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Support Tools License,COGS,Support Tools License,Debit,20564.84,Cheque,Completed,INV-01142,Monthly Support Tools License cost,N/A,Yes,No
+TXN-01160,2023-05-25,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Vertex Analytics,Revenue,Subscription - Enterprise,Credit,99207.14,Credit Card,Completed,INV-01160,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01168,2023-05-25,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,BlueStar Media,Revenue,Subscription - Enterprise,Credit,116062.9,Wire Transfer,Completed,INV-01168,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01169,2023-05-25,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Cloud Hosting (AWS),COGS,Cloud Hosting (AWS),Debit,52456.05,Credit Card,Completed,INV-01169,Monthly Cloud Hosting (AWS) cost,N/A,Yes,No
+TXN-01184,2023-05-25,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Content Marketing,Marketing,Content Marketing,Debit,214576.13,Cheque,Completed,EXP-01184,Marketing expense - Content Marketing [REVIEW REQUIRED],N/A,No,No
+TXN-01163,2023-05-26,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,CoreLogic Systems,Revenue,Subscription - Pro,Credit,15034.51,Wire Transfer,Completed,INV-01163,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01172,2023-05-27,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Third-party APIs,COGS,Third-party APIs,Debit,43332.52,Cheque,Completed,INV-01172,Monthly Third-party APIs cost,N/A,Yes,No
+TXN-01135,2023-05-28,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Client_01,Revenue,Subscription - Pro,Credit,21503.34,Credit Card,Completed,INV-01135,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01143,2023-05-30,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Engineering Salaries,Debit,221002.25,Bank Transfer,Completed,PAY-01143,Payroll - Engineering Salaries,N/A,Yes,No
+TXN-01144,2023-05-30,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Sales Salaries,Debit,315357.63,Bank Transfer,Completed,PAY-01144,Payroll - Sales Salaries,N/A,Yes,No
+TXN-01145,2023-05-30,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Marketing Salaries,Debit,291713.27,Bank Transfer,Completed,PAY-01145,Payroll - Marketing Salaries,N/A,Yes,No
+TXN-01146,2023-05-30,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,CS Salaries,Debit,276066.01,Bank Transfer,Completed,PAY-01146,Payroll - CS Salaries,N/A,Yes,No
+TXN-01147,2023-05-30,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Management Salaries,Debit,221787.47,Bank Transfer,Completed,PAY-01147,Payroll - Management Salaries,N/A,Yes,No
+TXN-01148,2023-05-30,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Contractor Payments,Debit,327526.5,Bank Transfer,Completed,PAY-01148,Payroll - Contractor Payments,N/A,Yes,No
+TXN-01149,2023-05-30,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Bonuses,Debit,82568.67,Bank Transfer,Completed,PAY-01149,Payroll - Bonuses,N/A,Yes,No
+TXN-01150,2023-05-30,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,PF/Benefits,Debit,127558.74,Bank Transfer,Completed,PAY-01150,Payroll - PF/Benefits,N/A,Yes,No
+TXN-01175,2023-05-30,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Engineering Salaries,Debit,86609.96,Bank Transfer,Completed,PAY-01175,Payroll - Engineering Salaries,N/A,Yes,No
+TXN-01176,2023-05-30,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Sales Salaries,Debit,106288.7,Bank Transfer,Completed,PAY-01176,Payroll - Sales Salaries,N/A,Yes,No
+TXN-01177,2023-05-30,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Marketing Salaries,Debit,194075.78,Bank Transfer,Completed,PAY-01177,Payroll - Marketing Salaries,N/A,Yes,No
+TXN-01178,2023-05-30,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,CS Salaries,Debit,223414.16,Bank Transfer,Completed,PAY-01178,Payroll - CS Salaries,N/A,Yes,No
+TXN-01179,2023-05-30,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Management Salaries,Debit,281904.24,Bank Transfer,Completed,PAY-01179,Payroll - Management Salaries,N/A,Yes,No
+TXN-01180,2023-05-30,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Contractor Payments,Debit,190158.29,Bank Transfer,Completed,PAY-01180,Payroll - Contractor Payments,N/A,Yes,No
+TXN-01181,2023-05-30,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Bonuses,Debit,316174.92,Bank Transfer,Completed,PAY-01181,Payroll - Bonuses,N/A,Yes,No
+TXN-01182,2023-05-30,2023-05,2023,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,PF/Benefits,Debit,62844.0,Bank Transfer,Completed,PAY-01182,Payroll - PF/Benefits,N/A,Yes,No
+TXN-01201,2023-06-02,2023-06,2023,Q2,NovaTech SaaS Pvt Ltd,CDN Costs,COGS,CDN Costs,Debit,71704.9,Cash,Completed,INV-01201,Monthly CDN Costs cost,N/A,Yes,No
+TXN-01219,2023-06-02,2023-06,2023,Q2,NovaTech SaaS Pvt Ltd,Security Audits,R&D,Security Audits,Debit,366808.79,Cash,Completed,EXP-01219,R&D expense - Security Audits [REVIEW REQUIRED],N/A,No,No
+TXN-01204,2023-06-04,2023-06,2023,Q2,NovaTech SaaS Pvt Ltd,Support Tools License,COGS,Support Tools License,Debit,20874.66,Wire Transfer,Completed,INV-01204,Monthly Support Tools License cost,N/A,Yes,No
+TXN-01195,2023-06-05,2023-06,2023,Q2,NovaTech SaaS Pvt Ltd,Nexus Dynamics,Revenue,Subscription - Pro,Credit,20627.95,Cheque,Failed,INV-01195,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01197,2023-06-05,2023-06,2023,Q2,NovaTech SaaS Pvt Ltd,Horizon Enterprises,Revenue,Subscription - Pro,Credit,13874.02,Bank Transfer,Completed,INV-01197,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01213,2023-06-06,2023-06,2023,Q2,NovaTech SaaS Pvt Ltd,SEO Tools,Marketing,SEO Tools,Debit,355371.25,Credit Card,Completed,EXP-01213,Marketing expense - SEO Tools [REVIEW REQUIRED],N/A,Yes,No
+TXN-01203,2023-06-08,2023-06,2023,Q2,NovaTech SaaS Pvt Ltd,Payment Gateway Fees,COGS,Payment Gateway Fees,Debit,74860.39,Wire Transfer,Completed,INV-01203,Monthly Payment Gateway Fees cost,N/A,Yes,No
+TXN-01220,2023-06-08,2023-06,2023,Q2,NovaTech SaaS Pvt Ltd,Research Subscriptions,R&D,Research Subscriptions,Debit,536858.74,Cash,Completed,EXP-01220,R&D expense - Research Subscriptions [REVIEW REQUIRED],N/A,No,No
+TXN-01199,2023-06-13,2023-06,2023,Q2,NovaTech SaaS Pvt Ltd,Cloud Hosting (AWS),COGS,Cloud Hosting (AWS),Debit,70857.24,UPI,Completed,INV-01199,Monthly Cloud Hosting (AWS) cost,N/A,Yes,No
+TXN-01217,2023-06-13,2023-06,2023,Q2,NovaTech SaaS Pvt Ltd,Insurance,Operations,Insurance,Debit,329642.73,Cheque,Completed,EXP-01217,Operations expense - Insurance [REVIEW REQUIRED],N/A,Yes,No
+TXN-01222,2023-06-15,2023-06,2023,Q2,NovaTech SaaS Pvt Ltd,Government / Tax Authority,Tax,GST Payment,Debit,136802.18,Bank Transfer,Completed,TAX-01222,Quarterly tax payment - GST Payment,N/A,Yes,No
+TXN-01223,2023-06-15,2023-06,2023,Q2,NovaTech SaaS Pvt Ltd,Government / Tax Authority,Tax,TDS Payment,Debit,183578.63,Bank Transfer,Completed,TAX-01223,Quarterly tax payment - TDS Payment,N/A,Yes,No
+TXN-01224,2023-06-15,2023-06,2023,Q2,NovaTech SaaS Pvt Ltd,Government / Tax Authority,Tax,Advance Tax,Debit,139877.9,Bank Transfer,Completed,TAX-01224,Quarterly tax payment - Advance Tax,N/A,Yes,No
+TXN-01225,2023-06-15,2023-06,2023,Q2,NovaTech SaaS Pvt Ltd,Government / Tax Authority,Tax,Income Tax,Debit,82518.59,Bank Transfer,Completed,TAX-01225,Quarterly tax payment - Income Tax,N/A,Yes,No
+TXN-01194,2023-06-16,2023-06,2023,Q2,NovaTech SaaS Pvt Ltd,Client_05,Revenue,Subscription - Starter,Credit,7424.05,Wire Transfer,Pending,INV-01194,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01214,2023-06-16,2023-06,2023,Q2,NovaTech SaaS Pvt Ltd,LinkedIn Ads,Marketing,LinkedIn Ads,Debit,379167.58,Cash,Completed,EXP-01214,Marketing expense - LinkedIn Ads [REVIEW REQUIRED],N/A,Yes,No
+TXN-01216,2023-06-19,2023-06,2023,Q2,NovaTech SaaS Pvt Ltd,Accounting,Operations,Accounting,Debit,93518.95,UPI,Completed,EXP-01216,Operations expense - Accounting [REVIEW REQUIRED],N/A,No,No
+TXN-01202,2023-06-21,2023-06,2023,Q2,NovaTech SaaS Pvt Ltd,Third-party APIs,COGS,Third-party APIs,Debit,19447.35,Wire Transfer,Completed,INV-01202,Monthly Third-party APIs cost,N/A,Yes,No
+TXN-01215,2023-06-22,2023-06,2023,Q2,NovaTech SaaS Pvt Ltd,Affiliate Payouts,Marketing,Affiliate Payouts,Debit,138812.47,Bank Transfer,Completed,EXP-01215,Marketing expense - Affiliate Payouts [REVIEW REQUIRED],N/A,No,No
+TXN-01193,2023-06-23,2023-06,2023,Q2,NovaTech SaaS Pvt Ltd,Client_03,Revenue,Subscription - Pro,Credit,16183.11,Credit Card,Completed,INV-01193,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01218,2023-06-23,2023-06,2023,Q2,NovaTech SaaS Pvt Ltd,Miscellaneous,Operations,Miscellaneous,Debit,152498.44,UPI,Completed,EXP-01218,Operations expense - Miscellaneous [REVIEW REQUIRED],N/A,Yes,No
+TXN-01200,2023-06-25,2023-06,2023,Q2,NovaTech SaaS Pvt Ltd,Cloud Hosting (GCP),COGS,Cloud Hosting (GCP),Debit,55741.95,Cheque,Completed,INV-01200,Monthly Cloud Hosting (GCP) cost,N/A,Yes,No
+TXN-01221,2023-06-25,2023-06,2023,Q2,NovaTech SaaS Pvt Ltd,Dev Tools,R&D,Dev Tools,Debit,113252.47,Wire Transfer,Completed,EXP-01221,R&D expense - Dev Tools [REVIEW REQUIRED],N/A,Yes,No
+TXN-01196,2023-06-28,2023-06,2023,Q2,NovaTech SaaS Pvt Ltd,Client_07,Revenue,Subscription - Starter,Credit,6009.16,Cheque,Completed,INV-01196,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01198,2023-06-28,2023-06,2023,Q2,NovaTech SaaS Pvt Ltd,DataStream GmbH,Revenue,Subscription - Pro,Credit,21005.16,UPI,Completed,INV-01198,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01205,2023-06-28,2023-06,2023,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Engineering Salaries,Debit,296361.79,Bank Transfer,Completed,PAY-01205,Payroll - Engineering Salaries,N/A,Yes,No
+TXN-01206,2023-06-28,2023-06,2023,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Sales Salaries,Debit,85177.53,Bank Transfer,Completed,PAY-01206,Payroll - Sales Salaries,N/A,Yes,No
+TXN-01207,2023-06-28,2023-06,2023,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Marketing Salaries,Debit,108227.68,Bank Transfer,Completed,PAY-01207,Payroll - Marketing Salaries,N/A,Yes,No
+TXN-01208,2023-06-28,2023-06,2023,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,CS Salaries,Debit,154813.13,Bank Transfer,Completed,PAY-01208,Payroll - CS Salaries,N/A,Yes,No
+TXN-01209,2023-06-28,2023-06,2023,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Management Salaries,Debit,60131.54,Bank Transfer,Completed,PAY-01209,Payroll - Management Salaries,N/A,Yes,No
+TXN-01210,2023-06-28,2023-06,2023,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Contractor Payments,Debit,163531.13,Bank Transfer,Completed,PAY-01210,Payroll - Contractor Payments,N/A,Yes,No
+TXN-01211,2023-06-28,2023-06,2023,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Bonuses,Debit,69641.73,Bank Transfer,Completed,PAY-01211,Payroll - Bonuses,N/A,Yes,No
+TXN-01212,2023-06-28,2023-06,2023,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,PF/Benefits,Debit,175462.17,Bank Transfer,Completed,PAY-01212,Payroll - PF/Benefits,N/A,Yes,No
+TXN-01250,2023-07-01,2023-07,2023,Q3,NovaTech SaaS Pvt Ltd,Google Ads,Marketing,Google Ads,Debit,389152.94,Bank Transfer,Completed,EXP-01250,Marketing expense - Google Ads [REVIEW REQUIRED],N/A,No,No
+TXN-01252,2023-07-01,2023-07,2023,Q3,NovaTech SaaS Pvt Ltd,Utilities,Operations,Utilities,Debit,243938.95,UPI,Completed,EXP-01252,Operations expense - Utilities [REVIEW REQUIRED],N/A,Yes,No
+TXN-01255,2023-07-03,2023-07,2023,Q3,NovaTech SaaS Pvt Ltd,Dev Tools,R&D,Dev Tools,Debit,65406.51,Cheque,Completed,EXP-01255,R&D expense - Dev Tools [REVIEW REQUIRED],N/A,No,No
+TXN-01253,2023-07-04,2023-07,2023,Q3,NovaTech SaaS Pvt Ltd,Accounting,Operations,Accounting,Debit,639725.83,Wire Transfer,Completed,EXP-01253,Operations expense - Accounting [REVIEW REQUIRED],N/A,Yes,No
+TXN-01233,2023-07-05,2023-07,2023,Q3,NovaTech SaaS Pvt Ltd,CoreLogic Systems,Revenue,Subscription - Pro,Credit,15928.47,Bank Transfer,Pending,INV-01233,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01254,2023-07-06,2023-07,2023,Q3,NovaTech SaaS Pvt Ltd,Research Subscriptions,R&D,Research Subscriptions,Debit,380643.48,UPI,Completed,EXP-01254,R&D expense - Research Subscriptions [REVIEW REQUIRED],N/A,Yes,No
+TXN-01232,2023-07-08,2023-07,2023,Q3,NovaTech SaaS Pvt Ltd,Nexus Dynamics,Revenue,Subscription - Enterprise,Credit,113220.47,Wire Transfer,Completed,INV-01232,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01226,2023-07-12,2023-07,2023,Q3,NovaTech SaaS Pvt Ltd,Brightwave Inc,Revenue,Subscription - Starter,Credit,4803.18,Cash,Completed,INV-01226,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01236,2023-07-12,2023-07,2023,Q3,NovaTech SaaS Pvt Ltd,CDN Costs,COGS,CDN Costs,Debit,40261.98,Wire Transfer,Completed,INV-01236,Monthly CDN Costs cost,N/A,Yes,No
+TXN-01239,2023-07-14,2023-07,2023,Q3,NovaTech SaaS Pvt Ltd,Support Tools License,COGS,Support Tools License,Debit,25043.99,Wire Transfer,Completed,INV-01239,Monthly Support Tools License cost,N/A,Yes,No
+TXN-01227,2023-07-16,2023-07,2023,Q3,NovaTech SaaS Pvt Ltd,TechNova India,Revenue,Subscription - Pro,Credit,15340.61,UPI,Completed,INV-01227,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01234,2023-07-16,2023-07,2023,Q3,NovaTech SaaS Pvt Ltd,Cloud Hosting (AWS),COGS,Cloud Hosting (AWS),Debit,34783.7,Bank Transfer,Completed,INV-01234,Monthly Cloud Hosting (AWS) cost,N/A,Yes,No
+TXN-01256,2023-07-17,2023-07,2023,Q3,NovaTech SaaS Pvt Ltd,Security Audits,R&D,Security Audits,Debit,314323.52,Credit Card,Completed,EXP-01256,R&D expense - Security Audits [REVIEW REQUIRED],N/A,Yes,No
+TXN-01229,2023-07-18,2023-07,2023,Q3,NovaTech SaaS Pvt Ltd,Zephyr Solutions,Revenue,Subscription - Enterprise,Credit,107659.56,UPI,Completed,INV-01229,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01235,2023-07-18,2023-07,2023,Q3,NovaTech SaaS Pvt Ltd,Cloud Hosting (GCP),COGS,Cloud Hosting (GCP),Debit,21317.48,Credit Card,Completed,INV-01235,Monthly Cloud Hosting (GCP) cost,N/A,Yes,No
+TXN-01251,2023-07-19,2023-07,2023,Q3,NovaTech SaaS Pvt Ltd,Legal & Compliance,Operations,Legal & Compliance,Debit,133344.69,Credit Card,Completed,EXP-01251,Operations expense - Legal & Compliance [REVIEW REQUIRED],N/A,Yes,No
+TXN-01248,2023-07-21,2023-07,2023,Q3,NovaTech SaaS Pvt Ltd,PR Agency,Marketing,PR Agency,Debit,672097.59,UPI,Completed,EXP-01248,Marketing expense - PR Agency [REVIEW REQUIRED],N/A,Yes,No
+TXN-01230,2023-07-22,2023-07,2023,Q3,NovaTech SaaS Pvt Ltd,Client_07,Revenue,Subscription - Pro,Credit,18975.44,Wire Transfer,Completed,INV-01230,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01231,2023-07-22,2023-07,2023,Q3,NovaTech SaaS Pvt Ltd,SkyBridge Pvt Ltd,Revenue,Subscription - Enterprise,Credit,69717.89,Credit Card,Completed,INV-01231,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01237,2023-07-23,2023-07,2023,Q3,NovaTech SaaS Pvt Ltd,Third-party APIs,COGS,Third-party APIs,Debit,76709.75,Cash,Completed,INV-01237,Monthly Third-party APIs cost,N/A,Yes,No
+TXN-01238,2023-07-24,2023-07,2023,Q3,NovaTech SaaS Pvt Ltd,Payment Gateway Fees,COGS,Payment Gateway Fees,Debit,42243.24,Wire Transfer,Completed,INV-01238,Monthly Payment Gateway Fees cost,N/A,Yes,No
+TXN-01228,2023-07-25,2023-07,2023,Q3,NovaTech SaaS Pvt Ltd,Client_05,Revenue,Subscription - Pro,Credit,18088.31,Credit Card,Completed,INV-01228,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01249,2023-07-28,2023-07,2023,Q3,NovaTech SaaS Pvt Ltd,Content Marketing,Marketing,Content Marketing,Debit,170970.21,Cheque,Completed,EXP-01249,Marketing expense - Content Marketing [REVIEW REQUIRED],N/A,Yes,No
+TXN-01240,2023-07-30,2023-07,2023,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Engineering Salaries,Debit,84657.57,Bank Transfer,Completed,PAY-01240,Payroll - Engineering Salaries,N/A,Yes,No
+TXN-01241,2023-07-30,2023-07,2023,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Sales Salaries,Debit,221271.46,Bank Transfer,Completed,PAY-01241,Payroll - Sales Salaries,N/A,Yes,No
+TXN-01242,2023-07-30,2023-07,2023,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Marketing Salaries,Debit,192840.56,Bank Transfer,Completed,PAY-01242,Payroll - Marketing Salaries,N/A,Yes,No
+TXN-01243,2023-07-30,2023-07,2023,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,CS Salaries,Debit,383032.53,Bank Transfer,Completed,PAY-01243,Payroll - CS Salaries,N/A,Yes,No
+TXN-01244,2023-07-30,2023-07,2023,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Management Salaries,Debit,61450.7,Bank Transfer,Completed,PAY-01244,Payroll - Management Salaries,N/A,Yes,No
+TXN-01245,2023-07-30,2023-07,2023,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Contractor Payments,Debit,179685.49,Bank Transfer,Completed,PAY-01245,Payroll - Contractor Payments,N/A,Yes,No
+TXN-01246,2023-07-30,2023-07,2023,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Bonuses,Debit,205184.08,Bank Transfer,Completed,PAY-01246,Payroll - Bonuses,N/A,Yes,No
+TXN-01247,2023-07-30,2023-07,2023,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,PF/Benefits,Debit,382694.31,Bank Transfer,Completed,PAY-01247,Payroll - PF/Benefits,N/A,Yes,No
+TXN-01279,2023-08-01,2023-08,2023,Q3,NovaTech SaaS Pvt Ltd,SEO Tools,Marketing,SEO Tools,Debit,381205.86,Credit Card,Completed,EXP-01279,Marketing expense - SEO Tools [REVIEW REQUIRED],N/A,No,No
+TXN-01280,2023-08-01,2023-08,2023,Q3,NovaTech SaaS Pvt Ltd,Events & Conferences,Marketing,Events & Conferences,Debit,344912.5,Credit Card,Completed,EXP-01280,Marketing expense - Events & Conferences [REVIEW REQUIRED],N/A,Yes,No
+TXN-01286,2023-08-01,2023-08,2023,Q3,NovaTech SaaS Pvt Ltd,Security Audits,R&D,Security Audits,Debit,49049.68,Credit Card,Completed,EXP-01286,R&D expense - Security Audits [REVIEW REQUIRED],N/A,No,No
+TXN-01283,2023-08-02,2023-08,2023,Q3,NovaTech SaaS Pvt Ltd,Utilities,Operations,Utilities,Debit,560986.23,Wire Transfer,Completed,EXP-01283,Operations expense - Utilities [REVIEW REQUIRED],N/A,Yes,No
+TXN-01257,2023-08-03,2023-08,2023,Q3,NovaTech SaaS Pvt Ltd,Client_03,Revenue,Subscription - Starter,Credit,5961.08,UPI,Completed,INV-01257,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01259,2023-08-04,2023-08,2023,Q3,NovaTech SaaS Pvt Ltd,Client_05,Revenue,Subscription - Enterprise,Credit,88434.14,Wire Transfer,Completed,INV-01259,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01265,2023-08-04,2023-08,2023,Q3,NovaTech SaaS Pvt Ltd,Cloud Hosting (GCP),COGS,Cloud Hosting (GCP),Debit,36426.99,Cheque,Completed,INV-01265,Monthly Cloud Hosting (GCP) cost,N/A,Yes,No
+TXN-01260,2023-08-07,2023-08,2023,Q3,NovaTech SaaS Pvt Ltd,Vertex Analytics,Revenue,Subscription - Enterprise,Credit,97667.19,Cheque,Completed,INV-01260,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01262,2023-08-16,2023-08,2023,Q3,NovaTech SaaS Pvt Ltd,DataStream GmbH,Revenue,Subscription - Pro,Credit,16865.91,Bank Transfer,Completed,INV-01262,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01281,2023-08-17,2023-08,2023,Q3,NovaTech SaaS Pvt Ltd,Travel & Expenses,Operations,Travel & Expenses,Debit,295467.1,Credit Card,Completed,EXP-01281,Operations expense - Travel & Expenses [REVIEW REQUIRED],N/A,No,No
+TXN-01264,2023-08-18,2023-08,2023,Q3,NovaTech SaaS Pvt Ltd,Cloud Hosting (AWS),COGS,Cloud Hosting (AWS),Debit,53120.23,Cash,Completed,INV-01264,Monthly Cloud Hosting (AWS) cost,N/A,Yes,No
+TXN-01269,2023-08-19,2023-08,2023,Q3,NovaTech SaaS Pvt Ltd,Support Tools License,COGS,Support Tools License,Debit,37857.0,Cash,Completed,INV-01269,Monthly Support Tools License cost,N/A,Yes,No
+TXN-01285,2023-08-19,2023-08,2023,Q3,NovaTech SaaS Pvt Ltd,Research Subscriptions,R&D,Research Subscriptions,Debit,225023.23,Cheque,Completed,EXP-01285,R&D expense - Research Subscriptions [REVIEW REQUIRED],N/A,No,No
+TXN-01268,2023-08-20,2023-08,2023,Q3,NovaTech SaaS Pvt Ltd,Payment Gateway Fees,COGS,Payment Gateway Fees,Debit,77945.91,UPI,Completed,INV-01268,Monthly Payment Gateway Fees cost,N/A,Yes,No
+TXN-01278,2023-08-21,2023-08,2023,Q3,NovaTech SaaS Pvt Ltd,PR Agency,Marketing,PR Agency,Debit,566716.91,Cash,Completed,EXP-01278,Marketing expense - PR Agency [REVIEW REQUIRED],N/A,Yes,No
+TXN-01266,2023-08-22,2023-08,2023,Q3,NovaTech SaaS Pvt Ltd,CDN Costs,COGS,CDN Costs,Debit,37983.88,Cheque,Completed,INV-01266,Monthly CDN Costs cost,N/A,Yes,No
+TXN-01258,2023-08-23,2023-08,2023,Q3,NovaTech SaaS Pvt Ltd,Acme Corp,Revenue,Subscription - Starter,Credit,4504.77,UPI,Completed,INV-01258,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01261,2023-08-24,2023-08,2023,Q3,NovaTech SaaS Pvt Ltd,CoreLogic Systems,Revenue,Subscription - Starter,Credit,5655.25,Bank Transfer,Completed,INV-01261,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01267,2023-08-24,2023-08,2023,Q3,NovaTech SaaS Pvt Ltd,Third-party APIs,COGS,Third-party APIs,Debit,71425.99,Bank Transfer,Completed,INV-01267,Monthly Third-party APIs cost,N/A,Yes,No
+TXN-01282,2023-08-24,2023-08,2023,Q3,NovaTech SaaS Pvt Ltd,Office Rent,Operations,Office Rent,Debit,218992.31,UPI,Completed,EXP-01282,Operations expense - Office Rent [REVIEW REQUIRED],N/A,Yes,No
+TXN-01284,2023-08-25,2023-08,2023,Q3,NovaTech SaaS Pvt Ltd,Testing Infrastructure,R&D,Testing Infrastructure,Debit,232420.79,Cash,Completed,EXP-01284,R&D expense - Testing Infrastructure [REVIEW REQUIRED],N/A,Yes,No
+TXN-01263,2023-08-26,2023-08,2023,Q3,NovaTech SaaS Pvt Ltd,FuturePath Co,Revenue,Subscription - Starter,Credit,4372.92,Credit Card,Completed,INV-01263,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01270,2023-08-30,2023-08,2023,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Engineering Salaries,Debit,124458.58,Bank Transfer,Completed,PAY-01270,Payroll - Engineering Salaries,N/A,Yes,No
+TXN-01271,2023-08-30,2023-08,2023,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Sales Salaries,Debit,279857.71,Bank Transfer,Completed,PAY-01271,Payroll - Sales Salaries,N/A,Yes,No
+TXN-01272,2023-08-30,2023-08,2023,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Marketing Salaries,Debit,128485.7,Bank Transfer,Completed,PAY-01272,Payroll - Marketing Salaries,N/A,Yes,No
+TXN-01273,2023-08-30,2023-08,2023,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,CS Salaries,Debit,87876.43,Bank Transfer,Completed,PAY-01273,Payroll - CS Salaries,N/A,Yes,No
+TXN-01274,2023-08-30,2023-08,2023,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Management Salaries,Debit,345880.7,Bank Transfer,Completed,PAY-01274,Payroll - Management Salaries,N/A,Yes,No
+TXN-01275,2023-08-30,2023-08,2023,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Contractor Payments,Debit,178646.37,Bank Transfer,Completed,PAY-01275,Payroll - Contractor Payments,N/A,Yes,No
+TXN-01276,2023-08-30,2023-08,2023,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Bonuses,Debit,316911.97,Bank Transfer,Completed,PAY-01276,Payroll - Bonuses,N/A,Yes,No
+TXN-01277,2023-08-30,2023-08,2023,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,PF/Benefits,Debit,250935.0,Bank Transfer,Completed,PAY-01277,Payroll - PF/Benefits,N/A,Yes,No
+TXN-01288,2023-09-02,2023-09,2023,Q3,NovaTech SaaS Pvt Ltd,Horizon Enterprises,Revenue,Subscription - Enterprise,Credit,108941.15,Cheque,Completed,INV-01288,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01308,2023-09-02,2023-09,2023,Q3,NovaTech SaaS Pvt Ltd,PR Agency,Marketing,PR Agency,Debit,213586.59,UPI,Completed,EXP-01308,Marketing expense - PR Agency [REVIEW REQUIRED],N/A,Yes,No
+TXN-01315,2023-09-04,2023-09,2023,Q3,NovaTech SaaS Pvt Ltd,Testing Infrastructure,R&D,Testing Infrastructure,Debit,306218.67,Cash,Completed,EXP-01315,R&D expense - Testing Infrastructure [REVIEW REQUIRED],N/A,No,No
+TXN-01297,2023-09-07,2023-09,2023,Q3,NovaTech SaaS Pvt Ltd,Payment Gateway Fees,COGS,Payment Gateway Fees,Debit,24518.87,Credit Card,Completed,INV-01297,Monthly Payment Gateway Fees cost,N/A,Yes,No
+TXN-01296,2023-09-08,2023-09,2023,Q3,NovaTech SaaS Pvt Ltd,Third-party APIs,COGS,Third-party APIs,Debit,67977.41,Bank Transfer,Completed,INV-01296,Monthly Third-party APIs cost,N/A,Yes,No
+TXN-01311,2023-09-11,2023-09,2023,Q3,NovaTech SaaS Pvt Ltd,Accounting,Operations,Accounting,Debit,281073.57,Cash,Completed,EXP-01311,Operations expense - Accounting [REVIEW REQUIRED],N/A,No,No
+TXN-01314,2023-09-11,2023-09,2023,Q3,NovaTech SaaS Pvt Ltd,Dev Tools,R&D,Dev Tools,Debit,202347.09,Wire Transfer,Completed,EXP-01314,R&D expense - Dev Tools [REVIEW REQUIRED],N/A,Yes,No
+TXN-01307,2023-09-15,2023-09,2023,Q3,NovaTech SaaS Pvt Ltd,Affiliate Payouts,Marketing,Affiliate Payouts,Debit,166500.58,Bank Transfer,Completed,EXP-01307,Marketing expense - Affiliate Payouts [REVIEW REQUIRED],N/A,No,No
+TXN-01316,2023-09-15,2023-09,2023,Q3,NovaTech SaaS Pvt Ltd,Government / Tax Authority,Tax,GST Payment,Debit,78304.99,Bank Transfer,Completed,TAX-01316,Quarterly tax payment - GST Payment,N/A,Yes,No
+TXN-01317,2023-09-15,2023-09,2023,Q3,NovaTech SaaS Pvt Ltd,Government / Tax Authority,Tax,TDS Payment,Debit,153034.72,Bank Transfer,Completed,TAX-01317,Quarterly tax payment - TDS Payment,N/A,Yes,No
+TXN-01318,2023-09-15,2023-09,2023,Q3,NovaTech SaaS Pvt Ltd,Government / Tax Authority,Tax,Advance Tax,Debit,141615.89,Bank Transfer,Completed,TAX-01318,Quarterly tax payment - Advance Tax,N/A,Yes,No
+TXN-01319,2023-09-15,2023-09,2023,Q3,NovaTech SaaS Pvt Ltd,Government / Tax Authority,Tax,Income Tax,Debit,184078.26,Bank Transfer,Completed,TAX-01319,Quarterly tax payment - Income Tax,N/A,Yes,No
+TXN-01293,2023-09-17,2023-09,2023,Q3,NovaTech SaaS Pvt Ltd,Cloud Hosting (AWS),COGS,Cloud Hosting (AWS),Debit,56159.6,Cash,Completed,INV-01293,Monthly Cloud Hosting (AWS) cost,N/A,Yes,No
+TXN-01291,2023-09-19,2023-09,2023,Q3,NovaTech SaaS Pvt Ltd,Brightwave Inc,Revenue,Subscription - Pro,Credit,22978.3,Cheque,Completed,INV-01291,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01290,2023-09-20,2023-09,2023,Q3,NovaTech SaaS Pvt Ltd,Nexus Dynamics,Revenue,Subscription - Starter,Credit,5620.13,Cheque,Completed,INV-01290,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01313,2023-09-20,2023-09,2023,Q3,NovaTech SaaS Pvt Ltd,Research Subscriptions,R&D,Research Subscriptions,Debit,394931.1,Credit Card,Completed,EXP-01313,R&D expense - Research Subscriptions [REVIEW REQUIRED],N/A,No,No
+TXN-01287,2023-09-23,2023-09,2023,Q3,NovaTech SaaS Pvt Ltd,SkyBridge Pvt Ltd,Revenue,Subscription - Pro,Credit,14284.03,Credit Card,Completed,INV-01287,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01289,2023-09-23,2023-09,2023,Q3,NovaTech SaaS Pvt Ltd,Client_09,Revenue,Subscription - Starter,Credit,7448.44,Wire Transfer,Completed,INV-01289,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01292,2023-09-25,2023-09,2023,Q3,NovaTech SaaS Pvt Ltd,Acme Corp,Revenue,Subscription - Pro,Credit,21695.46,Credit Card,Completed,INV-01292,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01294,2023-09-25,2023-09,2023,Q3,NovaTech SaaS Pvt Ltd,Cloud Hosting (GCP),COGS,Cloud Hosting (GCP),Debit,27603.74,UPI,Completed,INV-01294,Monthly Cloud Hosting (GCP) cost,N/A,Yes,No
+TXN-01298,2023-09-25,2023-09,2023,Q3,NovaTech SaaS Pvt Ltd,Support Tools License,COGS,Support Tools License,Debit,54155.93,Wire Transfer,Completed,INV-01298,Monthly Support Tools License cost,N/A,Yes,No
+TXN-01310,2023-09-26,2023-09,2023,Q3,NovaTech SaaS Pvt Ltd,Utilities,Operations,Utilities,Debit,295224.36,Wire Transfer,Completed,EXP-01310,Operations expense - Utilities [REVIEW REQUIRED],N/A,Yes,No
+TXN-01312,2023-09-26,2023-09,2023,Q3,NovaTech SaaS Pvt Ltd,Travel & Expenses,Operations,Travel & Expenses,Debit,272657.32,UPI,Completed,EXP-01312,Operations expense - Travel & Expenses [REVIEW REQUIRED],N/A,Yes,No
+TXN-01295,2023-09-27,2023-09,2023,Q3,NovaTech SaaS Pvt Ltd,CDN Costs,COGS,CDN Costs,Debit,37821.48,Wire Transfer,Completed,INV-01295,Monthly CDN Costs cost,N/A,Yes,No
+TXN-01309,2023-09-27,2023-09,2023,Q3,NovaTech SaaS Pvt Ltd,Events & Conferences,Marketing,Events & Conferences,Debit,129036.46,UPI,Completed,EXP-01309,Marketing expense - Events & Conferences [REVIEW REQUIRED],N/A,Yes,No
+TXN-01299,2023-09-28,2023-09,2023,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Engineering Salaries,Debit,76373.65,Bank Transfer,Completed,PAY-01299,Payroll - Engineering Salaries,N/A,Yes,No
+TXN-01300,2023-09-28,2023-09,2023,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Sales Salaries,Debit,382952.25,Bank Transfer,Completed,PAY-01300,Payroll - Sales Salaries,N/A,Yes,No
+TXN-01301,2023-09-28,2023-09,2023,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Marketing Salaries,Debit,269782.07,Bank Transfer,Completed,PAY-01301,Payroll - Marketing Salaries,N/A,Yes,No
+TXN-01302,2023-09-28,2023-09,2023,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,CS Salaries,Debit,212383.57,Bank Transfer,Completed,PAY-01302,Payroll - CS Salaries,N/A,Yes,No
+TXN-01303,2023-09-28,2023-09,2023,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Management Salaries,Debit,247307.42,Bank Transfer,Completed,PAY-01303,Payroll - Management Salaries,N/A,Yes,No
+TXN-01304,2023-09-28,2023-09,2023,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Contractor Payments,Debit,252813.83,Bank Transfer,Completed,PAY-01304,Payroll - Contractor Payments,N/A,Yes,No
+TXN-01305,2023-09-28,2023-09,2023,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Bonuses,Debit,288396.72,Bank Transfer,Completed,PAY-01305,Payroll - Bonuses,N/A,Yes,No
+TXN-01306,2023-09-28,2023-09,2023,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,PF/Benefits,Debit,358716.85,Bank Transfer,Completed,PAY-01306,Payroll - PF/Benefits,N/A,Yes,No
+TXN-01322,2023-10-01,2023-10,2023,Q4,NovaTech SaaS Pvt Ltd,SkyBridge Pvt Ltd,Revenue,Subscription - Enterprise,Credit,80679.08,UPI,Completed,INV-01322,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01344,2023-10-01,2023-10,2023,Q4,NovaTech SaaS Pvt Ltd,Miscellaneous,Operations,Miscellaneous,Debit,132463.81,UPI,Completed,EXP-01344,Operations expense - Miscellaneous [REVIEW REQUIRED],N/A,Yes,No
+TXN-01348,2023-10-02,2023-10,2023,Q4,NovaTech SaaS Pvt Ltd,Dev Tools,R&D,Dev Tools,Debit,69428.73,Credit Card,Completed,EXP-01348,R&D expense - Dev Tools [REVIEW REQUIRED],N/A,No,No
+TXN-01320,2023-10-03,2023-10,2023,Q4,NovaTech SaaS Pvt Ltd,FuturePath Co,Revenue,Subscription - Enterprise,Credit,87603.3,UPI,Completed,INV-01320,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01346,2023-10-03,2023-10,2023,Q4,NovaTech SaaS Pvt Ltd,Security Audits,R&D,Security Audits,Debit,447128.72,Bank Transfer,Completed,EXP-01346,R&D expense - Security Audits [REVIEW REQUIRED],N/A,No,No
+TXN-01323,2023-10-05,2023-10,2023,Q4,NovaTech SaaS Pvt Ltd,Client_03,Revenue,Subscription - Starter,Credit,5366.93,Credit Card,Completed,INV-01323,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01345,2023-10-05,2023-10,2023,Q4,NovaTech SaaS Pvt Ltd,Legal & Compliance,Operations,Legal & Compliance,Debit,545503.74,Bank Transfer,Completed,EXP-01345,Operations expense - Legal & Compliance [REVIEW REQUIRED],N/A,No,No
+TXN-01326,2023-10-06,2023-10,2023,Q4,NovaTech SaaS Pvt Ltd,Cloud Hosting (AWS),COGS,Cloud Hosting (AWS),Debit,67587.84,Wire Transfer,Completed,INV-01326,Monthly Cloud Hosting (AWS) cost,N/A,Yes,No
+TXN-01328,2023-10-08,2023-10,2023,Q4,NovaTech SaaS Pvt Ltd,CDN Costs,COGS,CDN Costs,Debit,58963.59,Cheque,Completed,INV-01328,Monthly CDN Costs cost,N/A,Yes,No
+TXN-01330,2023-10-08,2023-10,2023,Q4,NovaTech SaaS Pvt Ltd,Payment Gateway Fees,COGS,Payment Gateway Fees,Debit,65947.02,Cash,Completed,INV-01330,Monthly Payment Gateway Fees cost,N/A,Yes,No
+TXN-01343,2023-10-13,2023-10,2023,Q4,NovaTech SaaS Pvt Ltd,Utilities,Operations,Utilities,Debit,453046.13,Cash,Completed,EXP-01343,Operations expense - Utilities [REVIEW REQUIRED],N/A,No,No
+TXN-01327,2023-10-14,2023-10,2023,Q4,NovaTech SaaS Pvt Ltd,Cloud Hosting (GCP),COGS,Cloud Hosting (GCP),Debit,43448.77,UPI,Completed,INV-01327,Monthly Cloud Hosting (GCP) cost,N/A,Yes,No
+TXN-01324,2023-10-17,2023-10,2023,Q4,NovaTech SaaS Pvt Ltd,Nexus Dynamics,Revenue,Subscription - Starter,Credit,6030.76,Bank Transfer,Completed,INV-01324,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01342,2023-10-17,2023-10,2023,Q4,NovaTech SaaS Pvt Ltd,Affiliate Payouts,Marketing,Affiliate Payouts,Debit,63678.62,Credit Card,Completed,EXP-01342,Marketing expense - Affiliate Payouts [REVIEW REQUIRED],N/A,No,No
+TXN-01347,2023-10-20,2023-10,2023,Q4,NovaTech SaaS Pvt Ltd,Testing Infrastructure,R&D,Testing Infrastructure,Debit,173457.92,Cash,Completed,EXP-01347,R&D expense - Testing Infrastructure [REVIEW REQUIRED],N/A,No,No
+TXN-01340,2023-10-21,2023-10,2023,Q4,NovaTech SaaS Pvt Ltd,SEO Tools,Marketing,SEO Tools,Debit,364293.98,Cheque,Completed,EXP-01340,Marketing expense - SEO Tools [REVIEW REQUIRED],N/A,No,No
+TXN-01329,2023-10-25,2023-10,2023,Q4,NovaTech SaaS Pvt Ltd,Third-party APIs,COGS,Third-party APIs,Debit,54688.7,Wire Transfer,Completed,INV-01329,Monthly Third-party APIs cost,N/A,Yes,No
+TXN-01331,2023-10-26,2023-10,2023,Q4,NovaTech SaaS Pvt Ltd,Support Tools License,COGS,Support Tools License,Debit,30545.95,Cheque,Completed,INV-01331,Monthly Support Tools License cost,N/A,Yes,No
+TXN-01321,2023-10-27,2023-10,2023,Q4,NovaTech SaaS Pvt Ltd,Zephyr Solutions,Revenue,Subscription - Enterprise,Credit,93609.31,Wire Transfer,Refunded,INV-01321,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01325,2023-10-27,2023-10,2023,Q4,NovaTech SaaS Pvt Ltd,Client_05,Revenue,Subscription - Enterprise,Credit,52979.78,Wire Transfer,Completed,INV-01325,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01341,2023-10-28,2023-10,2023,Q4,NovaTech SaaS Pvt Ltd,LinkedIn Ads,Marketing,LinkedIn Ads,Debit,380838.14,Bank Transfer,Completed,EXP-01341,Marketing expense - LinkedIn Ads [REVIEW REQUIRED],N/A,No,No
+TXN-01332,2023-10-30,2023-10,2023,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,Engineering Salaries,Debit,366391.02,Bank Transfer,Completed,PAY-01332,Payroll - Engineering Salaries,N/A,Yes,No
+TXN-01333,2023-10-30,2023-10,2023,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,Sales Salaries,Debit,117905.66,Bank Transfer,Completed,PAY-01333,Payroll - Sales Salaries,N/A,Yes,No
+TXN-01334,2023-10-30,2023-10,2023,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,Marketing Salaries,Debit,287407.39,Bank Transfer,Completed,PAY-01334,Payroll - Marketing Salaries,N/A,Yes,No
+TXN-01335,2023-10-30,2023-10,2023,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,CS Salaries,Debit,249646.79,Bank Transfer,Completed,PAY-01335,Payroll - CS Salaries,N/A,Yes,No
+TXN-01336,2023-10-30,2023-10,2023,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,Management Salaries,Debit,204209.09,Bank Transfer,Completed,PAY-01336,Payroll - Management Salaries,N/A,Yes,No
+TXN-01337,2023-10-30,2023-10,2023,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,Contractor Payments,Debit,319303.49,Bank Transfer,Completed,PAY-01337,Payroll - Contractor Payments,N/A,Yes,No
+TXN-01338,2023-10-30,2023-10,2023,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,Bonuses,Debit,322343.41,Bank Transfer,Completed,PAY-01338,Payroll - Bonuses,N/A,Yes,No
+TXN-01339,2023-10-30,2023-10,2023,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,PF/Benefits,Debit,226017.34,Bank Transfer,Completed,PAY-01339,Payroll - PF/Benefits,N/A,Yes,No
+TXN-01351,2023-11-01,2023-11,2023,Q4,NovaTech SaaS Pvt Ltd,BlueStar Media,Revenue,Subscription - Enterprise,Credit,80609.81,Cheque,Completed,INV-01351,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01352,2023-11-01,2023-11,2023,Q4,NovaTech SaaS Pvt Ltd,Horizon Enterprises,Revenue,Subscription - Starter,Credit,6542.68,UPI,Completed,INV-01352,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01358,2023-11-05,2023-11,2023,Q4,NovaTech SaaS Pvt Ltd,Payment Gateway Fees,COGS,Payment Gateway Fees,Debit,26848.07,Bank Transfer,Completed,INV-01358,Monthly Payment Gateway Fees cost,N/A,Yes,No
+TXN-01354,2023-11-12,2023-11,2023,Q4,NovaTech SaaS Pvt Ltd,Cloud Hosting (AWS),COGS,Cloud Hosting (AWS),Debit,23671.62,Cash,Completed,INV-01354,Monthly Cloud Hosting (AWS) cost,N/A,Yes,No
+TXN-01370,2023-11-12,2023-11,2023,Q4,NovaTech SaaS Pvt Ltd,LinkedIn Ads,Marketing,LinkedIn Ads,Debit,223298.28,Cash,Completed,EXP-01370,Marketing expense - LinkedIn Ads [REVIEW REQUIRED],N/A,No,No
+TXN-01376,2023-11-12,2023-11,2023,Q4,NovaTech SaaS Pvt Ltd,Dev Tools,R&D,Dev Tools,Debit,96323.23,Cheque,Completed,EXP-01376,R&D expense - Dev Tools [REVIEW REQUIRED],N/A,Yes,No
+TXN-01349,2023-11-14,2023-11,2023,Q4,NovaTech SaaS Pvt Ltd,GlobalEdge Ltd,Revenue,Subscription - Enterprise,Credit,51486.15,Bank Transfer,Completed,INV-01349,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01359,2023-11-15,2023-11,2023,Q4,NovaTech SaaS Pvt Ltd,Support Tools License,COGS,Support Tools License,Debit,61542.93,Bank Transfer,Completed,INV-01359,Monthly Support Tools License cost,N/A,Yes,No
+TXN-01372,2023-11-15,2023-11,2023,Q4,NovaTech SaaS Pvt Ltd,Insurance,Operations,Insurance,Debit,65295.43,Cash,Completed,EXP-01372,Operations expense - Insurance [REVIEW REQUIRED],N/A,No,No
+TXN-01357,2023-11-16,2023-11,2023,Q4,NovaTech SaaS Pvt Ltd,Third-party APIs,COGS,Third-party APIs,Debit,78753.25,Wire Transfer,Completed,INV-01357,Monthly Third-party APIs cost,N/A,Yes,No
+TXN-01350,2023-11-17,2023-11,2023,Q4,NovaTech SaaS Pvt Ltd,Client_09,Revenue,Subscription - Starter,Credit,6282.65,UPI,Completed,INV-01350,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01371,2023-11-18,2023-11,2023,Q4,NovaTech SaaS Pvt Ltd,Utilities,Operations,Utilities,Debit,76957.14,UPI,Completed,EXP-01371,Operations expense - Utilities [REVIEW REQUIRED],N/A,No,No
+TXN-01353,2023-11-19,2023-11,2023,Q4,NovaTech SaaS Pvt Ltd,Acme Corp,Revenue,Subscription - Pro,Credit,20542.36,Wire Transfer,Completed,INV-01353,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01355,2023-11-21,2023-11,2023,Q4,NovaTech SaaS Pvt Ltd,Cloud Hosting (GCP),COGS,Cloud Hosting (GCP),Debit,37005.57,Credit Card,Completed,INV-01355,Monthly Cloud Hosting (GCP) cost,N/A,Yes,No
+TXN-01368,2023-11-21,2023-11,2023,Q4,NovaTech SaaS Pvt Ltd,Content Marketing,Marketing,Content Marketing,Debit,119143.97,UPI,Completed,EXP-01368,Marketing expense - Content Marketing [REVIEW REQUIRED],N/A,No,No
+TXN-01356,2023-11-22,2023-11,2023,Q4,NovaTech SaaS Pvt Ltd,CDN Costs,COGS,CDN Costs,Debit,68974.94,Cheque,Completed,INV-01356,Monthly CDN Costs cost,N/A,Yes,No
+TXN-01369,2023-11-24,2023-11,2023,Q4,NovaTech SaaS Pvt Ltd,Google Ads,Marketing,Google Ads,Debit,109484.18,Cheque,Completed,EXP-01369,Marketing expense - Google Ads [REVIEW REQUIRED],N/A,No,No
+TXN-01373,2023-11-24,2023-11,2023,Q4,NovaTech SaaS Pvt Ltd,Legal & Compliance,Operations,Legal & Compliance,Debit,104905.97,UPI,Completed,EXP-01373,Operations expense - Legal & Compliance [REVIEW REQUIRED],N/A,No,No
+TXN-01374,2023-11-26,2023-11,2023,Q4,NovaTech SaaS Pvt Ltd,Testing Infrastructure,R&D,Testing Infrastructure,Debit,55744.7,Wire Transfer,Completed,EXP-01374,R&D expense - Testing Infrastructure [REVIEW REQUIRED],N/A,Yes,No
+TXN-01375,2023-11-26,2023-11,2023,Q4,NovaTech SaaS Pvt Ltd,Security Audits,R&D,Security Audits,Debit,552542.65,Cheque,Completed,EXP-01375,R&D expense - Security Audits [REVIEW REQUIRED],N/A,Yes,No
+TXN-01360,2023-11-28,2023-11,2023,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,Engineering Salaries,Debit,152704.9,Bank Transfer,Completed,PAY-01360,Payroll - Engineering Salaries,N/A,Yes,No
+TXN-01361,2023-11-28,2023-11,2023,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,Sales Salaries,Debit,65332.2,Bank Transfer,Completed,PAY-01361,Payroll - Sales Salaries,N/A,Yes,No
+TXN-01362,2023-11-28,2023-11,2023,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,Marketing Salaries,Debit,119814.44,Bank Transfer,Completed,PAY-01362,Payroll - Marketing Salaries,N/A,Yes,No
+TXN-01363,2023-11-28,2023-11,2023,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,CS Salaries,Debit,64667.08,Bank Transfer,Completed,PAY-01363,Payroll - CS Salaries,N/A,Yes,No
+TXN-01364,2023-11-28,2023-11,2023,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,Management Salaries,Debit,376679.84,Bank Transfer,Completed,PAY-01364,Payroll - Management Salaries,N/A,Yes,No
+TXN-01365,2023-11-28,2023-11,2023,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,Contractor Payments,Debit,230384.26,Bank Transfer,Completed,PAY-01365,Payroll - Contractor Payments,N/A,Yes,No
+TXN-01366,2023-11-28,2023-11,2023,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,Bonuses,Debit,396192.95,Bank Transfer,Completed,PAY-01366,Payroll - Bonuses,N/A,Yes,No
+TXN-01367,2023-11-28,2023-11,2023,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,PF/Benefits,Debit,240060.74,Bank Transfer,Completed,PAY-01367,Payroll - PF/Benefits,N/A,Yes,No
+TXN-01402,2023-12-01,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,Events & Conferences,Marketing,Events & Conferences,Debit,557925.17,Bank Transfer,Completed,EXP-01402,Marketing expense - Events & Conferences [REVIEW REQUIRED],N/A,Yes,No
+TXN-01408,2023-12-02,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,Research Subscriptions,R&D,Research Subscriptions,Debit,65338.13,UPI,Completed,EXP-01408,R&D expense - Research Subscriptions [REVIEW REQUIRED],N/A,No,No
+TXN-01380,2023-12-03,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,Nexus Dynamics,Revenue,Subscription - Starter,Credit,5808.17,Wire Transfer,Failed,INV-01380,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01384,2023-12-03,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,BlueStar Media,Revenue,Subscription - Pro,Credit,19171.41,Bank Transfer,Completed,INV-01384,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01400,2023-12-03,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,LinkedIn Ads,Marketing,LinkedIn Ads,Debit,177079.54,Cash,Completed,EXP-01400,Marketing expense - LinkedIn Ads [REVIEW REQUIRED],N/A,Yes,No
+TXN-01377,2023-12-04,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,SkyBridge Pvt Ltd,Revenue,Subscription - Enterprise,Credit,62295.18,Bank Transfer,Completed,INV-01377,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01389,2023-12-06,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,Third-party APIs,COGS,Third-party APIs,Debit,56586.61,Credit Card,Completed,INV-01389,Monthly Third-party APIs cost,N/A,Yes,No
+TXN-01381,2023-12-10,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,Vertex Analytics,Revenue,Subscription - Pro,Credit,21224.03,UPI,Completed,INV-01381,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01407,2023-12-11,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,Dev Tools,R&D,Dev Tools,Debit,93877.6,Credit Card,Completed,EXP-01407,R&D expense - Dev Tools [REVIEW REQUIRED],N/A,No,No
+TXN-01382,2023-12-12,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,DataStream GmbH,Revenue,Subscription - Enterprise,Credit,53927.28,Cash,Completed,INV-01382,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01383,2023-12-12,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,Brightwave Inc,Revenue,Subscription - Starter,Credit,7168.26,Cash,Completed,INV-01383,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01405,2023-12-15,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,Utilities,Operations,Utilities,Debit,124661.34,Cheque,Completed,EXP-01405,Operations expense - Utilities [REVIEW REQUIRED],N/A,No,No
+TXN-01409,2023-12-15,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,Government / Tax Authority,Tax,GST Payment,Debit,176907.85,Bank Transfer,Completed,TAX-01409,Quarterly tax payment - GST Payment,N/A,Yes,No
+TXN-01410,2023-12-15,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,Government / Tax Authority,Tax,TDS Payment,Debit,101082.91,Bank Transfer,Completed,TAX-01410,Quarterly tax payment - TDS Payment,N/A,Yes,No
+TXN-01411,2023-12-15,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,Government / Tax Authority,Tax,Advance Tax,Debit,193656.59,Bank Transfer,Completed,TAX-01411,Quarterly tax payment - Advance Tax,N/A,Yes,No
+TXN-01412,2023-12-15,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,Government / Tax Authority,Tax,Income Tax,Debit,183392.84,Bank Transfer,Completed,TAX-01412,Quarterly tax payment - Income Tax,N/A,Yes,No
+TXN-01379,2023-12-16,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,TechNova India,Revenue,Subscription - Starter,Credit,7985.46,Credit Card,Completed,INV-01379,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01403,2023-12-16,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,Accounting,Operations,Accounting,Debit,458263.34,Wire Transfer,Completed,EXP-01403,Operations expense - Accounting [REVIEW REQUIRED],N/A,No,No
+TXN-01391,2023-12-17,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,Support Tools License,COGS,Support Tools License,Debit,69040.4,Credit Card,Completed,INV-01391,Monthly Support Tools License cost,N/A,Yes,No
+TXN-01401,2023-12-20,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,Affiliate Payouts,Marketing,Affiliate Payouts,Debit,256696.62,Wire Transfer,Completed,EXP-01401,Marketing expense - Affiliate Payouts [REVIEW REQUIRED],N/A,No,No
+TXN-01386,2023-12-21,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,Cloud Hosting (AWS),COGS,Cloud Hosting (AWS),Debit,78204.68,Bank Transfer,Completed,INV-01386,Monthly Cloud Hosting (AWS) cost,N/A,Yes,No
+TXN-01387,2023-12-22,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,Cloud Hosting (GCP),COGS,Cloud Hosting (GCP),Debit,44248.34,Cash,Completed,INV-01387,Monthly Cloud Hosting (GCP) cost,N/A,Yes,No
+TXN-01406,2023-12-24,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,Security Audits,R&D,Security Audits,Debit,385425.0,UPI,Completed,EXP-01406,R&D expense - Security Audits [REVIEW REQUIRED],N/A,No,No
+TXN-01378,2023-12-25,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,Client_05,Revenue,Subscription - Pro,Credit,23876.05,UPI,Completed,INV-01378,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01404,2023-12-26,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,Insurance,Operations,Insurance,Debit,294361.36,Wire Transfer,Completed,EXP-01404,Operations expense - Insurance [REVIEW REQUIRED],N/A,No,No
+TXN-01385,2023-12-27,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,Zephyr Solutions,Revenue,Subscription - Enterprise,Credit,101533.16,Cash,Completed,INV-01385,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01388,2023-12-27,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,CDN Costs,COGS,CDN Costs,Debit,37393.46,Cash,Completed,INV-01388,Monthly CDN Costs cost,N/A,Yes,No
+TXN-01390,2023-12-28,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,Payment Gateway Fees,COGS,Payment Gateway Fees,Debit,43120.19,Bank Transfer,Completed,INV-01390,Monthly Payment Gateway Fees cost,N/A,Yes,No
+TXN-01392,2023-12-30,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,Engineering Salaries,Debit,156443.59,Bank Transfer,Completed,PAY-01392,Payroll - Engineering Salaries,N/A,Yes,No
+TXN-01393,2023-12-30,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,Sales Salaries,Debit,106688.44,Bank Transfer,Completed,PAY-01393,Payroll - Sales Salaries,N/A,Yes,No
+TXN-01394,2023-12-30,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,Marketing Salaries,Debit,377158.24,Bank Transfer,Completed,PAY-01394,Payroll - Marketing Salaries,N/A,Yes,No
+TXN-01395,2023-12-30,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,CS Salaries,Debit,128914.6,Bank Transfer,Completed,PAY-01395,Payroll - CS Salaries,N/A,Yes,No
+TXN-01396,2023-12-30,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,Management Salaries,Debit,381619.1,Bank Transfer,Completed,PAY-01396,Payroll - Management Salaries,N/A,Yes,No
+TXN-01397,2023-12-30,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,Contractor Payments,Debit,231614.23,Bank Transfer,Completed,PAY-01397,Payroll - Contractor Payments,N/A,Yes,No
+TXN-01398,2023-12-30,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,Bonuses,Debit,149416.91,Bank Transfer,Completed,PAY-01398,Payroll - Bonuses,N/A,Yes,No
+TXN-01399,2023-12-30,2023-12,2023,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,PF/Benefits,Debit,77600.97,Bank Transfer,Completed,PAY-01399,Payroll - PF/Benefits,N/A,Yes,No
+TXN-01419,2024-01-02,2024-01,2024,Q1,NovaTech SaaS Pvt Ltd,DataStream GmbH,Revenue,Subscription - Starter,Credit,4796.23,Bank Transfer,Completed,INV-01419,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01438,2024-01-05,2024-01,2024,Q1,NovaTech SaaS Pvt Ltd,Legal & Compliance,Operations,Legal & Compliance,Debit,335810.6,Cash,Completed,EXP-01438,Operations expense - Legal & Compliance [REVIEW REQUIRED],N/A,Yes,No
+TXN-01416,2024-01-07,2024-01,2024,Q1,NovaTech SaaS Pvt Ltd,Vertex Analytics,Revenue,Subscription - Pro,Credit,17207.56,UPI,Completed,INV-01416,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01415,2024-01-09,2024-01,2024,Q1,NovaTech SaaS Pvt Ltd,Nexus Dynamics,Revenue,Subscription - Pro,Credit,23013.24,Wire Transfer,Completed,INV-01415,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01418,2024-01-11,2024-01,2024,Q1,NovaTech SaaS Pvt Ltd,Client_05,Revenue,Subscription - Starter,Credit,4514.65,Cash,Pending,INV-01418,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01439,2024-01-13,2024-01,2024,Q1,NovaTech SaaS Pvt Ltd,Software Subscriptions,Operations,Software Subscriptions,Debit,308249.13,UPI,Completed,EXP-01439,Operations expense - Software Subscriptions [REVIEW REQUIRED],N/A,Yes,No
+TXN-01413,2024-01-15,2024-01,2024,Q1,NovaTech SaaS Pvt Ltd,FuturePath Co,Revenue,Subscription - Pro,Credit,13170.64,Credit Card,Completed,INV-01413,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01420,2024-01-16,2024-01,2024,Q1,NovaTech SaaS Pvt Ltd,Cloud Hosting (AWS),COGS,Cloud Hosting (AWS),Debit,36647.65,Cash,Completed,INV-01420,Monthly Cloud Hosting (AWS) cost,N/A,Yes,No
+TXN-01425,2024-01-17,2024-01,2024,Q1,NovaTech SaaS Pvt Ltd,Support Tools License,COGS,Support Tools License,Debit,47975.47,Cash,Completed,INV-01425,Monthly Support Tools License cost,N/A,Yes,No
+TXN-01437,2024-01-17,2024-01,2024,Q1,NovaTech SaaS Pvt Ltd,Office Rent,Operations,Office Rent,Debit,191995.69,Cash,Completed,EXP-01437,Operations expense - Office Rent [REVIEW REQUIRED],N/A,No,No
+TXN-01441,2024-01-18,2024-01,2024,Q1,NovaTech SaaS Pvt Ltd,Testing Infrastructure,R&D,Testing Infrastructure,Debit,281060.67,UPI,Completed,EXP-01441,R&D expense - Testing Infrastructure [REVIEW REQUIRED],N/A,Yes,No
+TXN-01424,2024-01-19,2024-01,2024,Q1,NovaTech SaaS Pvt Ltd,Payment Gateway Fees,COGS,Payment Gateway Fees,Debit,69769.13,UPI,Completed,INV-01424,Monthly Payment Gateway Fees cost,N/A,Yes,No
+TXN-01421,2024-01-20,2024-01,2024,Q1,NovaTech SaaS Pvt Ltd,Cloud Hosting (GCP),COGS,Cloud Hosting (GCP),Debit,44704.26,Cash,Completed,INV-01421,Monthly Cloud Hosting (GCP) cost,N/A,Yes,No
+TXN-01422,2024-01-20,2024-01,2024,Q1,NovaTech SaaS Pvt Ltd,CDN Costs,COGS,CDN Costs,Debit,24085.76,UPI,Completed,INV-01422,Monthly CDN Costs cost,N/A,Yes,No
+TXN-01423,2024-01-20,2024-01,2024,Q1,NovaTech SaaS Pvt Ltd,Third-party APIs,COGS,Third-party APIs,Debit,25562.63,Wire Transfer,Completed,INV-01423,Monthly Third-party APIs cost,N/A,Yes,No
+TXN-01435,2024-01-21,2024-01,2024,Q1,NovaTech SaaS Pvt Ltd,PR Agency,Marketing,PR Agency,Debit,308878.28,Wire Transfer,Completed,EXP-01435,Marketing expense - PR Agency [REVIEW REQUIRED],N/A,No,No
+TXN-01440,2024-01-22,2024-01,2024,Q1,NovaTech SaaS Pvt Ltd,Security Audits,R&D,Security Audits,Debit,380000.92,Wire Transfer,Completed,EXP-01440,R&D expense - Security Audits [REVIEW REQUIRED],N/A,No,No
+TXN-01436,2024-01-23,2024-01,2024,Q1,NovaTech SaaS Pvt Ltd,Google Ads,Marketing,Google Ads,Debit,68065.72,Bank Transfer,Completed,EXP-01436,Marketing expense - Google Ads [REVIEW REQUIRED],N/A,Yes,No
+TXN-01442,2024-01-23,2024-01,2024,Q1,NovaTech SaaS Pvt Ltd,Research Subscriptions,R&D,Research Subscriptions,Debit,601867.18,Credit Card,Completed,EXP-01442,R&D expense - Research Subscriptions [REVIEW REQUIRED],N/A,No,No
+TXN-01434,2024-01-25,2024-01,2024,Q1,NovaTech SaaS Pvt Ltd,Affiliate Payouts,Marketing,Affiliate Payouts,Debit,365776.03,Cash,Completed,EXP-01434,Marketing expense - Affiliate Payouts [REVIEW REQUIRED],N/A,Yes,No
+TXN-01414,2024-01-27,2024-01,2024,Q1,NovaTech SaaS Pvt Ltd,CoreLogic Systems,Revenue,Subscription - Pro,Credit,15657.63,Wire Transfer,Completed,INV-01414,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01417,2024-01-27,2024-01,2024,Q1,NovaTech SaaS Pvt Ltd,Horizon Enterprises,Revenue,Subscription - Starter,Credit,5545.4,Cash,Completed,INV-01417,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01426,2024-01-30,2024-01,2024,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Engineering Salaries,Debit,221446.33,Bank Transfer,Completed,PAY-01426,Payroll - Engineering Salaries,N/A,Yes,No
+TXN-01427,2024-01-30,2024-01,2024,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Sales Salaries,Debit,247023.49,Bank Transfer,Completed,PAY-01427,Payroll - Sales Salaries,N/A,Yes,No
+TXN-01428,2024-01-30,2024-01,2024,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Marketing Salaries,Debit,216212.41,Bank Transfer,Completed,PAY-01428,Payroll - Marketing Salaries,N/A,Yes,No
+TXN-01429,2024-01-30,2024-01,2024,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,CS Salaries,Debit,55822.93,Bank Transfer,Completed,PAY-01429,Payroll - CS Salaries,N/A,Yes,No
+TXN-01430,2024-01-30,2024-01,2024,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Management Salaries,Debit,165933.86,Bank Transfer,Completed,PAY-01430,Payroll - Management Salaries,N/A,Yes,No
+TXN-01431,2024-01-30,2024-01,2024,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Contractor Payments,Debit,88361.61,Bank Transfer,Completed,PAY-01431,Payroll - Contractor Payments,N/A,Yes,No
+TXN-01432,2024-01-30,2024-01,2024,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Bonuses,Debit,195789.09,Bank Transfer,Completed,PAY-01432,Payroll - Bonuses,N/A,Yes,No
+TXN-01433,2024-01-30,2024-01,2024,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,PF/Benefits,Debit,157687.24,Bank Transfer,Completed,PAY-01433,Payroll - PF/Benefits,N/A,Yes,No
+TXN-01451,2024-02-02,2024-02,2024,Q1,NovaTech SaaS Pvt Ltd,Cloud Hosting (AWS),COGS,Cloud Hosting (AWS),Debit,26426.27,Cheque,Completed,INV-01451,Monthly Cloud Hosting (AWS) cost,N/A,Yes,No
+TXN-01449,2024-02-03,2024-02,2024,Q1,NovaTech SaaS Pvt Ltd,Client_13,Revenue,Subscription - Pro,Credit,20396.67,Wire Transfer,Completed,INV-01449,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01445,2024-02-04,2024-02,2024,Q1,NovaTech SaaS Pvt Ltd,BlueStar Media,Revenue,Subscription - Enterprise,Credit,61729.72,Cash,Completed,INV-01445,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01447,2024-02-05,2024-02,2024,Q1,NovaTech SaaS Pvt Ltd,Client_11,Revenue,Subscription - Pro,Credit,18141.25,Bank Transfer,Failed,INV-01447,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01467,2024-02-05,2024-02,2024,Q1,NovaTech SaaS Pvt Ltd,LinkedIn Ads,Marketing,LinkedIn Ads,Debit,53225.74,Cheque,Completed,EXP-01467,Marketing expense - LinkedIn Ads [REVIEW REQUIRED],N/A,No,No
+TXN-01450,2024-02-06,2024-02,2024,Q1,NovaTech SaaS Pvt Ltd,CoreLogic Systems,Revenue,Subscription - Enterprise,Credit,42983.86,Cheque,Completed,INV-01450,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01452,2024-02-06,2024-02,2024,Q1,NovaTech SaaS Pvt Ltd,Cloud Hosting (GCP),COGS,Cloud Hosting (GCP),Debit,66217.44,Wire Transfer,Completed,INV-01452,Monthly Cloud Hosting (GCP) cost,N/A,Yes,No
+TXN-01443,2024-02-10,2024-02,2024,Q1,NovaTech SaaS Pvt Ltd,DataStream GmbH,Revenue,Subscription - Pro,Credit,24409.92,Bank Transfer,Completed,INV-01443,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01453,2024-02-10,2024-02,2024,Q1,NovaTech SaaS Pvt Ltd,CDN Costs,COGS,CDN Costs,Debit,77538.54,Bank Transfer,Completed,INV-01453,Monthly CDN Costs cost,N/A,Yes,No
+TXN-01455,2024-02-11,2024-02,2024,Q1,NovaTech SaaS Pvt Ltd,Payment Gateway Fees,COGS,Payment Gateway Fees,Debit,21974.54,UPI,Completed,INV-01455,Monthly Payment Gateway Fees cost,N/A,Yes,No
+TXN-01468,2024-02-11,2024-02,2024,Q1,NovaTech SaaS Pvt Ltd,Legal & Compliance,Operations,Legal & Compliance,Debit,186670.28,UPI,Completed,EXP-01468,Operations expense - Legal & Compliance [REVIEW REQUIRED],N/A,Yes,No
+TXN-01466,2024-02-14,2024-02,2024,Q1,NovaTech SaaS Pvt Ltd,Content Marketing,Marketing,Content Marketing,Debit,317330.64,Cash,Completed,EXP-01466,Marketing expense - Content Marketing [REVIEW REQUIRED],N/A,No,No
+TXN-01448,2024-02-16,2024-02,2024,Q1,NovaTech SaaS Pvt Ltd,TechNova India,Revenue,Subscription - Starter,Credit,5627.63,Wire Transfer,Completed,INV-01448,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01472,2024-02-18,2024-02,2024,Q1,NovaTech SaaS Pvt Ltd,Research Subscriptions,R&D,Research Subscriptions,Debit,233077.33,Wire Transfer,Completed,EXP-01472,R&D expense - Research Subscriptions [REVIEW REQUIRED],N/A,Yes,No
+TXN-01454,2024-02-19,2024-02,2024,Q1,NovaTech SaaS Pvt Ltd,Third-party APIs,COGS,Third-party APIs,Debit,15602.37,Cash,Completed,INV-01454,Monthly Third-party APIs cost,N/A,Yes,No
+TXN-01446,2024-02-21,2024-02,2024,Q1,NovaTech SaaS Pvt Ltd,Brightwave Inc,Revenue,Subscription - Starter,Credit,4969.83,Credit Card,Completed,INV-01446,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01456,2024-02-21,2024-02,2024,Q1,NovaTech SaaS Pvt Ltd,Support Tools License,COGS,Support Tools License,Debit,44532.69,Cash,Completed,INV-01456,Monthly Support Tools License cost,N/A,Yes,No
+TXN-01465,2024-02-22,2024-02,2024,Q1,NovaTech SaaS Pvt Ltd,Affiliate Payouts,Marketing,Affiliate Payouts,Debit,25717.95,Credit Card,Completed,EXP-01465,Marketing expense - Affiliate Payouts [REVIEW REQUIRED],N/A,Yes,No
+TXN-01469,2024-02-22,2024-02,2024,Q1,NovaTech SaaS Pvt Ltd,Office Rent,Operations,Office Rent,Debit,130103.34,Bank Transfer,Completed,EXP-01469,Operations expense - Office Rent [REVIEW REQUIRED],N/A,No,No
+TXN-01470,2024-02-23,2024-02,2024,Q1,NovaTech SaaS Pvt Ltd,Software Subscriptions,Operations,Software Subscriptions,Debit,181576.88,UPI,Completed,EXP-01470,Operations expense - Software Subscriptions [REVIEW REQUIRED],N/A,Yes,No
+TXN-01444,2024-02-24,2024-02,2024,Q1,NovaTech SaaS Pvt Ltd,Horizon Enterprises,Revenue,Subscription - Enterprise,Credit,92477.76,Cheque,Completed,INV-01444,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01471,2024-02-24,2024-02,2024,Q1,NovaTech SaaS Pvt Ltd,Testing Infrastructure,R&D,Testing Infrastructure,Debit,104477.88,Cash,Completed,EXP-01471,R&D expense - Testing Infrastructure [REVIEW REQUIRED],N/A,No,No
+TXN-01473,2024-02-26,2024-02,2024,Q1,NovaTech SaaS Pvt Ltd,Dev Tools,R&D,Dev Tools,Debit,443383.59,Bank Transfer,Completed,EXP-01473,R&D expense - Dev Tools [REVIEW REQUIRED],N/A,No,No
+TXN-01457,2024-02-28,2024-02,2024,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Engineering Salaries,Debit,233511.49,Bank Transfer,Completed,PAY-01457,Payroll - Engineering Salaries,N/A,Yes,No
+TXN-01458,2024-02-28,2024-02,2024,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Sales Salaries,Debit,361240.99,Bank Transfer,Completed,PAY-01458,Payroll - Sales Salaries,N/A,Yes,No
+TXN-01459,2024-02-28,2024-02,2024,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Marketing Salaries,Debit,96969.98,Bank Transfer,Completed,PAY-01459,Payroll - Marketing Salaries,N/A,Yes,No
+TXN-01460,2024-02-28,2024-02,2024,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,CS Salaries,Debit,226474.44,Bank Transfer,Completed,PAY-01460,Payroll - CS Salaries,N/A,Yes,No
+TXN-01461,2024-02-28,2024-02,2024,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Management Salaries,Debit,145492.98,Bank Transfer,Completed,PAY-01461,Payroll - Management Salaries,N/A,Yes,No
+TXN-01462,2024-02-28,2024-02,2024,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Contractor Payments,Debit,333084.86,Bank Transfer,Completed,PAY-01462,Payroll - Contractor Payments,N/A,Yes,No
+TXN-01463,2024-02-28,2024-02,2024,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Bonuses,Debit,165739.43,Bank Transfer,Completed,PAY-01463,Payroll - Bonuses,N/A,Yes,No
+TXN-01464,2024-02-28,2024-02,2024,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,PF/Benefits,Debit,305891.73,Bank Transfer,Completed,PAY-01464,Payroll - PF/Benefits,N/A,Yes,No
+TXN-01482,2024-03-01,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,BlueStar Media,Revenue,Subscription - Pro,Credit,21462.16,Bank Transfer,Failed,INV-01482,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01488,2024-03-01,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,Support Tools License,COGS,Support Tools License,Debit,54970.01,Credit Card,Completed,INV-01488,Monthly Support Tools License cost,N/A,Yes,No
+TXN-01475,2024-03-02,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,Zephyr Solutions,Revenue,Subscription - Enterprise,Credit,75638.62,Cheque,Completed,INV-01475,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01477,2024-03-03,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,Acme Corp,Revenue,Subscription - Pro,Credit,12039.2,Bank Transfer,Completed,INV-01477,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01478,2024-03-03,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,Client_05,Revenue,Subscription - Enterprise,Credit,114766.62,Cheque,Completed,INV-01478,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01503,2024-03-03,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,Security Audits,R&D,Security Audits,Debit,198215.27,Cheque,Completed,EXP-01503,R&D expense - Security Audits [REVIEW REQUIRED],N/A,No,No
+TXN-01474,2024-03-04,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,DataStream GmbH,Revenue,Subscription - Enterprise,Credit,81627.32,Wire Transfer,Completed,INV-01474,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01481,2024-03-04,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,Client_11,Revenue,Subscription - Enterprise,Credit,108822.93,Credit Card,Refunded,INV-01481,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01502,2024-03-05,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,Legal & Compliance,Operations,Legal & Compliance,Debit,182288.0,Cheque,Completed,EXP-01502,Operations expense - Legal & Compliance [REVIEW REQUIRED],N/A,Yes,No
+TXN-01501,2024-03-06,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,Accounting,Operations,Accounting,Debit,331765.86,Cash,Completed,EXP-01501,Operations expense - Accounting [REVIEW REQUIRED],N/A,No,No
+TXN-01498,2024-03-08,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,Events & Conferences,Marketing,Events & Conferences,Debit,389549.92,UPI,Completed,EXP-01498,Marketing expense - Events & Conferences [REVIEW REQUIRED],N/A,Yes,No
+TXN-01499,2024-03-09,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,PR Agency,Marketing,PR Agency,Debit,501905.71,Bank Transfer,Completed,EXP-01499,Marketing expense - PR Agency [REVIEW REQUIRED],N/A,Yes,No
+TXN-01504,2024-03-09,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,Research Subscriptions,R&D,Research Subscriptions,Debit,55833.68,Cheque,Completed,EXP-01504,R&D expense - Research Subscriptions [REVIEW REQUIRED],N/A,Yes,No
+TXN-01497,2024-03-10,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,LinkedIn Ads,Marketing,LinkedIn Ads,Debit,313837.22,Credit Card,Completed,EXP-01497,Marketing expense - LinkedIn Ads [REVIEW REQUIRED],N/A,No,No
+TXN-01485,2024-03-12,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,CDN Costs,COGS,CDN Costs,Debit,31088.28,Credit Card,Completed,INV-01485,Monthly CDN Costs cost,N/A,Yes,No
+TXN-01480,2024-03-13,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,Client_01,Revenue,Subscription - Pro,Credit,16972.24,Cheque,Completed,INV-01480,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01484,2024-03-13,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,Cloud Hosting (GCP),COGS,Cloud Hosting (GCP),Debit,42568.32,Credit Card,Completed,INV-01484,Monthly Cloud Hosting (GCP) cost,N/A,Yes,No
+TXN-01500,2024-03-13,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,Travel & Expenses,Operations,Travel & Expenses,Debit,51230.4,Cash,Completed,EXP-01500,Operations expense - Travel & Expenses [REVIEW REQUIRED],N/A,No,No
+TXN-01506,2024-03-15,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,Government / Tax Authority,Tax,GST Payment,Debit,111497.02,Bank Transfer,Completed,TAX-01506,Quarterly tax payment - GST Payment,N/A,Yes,No
+TXN-01507,2024-03-15,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,Government / Tax Authority,Tax,TDS Payment,Debit,177810.55,Bank Transfer,Completed,TAX-01507,Quarterly tax payment - TDS Payment,N/A,Yes,No
+TXN-01508,2024-03-15,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,Government / Tax Authority,Tax,Advance Tax,Debit,86603.93,Bank Transfer,Completed,TAX-01508,Quarterly tax payment - Advance Tax,N/A,Yes,No
+TXN-01509,2024-03-15,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,Government / Tax Authority,Tax,Income Tax,Debit,192693.36,Bank Transfer,Completed,TAX-01509,Quarterly tax payment - Income Tax,N/A,Yes,No
+TXN-01487,2024-03-22,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,Payment Gateway Fees,COGS,Payment Gateway Fees,Debit,17094.13,Cheque,Completed,INV-01487,Monthly Payment Gateway Fees cost,N/A,Yes,No
+TXN-01479,2024-03-24,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,Horizon Enterprises,Revenue,Subscription - Pro,Credit,13760.58,Wire Transfer,Failed,INV-01479,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01483,2024-03-24,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,Cloud Hosting (AWS),COGS,Cloud Hosting (AWS),Debit,45095.25,Cash,Completed,INV-01483,Monthly Cloud Hosting (AWS) cost,N/A,Yes,No
+TXN-01486,2024-03-24,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,Third-party APIs,COGS,Third-party APIs,Debit,32917.23,Bank Transfer,Completed,INV-01486,Monthly Third-party APIs cost,N/A,Yes,No
+TXN-01505,2024-03-24,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,Dev Tools,R&D,Dev Tools,Debit,557399.09,Wire Transfer,Completed,EXP-01505,R&D expense - Dev Tools [REVIEW REQUIRED],N/A,Yes,No
+TXN-01476,2024-03-26,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,GlobalEdge Ltd,Revenue,Subscription - Pro,Credit,12750.58,UPI,Completed,INV-01476,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01489,2024-03-30,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Engineering Salaries,Debit,122128.57,Bank Transfer,Completed,PAY-01489,Payroll - Engineering Salaries,N/A,Yes,No
+TXN-01490,2024-03-30,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Sales Salaries,Debit,85313.85,Bank Transfer,Completed,PAY-01490,Payroll - Sales Salaries,N/A,Yes,No
+TXN-01491,2024-03-30,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Marketing Salaries,Debit,61751.7,Bank Transfer,Completed,PAY-01491,Payroll - Marketing Salaries,N/A,Yes,No
+TXN-01492,2024-03-30,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,CS Salaries,Debit,259224.71,Bank Transfer,Completed,PAY-01492,Payroll - CS Salaries,N/A,Yes,No
+TXN-01493,2024-03-30,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Management Salaries,Debit,296150.19,Bank Transfer,Completed,PAY-01493,Payroll - Management Salaries,N/A,Yes,No
+TXN-01494,2024-03-30,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Contractor Payments,Debit,67036.71,Bank Transfer,Completed,PAY-01494,Payroll - Contractor Payments,N/A,Yes,No
+TXN-01495,2024-03-30,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,Bonuses,Debit,309189.38,Bank Transfer,Completed,PAY-01495,Payroll - Bonuses,N/A,Yes,No
+TXN-01496,2024-03-30,2024-03,2024,Q1,NovaTech SaaS Pvt Ltd,Internal,Payroll,PF/Benefits,Debit,190792.87,Bank Transfer,Completed,PAY-01496,Payroll - PF/Benefits,N/A,Yes,No
+TXN-01536,2024-04-02,2024-04,2024,Q2,NovaTech SaaS Pvt Ltd,Testing Infrastructure,R&D,Testing Infrastructure,Debit,73377.06,Wire Transfer,Completed,EXP-01536,R&D expense - Testing Infrastructure [REVIEW REQUIRED],N/A,Yes,No
+TXN-01514,2024-04-05,2024-04,2024,Q2,NovaTech SaaS Pvt Ltd,Client_09,Revenue,Subscription - Enterprise,Credit,73406.25,Credit Card,Completed,INV-01514,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01519,2024-04-06,2024-04,2024,Q2,NovaTech SaaS Pvt Ltd,Payment Gateway Fees,COGS,Payment Gateway Fees,Debit,46888.71,Wire Transfer,Completed,INV-01519,Monthly Payment Gateway Fees cost,N/A,Yes,No
+TXN-01520,2024-04-06,2024-04,2024,Q2,NovaTech SaaS Pvt Ltd,Support Tools License,COGS,Support Tools License,Debit,66673.41,Credit Card,Completed,INV-01520,Monthly Support Tools License cost,N/A,Yes,No
+TXN-01510,2024-04-08,2024-04,2024,Q2,NovaTech SaaS Pvt Ltd,CoreLogic Systems,Revenue,Subscription - Starter,Credit,6782.51,Cash,Completed,INV-01510,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01529,2024-04-08,2024-04,2024,Q2,NovaTech SaaS Pvt Ltd,PR Agency,Marketing,PR Agency,Debit,513511.5,Bank Transfer,Completed,EXP-01529,Marketing expense - PR Agency [REVIEW REQUIRED],N/A,Yes,No
+TXN-01511,2024-04-09,2024-04,2024,Q2,NovaTech SaaS Pvt Ltd,Client_17,Revenue,Subscription - Pro,Credit,18937.45,UPI,Completed,INV-01511,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01534,2024-04-12,2024-04,2024,Q2,NovaTech SaaS Pvt Ltd,Software Subscriptions,Operations,Software Subscriptions,Debit,413829.12,Cheque,Completed,EXP-01534,Operations expense - Software Subscriptions [REVIEW REQUIRED],N/A,No,No
+TXN-01531,2024-04-14,2024-04,2024,Q2,NovaTech SaaS Pvt Ltd,Google Ads,Marketing,Google Ads,Debit,371489.66,Bank Transfer,Completed,EXP-01531,Marketing expense - Google Ads [REVIEW REQUIRED],N/A,Yes,Yes
+TXN-01530,2024-04-20,2024-04,2024,Q2,NovaTech SaaS Pvt Ltd,Affiliate Payouts,Marketing,Affiliate Payouts,Debit,24928.82,Wire Transfer,Completed,EXP-01530,Marketing expense - Affiliate Payouts [REVIEW REQUIRED],N/A,No,No
+TXN-01533,2024-04-20,2024-04,2024,Q2,NovaTech SaaS Pvt Ltd,Miscellaneous,Operations,Miscellaneous,Debit,411662.68,Cash,Completed,EXP-01533,Operations expense - Miscellaneous [REVIEW REQUIRED],N/A,No,No
+TXN-01516,2024-04-21,2024-04,2024,Q2,NovaTech SaaS Pvt Ltd,Cloud Hosting (GCP),COGS,Cloud Hosting (GCP),Debit,47454.6,Wire Transfer,Completed,INV-01516,Monthly Cloud Hosting (GCP) cost,N/A,Yes,No
+TXN-01518,2024-04-21,2024-04,2024,Q2,NovaTech SaaS Pvt Ltd,Third-party APIs,COGS,Third-party APIs,Debit,77823.04,Wire Transfer,Completed,INV-01518,Monthly Third-party APIs cost,N/A,Yes,No
+TXN-01537,2024-04-21,2024-04,2024,Q2,NovaTech SaaS Pvt Ltd,Dev Tools,R&D,Dev Tools,Debit,475138.43,UPI,Completed,EXP-01537,R&D expense - Dev Tools [REVIEW REQUIRED],N/A,Yes,No
+TXN-01513,2024-04-24,2024-04,2024,Q2,NovaTech SaaS Pvt Ltd,Client_11,Revenue,Subscription - Pro,Credit,12594.3,Credit Card,Completed,INV-01513,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01512,2024-04-25,2024-04,2024,Q2,NovaTech SaaS Pvt Ltd,GlobalEdge Ltd,Revenue,Subscription - Pro,Credit,22436.62,UPI,Pending,INV-01512,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01517,2024-04-25,2024-04,2024,Q2,NovaTech SaaS Pvt Ltd,CDN Costs,COGS,CDN Costs,Debit,36941.68,Cheque,Completed,INV-01517,Monthly CDN Costs cost,N/A,Yes,No
+TXN-01532,2024-04-26,2024-04,2024,Q2,NovaTech SaaS Pvt Ltd,Accounting,Operations,Accounting,Debit,35011.05,Credit Card,Completed,EXP-01532,Operations expense - Accounting [REVIEW REQUIRED],N/A,Yes,No
+TXN-01515,2024-04-27,2024-04,2024,Q2,NovaTech SaaS Pvt Ltd,Cloud Hosting (AWS),COGS,Cloud Hosting (AWS),Debit,39689.59,Credit Card,Completed,INV-01515,Monthly Cloud Hosting (AWS) cost,N/A,Yes,No
+TXN-01521,2024-04-28,2024-04,2024,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Engineering Salaries,Debit,302109.74,Bank Transfer,Completed,PAY-01521,Payroll - Engineering Salaries,N/A,Yes,No
+TXN-01522,2024-04-28,2024-04,2024,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Sales Salaries,Debit,220910.71,Bank Transfer,Completed,PAY-01522,Payroll - Sales Salaries,N/A,Yes,No
+TXN-01523,2024-04-28,2024-04,2024,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Marketing Salaries,Debit,370914.79,Bank Transfer,Completed,PAY-01523,Payroll - Marketing Salaries,N/A,Yes,No
+TXN-01524,2024-04-28,2024-04,2024,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,CS Salaries,Debit,239747.9,Bank Transfer,Completed,PAY-01524,Payroll - CS Salaries,N/A,Yes,No
+TXN-01525,2024-04-28,2024-04,2024,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Management Salaries,Debit,274633.31,Bank Transfer,Completed,PAY-01525,Payroll - Management Salaries,N/A,Yes,No
+TXN-01526,2024-04-28,2024-04,2024,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Contractor Payments,Debit,70556.22,Bank Transfer,Completed,PAY-01526,Payroll - Contractor Payments,N/A,Yes,No
+TXN-01527,2024-04-28,2024-04,2024,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Bonuses,Debit,61838.32,Bank Transfer,Completed,PAY-01527,Payroll - Bonuses,N/A,Yes,No
+TXN-01528,2024-04-28,2024-04,2024,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,PF/Benefits,Debit,346344.08,Bank Transfer,Completed,PAY-01528,Payroll - PF/Benefits,N/A,Yes,No
+TXN-01535,2024-04-28,2024-04,2024,Q2,NovaTech SaaS Pvt Ltd,Research Subscriptions,R&D,Research Subscriptions,Debit,128043.65,Wire Transfer,Completed,EXP-01535,R&D expense - Research Subscriptions [REVIEW REQUIRED],N/A,Yes,No
+TXN-01561,2024-05-09,2024-05,2024,Q2,NovaTech SaaS Pvt Ltd,Office Rent,Operations,Office Rent,Debit,319049.39,Cheque,Completed,EXP-01561,Operations expense - Office Rent [REVIEW REQUIRED],N/A,Yes,No
+TXN-01563,2024-05-10,2024-05,2024,Q2,NovaTech SaaS Pvt Ltd,Testing Infrastructure,R&D,Testing Infrastructure,Debit,243382.5,Bank Transfer,Completed,EXP-01563,R&D expense - Testing Infrastructure [REVIEW REQUIRED],N/A,No,No
+TXN-01544,2024-05-11,2024-05,2024,Q2,NovaTech SaaS Pvt Ltd,Cloud Hosting (GCP),COGS,Cloud Hosting (GCP),Debit,77979.83,Bank Transfer,Completed,INV-01544,Monthly Cloud Hosting (GCP) cost,N/A,Yes,No
+TXN-01564,2024-05-11,2024-05,2024,Q2,NovaTech SaaS Pvt Ltd,Dev Tools,R&D,Dev Tools,Debit,233835.26,Cheque,Completed,EXP-01564,R&D expense - Dev Tools [REVIEW REQUIRED],N/A,No,No
+TXN-01546,2024-05-12,2024-05,2024,Q2,NovaTech SaaS Pvt Ltd,Third-party APIs,COGS,Third-party APIs,Debit,46889.22,Cash,Completed,INV-01546,Monthly Third-party APIs cost,N/A,Yes,No
+TXN-01547,2024-05-14,2024-05,2024,Q2,NovaTech SaaS Pvt Ltd,Payment Gateway Fees,COGS,Payment Gateway Fees,Debit,76174.28,Credit Card,Completed,INV-01547,Monthly Payment Gateway Fees cost,N/A,Yes,No
+TXN-01557,2024-05-15,2024-05,2024,Q2,NovaTech SaaS Pvt Ltd,Affiliate Payouts,Marketing,Affiliate Payouts,Debit,270929.44,UPI,Completed,EXP-01557,Marketing expense - Affiliate Payouts [REVIEW REQUIRED],N/A,No,No
+TXN-01562,2024-05-16,2024-05,2024,Q2,NovaTech SaaS Pvt Ltd,Software Subscriptions,Operations,Software Subscriptions,Debit,52335.17,Bank Transfer,Completed,EXP-01562,Operations expense - Software Subscriptions [REVIEW REQUIRED],N/A,No,No
+TXN-01558,2024-05-18,2024-05,2024,Q2,NovaTech SaaS Pvt Ltd,SEO Tools,Marketing,SEO Tools,Debit,71935.11,Cash,Completed,EXP-01558,Marketing expense - SEO Tools [REVIEW REQUIRED],N/A,No,No
+TXN-01560,2024-05-18,2024-05,2024,Q2,NovaTech SaaS Pvt Ltd,Travel & Expenses,Operations,Travel & Expenses,Debit,272119.08,Credit Card,Completed,EXP-01560,Operations expense - Travel & Expenses [REVIEW REQUIRED],N/A,Yes,No
+TXN-01543,2024-05-20,2024-05,2024,Q2,NovaTech SaaS Pvt Ltd,Cloud Hosting (AWS),COGS,Cloud Hosting (AWS),Debit,64985.37,Cheque,Completed,INV-01543,Monthly Cloud Hosting (AWS) cost,N/A,Yes,No
+TXN-01559,2024-05-20,2024-05,2024,Q2,NovaTech SaaS Pvt Ltd,Content Marketing,Marketing,Content Marketing,Debit,78699.57,Cash,Completed,EXP-01559,Marketing expense - Content Marketing [REVIEW REQUIRED],N/A,No,No
+TXN-01565,2024-05-20,2024-05,2024,Q2,NovaTech SaaS Pvt Ltd,Research Subscriptions,R&D,Research Subscriptions,Debit,270047.88,Credit Card,Completed,EXP-01565,R&D expense - Research Subscriptions [REVIEW REQUIRED],N/A,No,No
+TXN-01538,2024-05-22,2024-05,2024,Q2,NovaTech SaaS Pvt Ltd,Vertex Analytics,Revenue,Subscription - Starter,Credit,6737.71,Bank Transfer,Completed,INV-01538,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01548,2024-05-22,2024-05,2024,Q2,NovaTech SaaS Pvt Ltd,Support Tools License,COGS,Support Tools License,Debit,59180.17,Cheque,Completed,INV-01548,Monthly Support Tools License cost,N/A,Yes,No
+TXN-01541,2024-05-23,2024-05,2024,Q2,NovaTech SaaS Pvt Ltd,SkyBridge Pvt Ltd,Revenue,Subscription - Enterprise,Credit,51196.05,Wire Transfer,Completed,INV-01541,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01545,2024-05-26,2024-05,2024,Q2,NovaTech SaaS Pvt Ltd,CDN Costs,COGS,CDN Costs,Debit,56217.99,Cheque,Completed,INV-01545,Monthly CDN Costs cost,N/A,Yes,No
+TXN-01539,2024-05-27,2024-05,2024,Q2,NovaTech SaaS Pvt Ltd,CoreLogic Systems,Revenue,Subscription - Pro,Credit,14693.06,Wire Transfer,Completed,INV-01539,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01542,2024-05-27,2024-05,2024,Q2,NovaTech SaaS Pvt Ltd,Acme Corp,Revenue,Subscription - Enterprise,Credit,74967.06,Bank Transfer,Completed,INV-01542,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01540,2024-05-28,2024-05,2024,Q2,NovaTech SaaS Pvt Ltd,Client_11,Revenue,Subscription - Starter,Credit,5197.11,Cheque,Completed,INV-01540,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01549,2024-05-30,2024-05,2024,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Engineering Salaries,Debit,79992.94,Bank Transfer,Completed,PAY-01549,Payroll - Engineering Salaries,N/A,Yes,No
+TXN-01550,2024-05-30,2024-05,2024,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Sales Salaries,Debit,266515.56,Bank Transfer,Completed,PAY-01550,Payroll - Sales Salaries,N/A,Yes,No
+TXN-01551,2024-05-30,2024-05,2024,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Marketing Salaries,Debit,329319.31,Bank Transfer,Completed,PAY-01551,Payroll - Marketing Salaries,N/A,Yes,No
+TXN-01552,2024-05-30,2024-05,2024,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,CS Salaries,Debit,299587.99,Bank Transfer,Completed,PAY-01552,Payroll - CS Salaries,N/A,Yes,No
+TXN-01553,2024-05-30,2024-05,2024,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Management Salaries,Debit,78713.3,Bank Transfer,Completed,PAY-01553,Payroll - Management Salaries,N/A,Yes,No
+TXN-01554,2024-05-30,2024-05,2024,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Contractor Payments,Debit,103977.34,Bank Transfer,Completed,PAY-01554,Payroll - Contractor Payments,N/A,Yes,No
+TXN-01555,2024-05-30,2024-05,2024,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Bonuses,Debit,299087.0,Bank Transfer,Completed,PAY-01555,Payroll - Bonuses,N/A,Yes,No
+TXN-01556,2024-05-30,2024-05,2024,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,PF/Benefits,Debit,271865.31,Bank Transfer,Completed,PAY-01556,Payroll - PF/Benefits,N/A,Yes,No
+TXN-01575,2024-06-02,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,CDN Costs,COGS,CDN Costs,Debit,57054.99,Cash,Completed,INV-01575,Monthly CDN Costs cost,N/A,Yes,No
+TXN-01595,2024-06-04,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,Dev Tools,R&D,Dev Tools,Debit,291729.32,Cash,Completed,EXP-01595,R&D expense - Dev Tools [REVIEW REQUIRED],N/A,Yes,No
+TXN-01568,2024-06-07,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,TechNova India,Revenue,Subscription - Enterprise,Credit,115437.99,Cheque,Completed,INV-01568,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01594,2024-06-07,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,Testing Infrastructure,R&D,Testing Infrastructure,Debit,170860.35,Credit Card,Completed,EXP-01594,R&D expense - Testing Infrastructure [REVIEW REQUIRED],N/A,No,No
+TXN-01566,2024-06-08,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,CoreLogic Systems,Revenue,Subscription - Enterprise,Credit,86070.34,UPI,Completed,INV-01566,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01574,2024-06-12,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,Cloud Hosting (GCP),COGS,Cloud Hosting (GCP),Debit,57744.11,Credit Card,Completed,INV-01574,Monthly Cloud Hosting (GCP) cost,N/A,Yes,No
+TXN-01578,2024-06-14,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,Support Tools License,COGS,Support Tools License,Debit,77771.59,Bank Transfer,Completed,INV-01578,Monthly Support Tools License cost,N/A,Yes,No
+TXN-01592,2024-06-14,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,Insurance,Operations,Insurance,Debit,256904.82,Cheque,Completed,EXP-01592,Operations expense - Insurance [REVIEW REQUIRED],N/A,Yes,No
+TXN-01596,2024-06-15,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,Government / Tax Authority,Tax,GST Payment,Debit,92184.82,Bank Transfer,Completed,TAX-01596,Quarterly tax payment - GST Payment,N/A,Yes,No
+TXN-01597,2024-06-15,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,Government / Tax Authority,Tax,TDS Payment,Debit,63502.63,Bank Transfer,Completed,TAX-01597,Quarterly tax payment - TDS Payment,N/A,Yes,No
+TXN-01598,2024-06-15,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,Government / Tax Authority,Tax,Advance Tax,Debit,49372.35,Bank Transfer,Completed,TAX-01598,Quarterly tax payment - Advance Tax,N/A,Yes,No
+TXN-01599,2024-06-15,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,Government / Tax Authority,Tax,Income Tax,Debit,144019.24,Bank Transfer,Completed,TAX-01599,Quarterly tax payment - Income Tax,N/A,Yes,No
+TXN-01587,2024-06-16,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,PR Agency,Marketing,PR Agency,Debit,505820.07,Bank Transfer,Completed,EXP-01587,Marketing expense - PR Agency [REVIEW REQUIRED],N/A,No,No
+TXN-01589,2024-06-16,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,Events & Conferences,Marketing,Events & Conferences,Debit,147964.55,UPI,Completed,EXP-01589,Marketing expense - Events & Conferences [REVIEW REQUIRED],N/A,No,No
+TXN-01567,2024-06-18,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,Client_11,Revenue,Subscription - Pro,Credit,24116.87,Credit Card,Completed,INV-01567,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01572,2024-06-18,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,SkyBridge Pvt Ltd,Revenue,Subscription - Starter,Credit,7162.88,Cash,Completed,INV-01572,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01569,2024-06-22,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,Nexus Dynamics,Revenue,Subscription - Enterprise,Credit,103603.65,Cheque,Completed,INV-01569,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01576,2024-06-22,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,Third-party APIs,COGS,Third-party APIs,Debit,78934.53,Wire Transfer,Completed,INV-01576,Monthly Third-party APIs cost,N/A,Yes,No
+TXN-01588,2024-06-24,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,Affiliate Payouts,Marketing,Affiliate Payouts,Debit,176909.85,Credit Card,Completed,EXP-01588,Marketing expense - Affiliate Payouts [REVIEW REQUIRED],N/A,No,No
+TXN-01593,2024-06-24,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,Security Audits,R&D,Security Audits,Debit,110674.55,Cash,Completed,EXP-01593,R&D expense - Security Audits [REVIEW REQUIRED],N/A,Yes,No
+TXN-01573,2024-06-25,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,Cloud Hosting (AWS),COGS,Cloud Hosting (AWS),Debit,20523.83,Credit Card,Completed,INV-01573,Monthly Cloud Hosting (AWS) cost,N/A,Yes,No
+TXN-01577,2024-06-25,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,Payment Gateway Fees,COGS,Payment Gateway Fees,Debit,40975.15,UPI,Completed,INV-01577,Monthly Payment Gateway Fees cost,N/A,Yes,No
+TXN-01570,2024-06-26,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,Client_19,Revenue,Subscription - Pro,Credit,20562.62,Cheque,Completed,INV-01570,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01590,2024-06-26,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,Utilities,Operations,Utilities,Debit,332065.77,Wire Transfer,Completed,EXP-01590,Operations expense - Utilities [REVIEW REQUIRED],N/A,Yes,No
+TXN-01591,2024-06-26,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,Legal & Compliance,Operations,Legal & Compliance,Debit,25284.44,Credit Card,Completed,EXP-01591,Operations expense - Legal & Compliance [REVIEW REQUIRED],N/A,Yes,No
+TXN-01571,2024-06-28,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,Client_17,Revenue,Subscription - Enterprise,Credit,80529.01,Wire Transfer,Completed,INV-01571,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01579,2024-06-28,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Engineering Salaries,Debit,53691.72,Bank Transfer,Completed,PAY-01579,Payroll - Engineering Salaries,N/A,Yes,No
+TXN-01580,2024-06-28,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Sales Salaries,Debit,140558.43,Bank Transfer,Completed,PAY-01580,Payroll - Sales Salaries,N/A,Yes,No
+TXN-01581,2024-06-28,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Marketing Salaries,Debit,228736.68,Bank Transfer,Completed,PAY-01581,Payroll - Marketing Salaries,N/A,Yes,No
+TXN-01582,2024-06-28,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,CS Salaries,Debit,231579.22,Bank Transfer,Completed,PAY-01582,Payroll - CS Salaries,N/A,Yes,No
+TXN-01583,2024-06-28,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Management Salaries,Debit,253181.4,Bank Transfer,Completed,PAY-01583,Payroll - Management Salaries,N/A,Yes,No
+TXN-01584,2024-06-28,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Contractor Payments,Debit,251332.39,Bank Transfer,Completed,PAY-01584,Payroll - Contractor Payments,N/A,Yes,No
+TXN-01585,2024-06-28,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,Bonuses,Debit,206022.49,Bank Transfer,Completed,PAY-01585,Payroll - Bonuses,N/A,Yes,No
+TXN-01586,2024-06-28,2024-06,2024,Q2,NovaTech SaaS Pvt Ltd,Internal,Payroll,PF/Benefits,Debit,186896.96,Bank Transfer,Completed,PAY-01586,Payroll - PF/Benefits,N/A,Yes,No
+TXN-01601,2024-07-06,2024-07,2024,Q3,NovaTech SaaS Pvt Ltd,TechNova India,Revenue,Subscription - Enterprise,Credit,64430.4,UPI,Completed,INV-01601,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01606,2024-07-06,2024-07,2024,Q3,NovaTech SaaS Pvt Ltd,Nexus Dynamics,Revenue,Subscription - Enterprise,Credit,75508.14,Bank Transfer,Completed,INV-01606,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01607,2024-07-06,2024-07,2024,Q3,NovaTech SaaS Pvt Ltd,Client_11,Revenue,Subscription - Starter,Credit,5168.36,Cheque,Completed,INV-01607,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01623,2024-07-07,2024-07,2024,Q3,NovaTech SaaS Pvt Ltd,Google Ads,Marketing,Google Ads,Debit,87194.75,Bank Transfer,Completed,EXP-01623,Marketing expense - Google Ads [REVIEW REQUIRED],N/A,No,No
+TXN-01600,2024-07-10,2024-07,2024,Q3,NovaTech SaaS Pvt Ltd,Client_15,Revenue,Subscription - Pro,Credit,22578.6,Cash,Completed,INV-01600,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01629,2024-07-12,2024-07,2024,Q3,NovaTech SaaS Pvt Ltd,Dev Tools,R&D,Dev Tools,Debit,373493.38,Cheque,Completed,EXP-01629,R&D expense - Dev Tools [REVIEW REQUIRED],N/A,No,No
+TXN-01602,2024-07-14,2024-07,2024,Q3,NovaTech SaaS Pvt Ltd,Client_01,Revenue,Subscription - Enterprise,Credit,85984.48,Credit Card,Completed,INV-01602,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01613,2024-07-14,2024-07,2024,Q3,NovaTech SaaS Pvt Ltd,Support Tools License,COGS,Support Tools License,Debit,29205.23,Bank Transfer,Completed,INV-01613,Monthly Support Tools License cost,N/A,Yes,No
+TXN-01612,2024-07-15,2024-07,2024,Q3,NovaTech SaaS Pvt Ltd,Payment Gateway Fees,COGS,Payment Gateway Fees,Debit,64400.27,Cash,Completed,INV-01612,Monthly Payment Gateway Fees cost,N/A,Yes,No
+TXN-01608,2024-07-16,2024-07,2024,Q3,NovaTech SaaS Pvt Ltd,Cloud Hosting (AWS),COGS,Cloud Hosting (AWS),Debit,65215.6,Cash,Completed,INV-01608,Monthly Cloud Hosting (AWS) cost,N/A,Yes,No
+TXN-01605,2024-07-17,2024-07,2024,Q3,NovaTech SaaS Pvt Ltd,Brightwave Inc,Revenue,Subscription - Pro,Credit,22597.81,Wire Transfer,Completed,INV-01605,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01603,2024-07-18,2024-07,2024,Q3,NovaTech SaaS Pvt Ltd,Client_19,Revenue,Subscription - Enterprise,Credit,119991.96,Credit Card,Completed,INV-01603,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01610,2024-07-18,2024-07,2024,Q3,NovaTech SaaS Pvt Ltd,CDN Costs,COGS,CDN Costs,Debit,32412.78,UPI,Completed,INV-01610,Monthly CDN Costs cost,N/A,Yes,No
+TXN-01609,2024-07-19,2024-07,2024,Q3,NovaTech SaaS Pvt Ltd,Cloud Hosting (GCP),COGS,Cloud Hosting (GCP),Debit,48202.39,Bank Transfer,Completed,INV-01609,Monthly Cloud Hosting (GCP) cost,N/A,Yes,No
+TXN-01624,2024-07-23,2024-07,2024,Q3,NovaTech SaaS Pvt Ltd,LinkedIn Ads,Marketing,LinkedIn Ads,Debit,232082.83,UPI,Completed,EXP-01624,Marketing expense - LinkedIn Ads [REVIEW REQUIRED],N/A,No,No
+TXN-01630,2024-07-24,2024-07,2024,Q3,NovaTech SaaS Pvt Ltd,Research Subscriptions,R&D,Research Subscriptions,Debit,226938.16,Bank Transfer,Completed,EXP-01630,R&D expense - Research Subscriptions [REVIEW REQUIRED],N/A,No,Yes
+TXN-01611,2024-07-25,2024-07,2024,Q3,NovaTech SaaS Pvt Ltd,Third-party APIs,COGS,Third-party APIs,Debit,50232.82,Bank Transfer,Completed,INV-01611,Monthly Third-party APIs cost,N/A,Yes,No
+TXN-01625,2024-07-25,2024-07,2024,Q3,NovaTech SaaS Pvt Ltd,Accounting,Operations,Accounting,Debit,388797.78,Cheque,Completed,EXP-01625,Operations expense - Accounting [REVIEW REQUIRED],N/A,Yes,No
+TXN-01628,2024-07-26,2024-07,2024,Q3,NovaTech SaaS Pvt Ltd,Security Audits,R&D,Security Audits,Debit,249084.65,Bank Transfer,Completed,EXP-01628,R&D expense - Security Audits [REVIEW REQUIRED],N/A,No,No
+TXN-01627,2024-07-27,2024-07,2024,Q3,NovaTech SaaS Pvt Ltd,Miscellaneous,Operations,Miscellaneous,Debit,81657.43,Wire Transfer,Completed,EXP-01627,Operations expense - Miscellaneous [REVIEW REQUIRED],N/A,No,No
+TXN-01604,2024-07-28,2024-07,2024,Q3,NovaTech SaaS Pvt Ltd,BlueStar Media,Revenue,Subscription - Starter,Credit,4748.39,UPI,Failed,INV-01604,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01622,2024-07-28,2024-07,2024,Q3,NovaTech SaaS Pvt Ltd,PR Agency,Marketing,PR Agency,Debit,147643.73,Wire Transfer,Completed,EXP-01622,Marketing expense - PR Agency [REVIEW REQUIRED],N/A,No,No
+TXN-01626,2024-07-28,2024-07,2024,Q3,NovaTech SaaS Pvt Ltd,Travel & Expenses,Operations,Travel & Expenses,Debit,402758.56,Credit Card,Completed,EXP-01626,Operations expense - Travel & Expenses [REVIEW REQUIRED],N/A,Yes,No
+TXN-01614,2024-07-30,2024-07,2024,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Engineering Salaries,Debit,307596.04,Bank Transfer,Completed,PAY-01614,Payroll - Engineering Salaries,N/A,Yes,No
+TXN-01615,2024-07-30,2024-07,2024,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Sales Salaries,Debit,278785.1,Bank Transfer,Completed,PAY-01615,Payroll - Sales Salaries,N/A,Yes,No
+TXN-01616,2024-07-30,2024-07,2024,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Marketing Salaries,Debit,136636.07,Bank Transfer,Completed,PAY-01616,Payroll - Marketing Salaries,N/A,Yes,No
+TXN-01617,2024-07-30,2024-07,2024,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,CS Salaries,Debit,356183.45,Bank Transfer,Completed,PAY-01617,Payroll - CS Salaries,N/A,Yes,No
+TXN-01618,2024-07-30,2024-07,2024,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Management Salaries,Debit,61280.64,Bank Transfer,Completed,PAY-01618,Payroll - Management Salaries,N/A,Yes,No
+TXN-01619,2024-07-30,2024-07,2024,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Contractor Payments,Debit,141985.33,Bank Transfer,Completed,PAY-01619,Payroll - Contractor Payments,N/A,Yes,No
+TXN-01620,2024-07-30,2024-07,2024,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Bonuses,Debit,351769.87,Bank Transfer,Completed,PAY-01620,Payroll - Bonuses,N/A,Yes,No
+TXN-01621,2024-07-30,2024-07,2024,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,PF/Benefits,Debit,80444.05,Bank Transfer,Completed,PAY-01621,Payroll - PF/Benefits,N/A,Yes,No
+TXN-01641,2024-08-01,2024-08,2024,Q3,NovaTech SaaS Pvt Ltd,Support Tools License,COGS,Support Tools License,Debit,59198.88,Bank Transfer,Completed,INV-01641,Monthly Support Tools License cost,N/A,Yes,No
+TXN-01632,2024-08-02,2024-08,2024,Q3,NovaTech SaaS Pvt Ltd,Client_05,Revenue,Subscription - Pro,Credit,23624.01,Bank Transfer,Completed,INV-01632,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01651,2024-08-06,2024-08,2024,Q3,NovaTech SaaS Pvt Ltd,PR Agency,Marketing,PR Agency,Debit,62161.55,Cheque,Completed,EXP-01651,Marketing expense - PR Agency [REVIEW REQUIRED],N/A,No,No
+TXN-01637,2024-08-08,2024-08,2024,Q3,NovaTech SaaS Pvt Ltd,Cloud Hosting (GCP),COGS,Cloud Hosting (GCP),Debit,60463.69,Cheque,Completed,INV-01637,Monthly Cloud Hosting (GCP) cost,N/A,Yes,No
+TXN-01640,2024-08-08,2024-08,2024,Q3,NovaTech SaaS Pvt Ltd,Payment Gateway Fees,COGS,Payment Gateway Fees,Debit,23625.49,Cash,Completed,INV-01640,Monthly Payment Gateway Fees cost,N/A,Yes,No
+TXN-01654,2024-08-08,2024-08,2024,Q3,NovaTech SaaS Pvt Ltd,Office Rent,Operations,Office Rent,Debit,473521.54,Cash,Completed,EXP-01654,Operations expense - Office Rent [REVIEW REQUIRED],N/A,No,No
+TXN-01656,2024-08-08,2024-08,2024,Q3,NovaTech SaaS Pvt Ltd,Research Subscriptions,R&D,Research Subscriptions,Debit,221983.66,Cheque,Completed,EXP-01656,R&D expense - Research Subscriptions [REVIEW REQUIRED],N/A,No,No
+TXN-01636,2024-08-10,2024-08,2024,Q3,NovaTech SaaS Pvt Ltd,Cloud Hosting (AWS),COGS,Cloud Hosting (AWS),Debit,40762.2,Wire Transfer,Completed,INV-01636,Monthly Cloud Hosting (AWS) cost,N/A,Yes,No
+TXN-01653,2024-08-12,2024-08,2024,Q3,NovaTech SaaS Pvt Ltd,Legal & Compliance,Operations,Legal & Compliance,Debit,109517.42,Cheque,Completed,EXP-01653,Operations expense - Legal & Compliance [REVIEW REQUIRED],N/A,No,No
+TXN-01652,2024-08-14,2024-08,2024,Q3,NovaTech SaaS Pvt Ltd,Content Marketing,Marketing,Content Marketing,Debit,304238.01,Cash,Completed,EXP-01652,Marketing expense - Content Marketing [REVIEW REQUIRED],N/A,No,No
+TXN-01633,2024-08-15,2024-08,2024,Q3,NovaTech SaaS Pvt Ltd,CoreLogic Systems,Revenue,Subscription - Pro,Credit,24082.63,Bank Transfer,Refunded,INV-01633,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01639,2024-08-16,2024-08,2024,Q3,NovaTech SaaS Pvt Ltd,Third-party APIs,COGS,Third-party APIs,Debit,15070.61,Bank Transfer,Completed,INV-01639,Monthly Third-party APIs cost,N/A,Yes,No
+TXN-01657,2024-08-17,2024-08,2024,Q3,NovaTech SaaS Pvt Ltd,Testing Infrastructure,R&D,Testing Infrastructure,Debit,85907.34,Bank Transfer,Completed,EXP-01657,R&D expense - Testing Infrastructure [REVIEW REQUIRED],N/A,No,No
+TXN-01631,2024-08-18,2024-08,2024,Q3,NovaTech SaaS Pvt Ltd,Client_19,Revenue,Subscription - Starter,Credit,5978.86,Cash,Completed,INV-01631,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01658,2024-08-19,2024-08,2024,Q3,NovaTech SaaS Pvt Ltd,Security Audits,R&D,Security Audits,Debit,627473.77,Cheque,Completed,EXP-01658,R&D expense - Security Audits [REVIEW REQUIRED],N/A,No,No
+TXN-01634,2024-08-21,2024-08,2024,Q3,NovaTech SaaS Pvt Ltd,Client_09,Revenue,Subscription - Pro,Credit,20951.69,UPI,Completed,INV-01634,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01635,2024-08-22,2024-08,2024,Q3,NovaTech SaaS Pvt Ltd,Client_15,Revenue,Subscription - Pro,Credit,16685.66,Wire Transfer,Completed,INV-01635,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01655,2024-08-22,2024-08,2024,Q3,NovaTech SaaS Pvt Ltd,Travel & Expenses,Operations,Travel & Expenses,Debit,524329.28,UPI,Completed,EXP-01655,Operations expense - Travel & Expenses [REVIEW REQUIRED],N/A,Yes,No
+TXN-01638,2024-08-23,2024-08,2024,Q3,NovaTech SaaS Pvt Ltd,CDN Costs,COGS,CDN Costs,Debit,57606.54,Bank Transfer,Completed,INV-01638,Monthly CDN Costs cost,N/A,Yes,No
+TXN-01650,2024-08-27,2024-08,2024,Q3,NovaTech SaaS Pvt Ltd,Google Ads,Marketing,Google Ads,Debit,196081.99,Credit Card,Completed,EXP-01650,Marketing expense - Google Ads [REVIEW REQUIRED],N/A,Yes,No
+TXN-01642,2024-08-30,2024-08,2024,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Engineering Salaries,Debit,293458.99,Bank Transfer,Completed,PAY-01642,Payroll - Engineering Salaries,N/A,Yes,No
+TXN-01643,2024-08-30,2024-08,2024,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Sales Salaries,Debit,335988.16,Bank Transfer,Completed,PAY-01643,Payroll - Sales Salaries,N/A,Yes,No
+TXN-01644,2024-08-30,2024-08,2024,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Marketing Salaries,Debit,395854.22,Bank Transfer,Completed,PAY-01644,Payroll - Marketing Salaries,N/A,Yes,No
+TXN-01645,2024-08-30,2024-08,2024,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,CS Salaries,Debit,197809.88,Bank Transfer,Completed,PAY-01645,Payroll - CS Salaries,N/A,Yes,No
+TXN-01646,2024-08-30,2024-08,2024,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Management Salaries,Debit,96261.3,Bank Transfer,Completed,PAY-01646,Payroll - Management Salaries,N/A,Yes,No
+TXN-01647,2024-08-30,2024-08,2024,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Contractor Payments,Debit,74789.91,Bank Transfer,Completed,PAY-01647,Payroll - Contractor Payments,N/A,Yes,No
+TXN-01648,2024-08-30,2024-08,2024,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Bonuses,Debit,184074.47,Bank Transfer,Completed,PAY-01648,Payroll - Bonuses,N/A,Yes,No
+TXN-01649,2024-08-30,2024-08,2024,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,PF/Benefits,Debit,305767.18,Bank Transfer,Completed,PAY-01649,Payroll - PF/Benefits,N/A,Yes,No
+TXN-01690,2024-09-02,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,Security Audits,R&D,Security Audits,Debit,121808.92,Credit Card,Completed,EXP-01690,R&D expense - Security Audits [REVIEW REQUIRED],N/A,No,No
+TXN-01663,2024-09-03,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,BlueStar Media,Revenue,Subscription - Pro,Credit,23004.09,Cheque,Completed,INV-01663,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01683,2024-09-03,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,Google Ads,Marketing,Google Ads,Debit,201632.35,Cash,Completed,EXP-01683,Marketing expense - Google Ads [REVIEW REQUIRED],N/A,No,No
+TXN-01685,2024-09-03,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,Travel & Expenses,Operations,Travel & Expenses,Debit,411272.21,Cash,Completed,EXP-01685,Operations expense - Travel & Expenses [REVIEW REQUIRED],N/A,No,No
+TXN-01671,2024-09-06,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,Third-party APIs,COGS,Third-party APIs,Debit,25847.29,UPI,Completed,INV-01671,Monthly Third-party APIs cost,N/A,Yes,No
+TXN-01673,2024-09-08,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,Support Tools License,COGS,Support Tools License,Debit,61980.59,Wire Transfer,Completed,INV-01673,Monthly Support Tools License cost,N/A,Yes,No
+TXN-01682,2024-09-08,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,PR Agency,Marketing,PR Agency,Debit,483589.28,UPI,Completed,EXP-01682,Marketing expense - PR Agency [REVIEW REQUIRED],N/A,Yes,No
+TXN-01684,2024-09-08,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,Events & Conferences,Marketing,Events & Conferences,Debit,59153.14,Cash,Completed,EXP-01684,Marketing expense - Events & Conferences [REVIEW REQUIRED],N/A,Yes,No
+TXN-01667,2024-09-09,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,GlobalEdge Ltd,Revenue,Subscription - Starter,Credit,7085.72,Cash,Completed,INV-01667,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01659,2024-09-10,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,Nexus Dynamics,Revenue,Subscription - Starter,Credit,7690.32,Wire Transfer,Completed,INV-01659,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01686,2024-09-10,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,Office Rent,Operations,Office Rent,Debit,27756.58,Wire Transfer,Completed,EXP-01686,Operations expense - Office Rent [REVIEW REQUIRED],N/A,Yes,No
+TXN-01665,2024-09-12,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,Client_19,Revenue,Subscription - Enterprise,Credit,79713.03,Cash,Completed,INV-01665,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01669,2024-09-15,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,Cloud Hosting (GCP),COGS,Cloud Hosting (GCP),Debit,20009.55,Cash,Completed,INV-01669,Monthly Cloud Hosting (GCP) cost,N/A,Yes,No
+TXN-01691,2024-09-15,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,Government / Tax Authority,Tax,GST Payment,Debit,45814.53,Bank Transfer,Completed,TAX-01691,Quarterly tax payment - GST Payment,N/A,Yes,No
+TXN-01692,2024-09-15,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,Government / Tax Authority,Tax,TDS Payment,Debit,186616.65,Bank Transfer,Completed,TAX-01692,Quarterly tax payment - TDS Payment,N/A,Yes,No
+TXN-01693,2024-09-15,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,Government / Tax Authority,Tax,Advance Tax,Debit,182538.87,Bank Transfer,Completed,TAX-01693,Quarterly tax payment - Advance Tax,N/A,Yes,No
+TXN-01694,2024-09-15,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,Government / Tax Authority,Tax,Income Tax,Debit,118359.07,Bank Transfer,Completed,TAX-01694,Quarterly tax payment - Income Tax,N/A,Yes,No
+TXN-01670,2024-09-16,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,CDN Costs,COGS,CDN Costs,Debit,38408.05,Cash,Completed,INV-01670,Monthly CDN Costs cost,N/A,Yes,No
+TXN-01660,2024-09-18,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,Client_15,Revenue,Subscription - Pro,Credit,17229.61,Cash,Completed,INV-01660,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01668,2024-09-19,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,Cloud Hosting (AWS),COGS,Cloud Hosting (AWS),Debit,61301.01,Wire Transfer,Completed,INV-01668,Monthly Cloud Hosting (AWS) cost,N/A,Yes,No
+TXN-01672,2024-09-19,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,Payment Gateway Fees,COGS,Payment Gateway Fees,Debit,65266.38,Wire Transfer,Completed,INV-01672,Monthly Payment Gateway Fees cost,N/A,Yes,No
+TXN-01662,2024-09-21,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,Acme Corp,Revenue,Subscription - Pro,Credit,21921.91,Bank Transfer,Completed,INV-01662,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01688,2024-09-23,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,Research Subscriptions,R&D,Research Subscriptions,Debit,38034.07,Bank Transfer,Completed,EXP-01688,R&D expense - Research Subscriptions [REVIEW REQUIRED],N/A,No,No
+TXN-01664,2024-09-24,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,Brightwave Inc,Revenue,Subscription - Enterprise,Credit,99335.48,Credit Card,Completed,INV-01664,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01689,2024-09-24,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,Dev Tools,R&D,Dev Tools,Debit,28667.74,UPI,Completed,EXP-01689,R&D expense - Dev Tools [REVIEW REQUIRED],N/A,Yes,No
+TXN-01687,2024-09-25,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,Legal & Compliance,Operations,Legal & Compliance,Debit,261419.82,Credit Card,Completed,EXP-01687,Operations expense - Legal & Compliance [REVIEW REQUIRED],N/A,Yes,No
+TXN-01661,2024-09-26,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,Zephyr Solutions,Revenue,Subscription - Starter,Credit,5239.63,Credit Card,Completed,INV-01661,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01666,2024-09-28,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,SkyBridge Pvt Ltd,Revenue,Subscription - Enterprise,Credit,99982.11,UPI,Completed,INV-01666,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01674,2024-09-28,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Engineering Salaries,Debit,228088.71,Bank Transfer,Completed,PAY-01674,Payroll - Engineering Salaries,N/A,Yes,No
+TXN-01675,2024-09-28,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Sales Salaries,Debit,65413.27,Bank Transfer,Completed,PAY-01675,Payroll - Sales Salaries,N/A,Yes,No
+TXN-01676,2024-09-28,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Marketing Salaries,Debit,352024.97,Bank Transfer,Completed,PAY-01676,Payroll - Marketing Salaries,N/A,Yes,No
+TXN-01677,2024-09-28,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,CS Salaries,Debit,135593.01,Bank Transfer,Completed,PAY-01677,Payroll - CS Salaries,N/A,Yes,No
+TXN-01678,2024-09-28,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Management Salaries,Debit,215117.61,Bank Transfer,Completed,PAY-01678,Payroll - Management Salaries,N/A,Yes,No
+TXN-01679,2024-09-28,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Contractor Payments,Debit,184042.82,Bank Transfer,Completed,PAY-01679,Payroll - Contractor Payments,N/A,Yes,No
+TXN-01680,2024-09-28,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,Bonuses,Debit,102529.63,Bank Transfer,Completed,PAY-01680,Payroll - Bonuses,N/A,Yes,No
+TXN-01681,2024-09-28,2024-09,2024,Q3,NovaTech SaaS Pvt Ltd,Internal,Payroll,PF/Benefits,Debit,375906.03,Bank Transfer,Completed,PAY-01681,Payroll - PF/Benefits,N/A,Yes,No
+TXN-01726,2024-10-01,2024-10,2024,Q4,NovaTech SaaS Pvt Ltd,Testing Infrastructure,R&D,Testing Infrastructure,Debit,561068.94,Wire Transfer,Completed,EXP-01726,R&D expense - Testing Infrastructure [REVIEW REQUIRED],N/A,No,No
+TXN-01706,2024-10-03,2024-10,2024,Q4,NovaTech SaaS Pvt Ltd,Cloud Hosting (GCP),COGS,Cloud Hosting (GCP),Debit,67604.41,UPI,Completed,INV-01706,Monthly Cloud Hosting (GCP) cost,N/A,Yes,No
+TXN-01697,2024-10-04,2024-10,2024,Q4,NovaTech SaaS Pvt Ltd,Zephyr Solutions,Revenue,Subscription - Starter,Credit,4544.45,Credit Card,Completed,INV-01697,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01702,2024-10-04,2024-10,2024,Q4,NovaTech SaaS Pvt Ltd,CoreLogic Systems,Revenue,Subscription - Pro,Credit,19151.57,Credit Card,Completed,INV-01702,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01701,2024-10-06,2024-10,2024,Q4,NovaTech SaaS Pvt Ltd,Client_09,Revenue,Subscription - Pro,Credit,20803.38,Bank Transfer,Failed,INV-01701,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01725,2024-10-06,2024-10,2024,Q4,NovaTech SaaS Pvt Ltd,Research Subscriptions,R&D,Research Subscriptions,Debit,253547.37,Credit Card,Completed,EXP-01725,R&D expense - Research Subscriptions [REVIEW REQUIRED],N/A,No,No
+TXN-01698,2024-10-07,2024-10,2024,Q4,NovaTech SaaS Pvt Ltd,GlobalEdge Ltd,Revenue,Subscription - Pro,Credit,18967.02,Cheque,Completed,INV-01698,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01727,2024-10-07,2024-10,2024,Q4,NovaTech SaaS Pvt Ltd,Security Audits,R&D,Security Audits,Debit,534439.07,Cheque,Completed,EXP-01727,R&D expense - Security Audits [REVIEW REQUIRED],N/A,No,No
+TXN-01696,2024-10-09,2024-10,2024,Q4,NovaTech SaaS Pvt Ltd,Client_11,Revenue,Subscription - Pro,Credit,21559.59,Credit Card,Completed,INV-01696,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01695,2024-10-10,2024-10,2024,Q4,NovaTech SaaS Pvt Ltd,Client_01,Revenue,Subscription - Enterprise,Credit,50456.66,UPI,Completed,INV-01695,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01699,2024-10-10,2024-10,2024,Q4,NovaTech SaaS Pvt Ltd,SkyBridge Pvt Ltd,Revenue,Subscription - Pro,Credit,13175.47,Wire Transfer,Completed,INV-01699,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01709,2024-10-13,2024-10,2024,Q4,NovaTech SaaS Pvt Ltd,Payment Gateway Fees,COGS,Payment Gateway Fees,Debit,68409.55,Cheque,Completed,INV-01709,Monthly Payment Gateway Fees cost,N/A,Yes,No
+TXN-01719,2024-10-13,2024-10,2024,Q4,NovaTech SaaS Pvt Ltd,Content Marketing,Marketing,Content Marketing,Debit,347590.78,Credit Card,Completed,EXP-01719,Marketing expense - Content Marketing [REVIEW REQUIRED],N/A,No,No
+TXN-01707,2024-10-15,2024-10,2024,Q4,NovaTech SaaS Pvt Ltd,CDN Costs,COGS,CDN Costs,Debit,22964.3,Bank Transfer,Completed,INV-01707,Monthly CDN Costs cost,N/A,Yes,No
+TXN-01721,2024-10-18,2024-10,2024,Q4,NovaTech SaaS Pvt Ltd,Affiliate Payouts,Marketing,Affiliate Payouts,Debit,484311.78,Cheque,Completed,EXP-01721,Marketing expense - Affiliate Payouts [REVIEW REQUIRED],N/A,No,No
+TXN-01708,2024-10-19,2024-10,2024,Q4,NovaTech SaaS Pvt Ltd,Third-party APIs,COGS,Third-party APIs,Debit,25919.3,Cheque,Completed,INV-01708,Monthly Third-party APIs cost,N/A,Yes,No
+TXN-01723,2024-10-19,2024-10,2024,Q4,NovaTech SaaS Pvt Ltd,Legal & Compliance,Operations,Legal & Compliance,Debit,399065.71,Credit Card,Completed,EXP-01723,Operations expense - Legal & Compliance [REVIEW REQUIRED],N/A,Yes,No
+TXN-01705,2024-10-21,2024-10,2024,Q4,NovaTech SaaS Pvt Ltd,Cloud Hosting (AWS),COGS,Cloud Hosting (AWS),Debit,19190.68,Cheque,Completed,INV-01705,Monthly Cloud Hosting (AWS) cost,N/A,Yes,No
+TXN-01720,2024-10-21,2024-10,2024,Q4,NovaTech SaaS Pvt Ltd,SEO Tools,Marketing,SEO Tools,Debit,127882.97,Cash,Completed,EXP-01720,Marketing expense - SEO Tools [REVIEW REQUIRED],N/A,Yes,No
+TXN-01710,2024-10-22,2024-10,2024,Q4,NovaTech SaaS Pvt Ltd,Support Tools License,COGS,Support Tools License,Debit,16916.35,Cheque,Completed,INV-01710,Monthly Support Tools License cost,N/A,Yes,No
+TXN-01700,2024-10-23,2024-10,2024,Q4,NovaTech SaaS Pvt Ltd,TechNova India,Revenue,Subscription - Starter,Credit,4860.08,Credit Card,Failed,INV-01700,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01722,2024-10-26,2024-10,2024,Q4,NovaTech SaaS Pvt Ltd,Insurance,Operations,Insurance,Debit,93909.02,UPI,Completed,EXP-01722,Operations expense - Insurance [REVIEW REQUIRED],N/A,Yes,No
+TXN-01703,2024-10-27,2024-10,2024,Q4,NovaTech SaaS Pvt Ltd,Brightwave Inc,Revenue,Subscription - Starter,Credit,7321.49,Cheque,Completed,INV-01703,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01704,2024-10-27,2024-10,2024,Q4,NovaTech SaaS Pvt Ltd,BlueStar Media,Revenue,Subscription - Enterprise,Credit,86889.5,Bank Transfer,Completed,INV-01704,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01724,2024-10-27,2024-10,2024,Q4,NovaTech SaaS Pvt Ltd,Software Subscriptions,Operations,Software Subscriptions,Debit,62751.79,Wire Transfer,Completed,EXP-01724,Operations expense - Software Subscriptions [REVIEW REQUIRED],N/A,Yes,No
+TXN-01711,2024-10-30,2024-10,2024,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,Engineering Salaries,Debit,110482.52,Bank Transfer,Completed,PAY-01711,Payroll - Engineering Salaries,N/A,Yes,No
+TXN-01712,2024-10-30,2024-10,2024,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,Sales Salaries,Debit,125150.64,Bank Transfer,Completed,PAY-01712,Payroll - Sales Salaries,N/A,Yes,No
+TXN-01713,2024-10-30,2024-10,2024,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,Marketing Salaries,Debit,115502.89,Bank Transfer,Completed,PAY-01713,Payroll - Marketing Salaries,N/A,Yes,No
+TXN-01714,2024-10-30,2024-10,2024,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,CS Salaries,Debit,147949.09,Bank Transfer,Completed,PAY-01714,Payroll - CS Salaries,N/A,Yes,No
+TXN-01715,2024-10-30,2024-10,2024,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,Management Salaries,Debit,359198.33,Bank Transfer,Completed,PAY-01715,Payroll - Management Salaries,N/A,Yes,No
+TXN-01716,2024-10-30,2024-10,2024,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,Contractor Payments,Debit,62127.31,Bank Transfer,Completed,PAY-01716,Payroll - Contractor Payments,N/A,Yes,No
+TXN-01717,2024-10-30,2024-10,2024,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,Bonuses,Debit,266711.79,Bank Transfer,Completed,PAY-01717,Payroll - Bonuses,N/A,Yes,No
+TXN-01718,2024-10-30,2024-10,2024,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,PF/Benefits,Debit,136024.67,Bank Transfer,Completed,PAY-01718,Payroll - PF/Benefits,N/A,Yes,No
+TXN-01738,2024-11-03,2024-11,2024,Q4,NovaTech SaaS Pvt Ltd,CDN Costs,COGS,CDN Costs,Debit,25912.68,Wire Transfer,Completed,INV-01738,Monthly CDN Costs cost,N/A,Yes,No
+TXN-01741,2024-11-03,2024-11,2024,Q4,NovaTech SaaS Pvt Ltd,Support Tools License,COGS,Support Tools License,Debit,31220.16,UPI,Completed,INV-01741,Monthly Support Tools License cost,N/A,Yes,No
+TXN-01728,2024-11-05,2024-11,2024,Q4,NovaTech SaaS Pvt Ltd,Brightwave Inc,Revenue,Subscription - Pro,Credit,23932.65,UPI,Completed,INV-01728,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01729,2024-11-05,2024-11,2024,Q4,NovaTech SaaS Pvt Ltd,Zephyr Solutions,Revenue,Subscription - Pro,Credit,13920.26,Bank Transfer,Completed,INV-01729,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01756,2024-11-05,2024-11,2024,Q4,NovaTech SaaS Pvt Ltd,Testing Infrastructure,R&D,Testing Infrastructure,Debit,59103.91,Bank Transfer,Completed,EXP-01756,R&D expense - Testing Infrastructure [REVIEW REQUIRED],N/A,No,No
+TXN-01740,2024-11-09,2024-11,2024,Q4,NovaTech SaaS Pvt Ltd,Payment Gateway Fees,COGS,Payment Gateway Fees,Debit,44030.95,Credit Card,Completed,INV-01740,Monthly Payment Gateway Fees cost,N/A,Yes,No
+TXN-01733,2024-11-10,2024-11,2024,Q4,NovaTech SaaS Pvt Ltd,GlobalEdge Ltd,Revenue,Subscription - Enterprise,Credit,98719.6,Credit Card,Completed,INV-01733,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01751,2024-11-10,2024-11,2024,Q4,NovaTech SaaS Pvt Ltd,Content Marketing,Marketing,Content Marketing,Debit,131264.16,Bank Transfer,Completed,EXP-01751,Marketing expense - Content Marketing [REVIEW REQUIRED],N/A,No,No
+TXN-01758,2024-11-10,2024-11,2024,Q4,NovaTech SaaS Pvt Ltd,Security Audits,R&D,Security Audits,Debit,98218.54,Bank Transfer,Completed,EXP-01758,R&D expense - Security Audits [REVIEW REQUIRED],N/A,No,Yes
+TXN-01736,2024-11-11,2024-11,2024,Q4,NovaTech SaaS Pvt Ltd,Cloud Hosting (AWS),COGS,Cloud Hosting (AWS),Debit,47252.03,Wire Transfer,Completed,INV-01736,Monthly Cloud Hosting (AWS) cost,N/A,Yes,No
+TXN-01754,2024-11-11,2024-11,2024,Q4,NovaTech SaaS Pvt Ltd,Software Subscriptions,Operations,Software Subscriptions,Debit,236549.16,Credit Card,Completed,EXP-01754,Operations expense - Software Subscriptions [REVIEW REQUIRED],N/A,Yes,No
+TXN-01737,2024-11-12,2024-11,2024,Q4,NovaTech SaaS Pvt Ltd,Cloud Hosting (GCP),COGS,Cloud Hosting (GCP),Debit,20057.43,UPI,Completed,INV-01737,Monthly Cloud Hosting (GCP) cost,N/A,Yes,No
+TXN-01730,2024-11-13,2024-11,2024,Q4,NovaTech SaaS Pvt Ltd,Client_23,Revenue,Subscription - Pro,Credit,16856.68,Cash,Completed,INV-01730,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01752,2024-11-13,2024-11,2024,Q4,NovaTech SaaS Pvt Ltd,Events & Conferences,Marketing,Events & Conferences,Debit,141009.36,Credit Card,Completed,EXP-01752,Marketing expense - Events & Conferences [REVIEW REQUIRED],N/A,Yes,No
+TXN-01731,2024-11-14,2024-11,2024,Q4,NovaTech SaaS Pvt Ltd,Horizon Enterprises,Revenue,Subscription - Pro,Credit,24686.19,Wire Transfer,Failed,INV-01731,Monthly subscription - Pro plan,Pro,Yes,No
+TXN-01753,2024-11-14,2024-11,2024,Q4,NovaTech SaaS Pvt Ltd,Utilities,Operations,Utilities,Debit,604963.22,Wire Transfer,Completed,EXP-01753,Operations expense - Utilities [REVIEW REQUIRED],N/A,Yes,No
+TXN-01755,2024-11-18,2024-11,2024,Q4,NovaTech SaaS Pvt Ltd,Accounting,Operations,Accounting,Debit,300777.59,UPI,Completed,EXP-01755,Operations expense - Accounting [REVIEW REQUIRED],N/A,No,No
+TXN-01750,2024-11-19,2024-11,2024,Q4,NovaTech SaaS Pvt Ltd,SEO Tools,Marketing,SEO Tools,Debit,258462.38,Wire Transfer,Completed,EXP-01750,Marketing expense - SEO Tools [REVIEW REQUIRED],N/A,Yes,No
+TXN-01732,2024-11-20,2024-11,2024,Q4,NovaTech SaaS Pvt Ltd,TechNova India,Revenue,Subscription - Enterprise,Credit,84958.18,UPI,Completed,INV-01732,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01735,2024-11-21,2024-11,2024,Q4,NovaTech SaaS Pvt Ltd,BlueStar Media,Revenue,Subscription - Enterprise,Credit,88910.49,Cash,Completed,INV-01735,Monthly subscription - Enterprise plan,Enterprise,Yes,No
+TXN-01757,2024-11-21,2024-11,2024,Q4,NovaTech SaaS Pvt Ltd,Dev Tools,R&D,Dev Tools,Debit,29759.39,Cash,Completed,EXP-01757,R&D expense - Dev Tools [REVIEW REQUIRED],N/A,No,No
+TXN-01739,2024-11-24,2024-11,2024,Q4,NovaTech SaaS Pvt Ltd,Third-party APIs,COGS,Third-party APIs,Debit,58551.6,UPI,Completed,INV-01739,Monthly Third-party APIs cost,N/A,Yes,No
+TXN-01734,2024-11-25,2024-11,2024,Q4,NovaTech SaaS Pvt Ltd,Acme Corp,Revenue,Subscription - Starter,Credit,7795.15,Cash,Completed,INV-01734,Monthly subscription - Starter plan,Starter,Yes,No
+TXN-01742,2024-11-28,2024-11,2024,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,Engineering Salaries,Debit,139830.28,Bank Transfer,Completed,PAY-01742,Payroll - Engineering Salaries,N/A,Yes,No
+TXN-01743,2024-11-28,2024-11,2024,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,Sales Salaries,Debit,87812.11,Bank Transfer,Completed,PAY-01743,Payroll - Sales Salaries,N/A,Yes,No
+TXN-01744,2024-11-28,2024-11,2024,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,Marketing Salaries,Debit,50448.41,Bank Transfer,Completed,PAY-01744,Payroll - Marketing Salaries,N/A,Yes,No
+TXN-01745,2024-11-28,2024-11,2024,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,CS Salaries,Debit,185077.98,Bank Transfer,Completed,PAY-01745,Payroll - CS Salaries,N/A,Yes,No
+TXN-01746,2024-11-28,2024-11,2024,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,Management Salaries,Debit,306404.57,Bank Transfer,Completed,PAY-01746,Payroll - Management Salaries,N/A,Yes,No
+TXN-01747,2024-11-28,2024-11,2024,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,Contractor Payments,Debit,389185.64,Bank Transfer,Completed,PAY-01747,Payroll - Contractor Payments,N/A,Yes,No
+TXN-01748,2024-11-28,2024-11,2024,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,Bonuses,Debit,359593.2,Bank Transfer,Completed,PAY-01748,Payroll - Bonuses,N/A,Yes,No
+TXN-01749,2024-11-28,2024-11,2024,Q4,NovaTech SaaS Pvt Ltd,Internal,Payroll,PF/Benefits,Debit,222578.7,Bank Transfer,Completed,PAY-01749,Payroll - PF/Benefits,N/A,Yes,No

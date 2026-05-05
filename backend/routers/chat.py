@@ -318,8 +318,8 @@ async def chat_stream(
         yield f"data: {done_evt}\n\n"
 
         # Save assistant reply to DB (after stream completes)
-        from database import get_db_context
-        async with get_db_context() as bg_db:
+        from database import get_rls_db_context
+        async with get_rls_db_context(str(ws_id)) as bg_db:
             bg_db.add(ChatMessage(
                 workspace_id=ws_id,
                 user_id=uid,

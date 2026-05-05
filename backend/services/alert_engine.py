@@ -5,6 +5,7 @@ Designed to be called as a background task after data mutations.
 """
 import logging
 from datetime import datetime, timezone
+from dateutil.relativedelta import relativedelta
 
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -37,33 +38,57 @@ async def run_alert_engine(db: AsyncSession, workspace_id) -> int:
             if budget.monthly_limit > 0:
                 ratio = float(budget.current_spend) / float(budget.monthly_limit)
                 if ratio >= 1.0:
-                    alert = Alert(
-                        workspace_id=workspace_id,
-                        title=f"Budget exceeded: {budget.category}",
-                        message=(
-                            f"Spending in '{budget.category}' has reached "
-                            f"${float(budget.current_spend):,.0f} "
-                            f"({ratio:.0%} of ${float(budget.monthly_limit):,.0f} limit)."
-                        ),
-                        severity=AlertSeverity.critical,
-                        category="budget",
+                    title = f"Budget exceeded: {budget.category}"
+                    # LOW-001: Check for existing undismissed alert before creating
+                    existing = await db.execute(
+                        select(Alert).where(
+                            and_(
+                                Alert.workspace_id == workspace_id,
+                                Alert.title == title,
+                                Alert.is_dismissed.is_(False),
+                            )
+                        )
                     )
-                    db.add(alert)
-                    alerts_created += 1
+                    if existing.scalar_one_or_none() is None:
+                        alert = Alert(
+                            workspace_id=workspace_id,
+                            title=title,
+                            message=(
+                                f"Spending in '{budget.category}' has reached "
+                                f"${float(budget.current_spend):,.0f} "
+                                f"({ratio:.0%} of ${float(budget.monthly_limit):,.0f} limit)."
+                            ),
+                            severity=AlertSeverity.critical,
+                            category="budget",
+                        )
+                        db.add(alert)
+                        alerts_created += 1
                 elif ratio >= 0.9:
-                    alert = Alert(
-                        workspace_id=workspace_id,
-                        title=f"Budget warning: {budget.category}",
-                        message=(
-                            f"Spending in '{budget.category}' is at "
-                            f"${float(budget.current_spend):,.0f} "
-                            f"({ratio:.0%} of ${float(budget.monthly_limit):,.0f} limit)."
-                        ),
-                        severity=AlertSeverity.warning,
-                        category="budget",
+                    title = f"Budget warning: {budget.category}"
+                    # LOW-001: Check for existing undismissed alert before creating
+                    existing = await db.execute(
+                        select(Alert).where(
+                            and_(
+                                Alert.workspace_id == workspace_id,
+                                Alert.title == title,
+                                Alert.is_dismissed.is_(False),
+                            )
+                        )
                     )
-                    db.add(alert)
-                    alerts_created += 1
+                    if existing.scalar_one_or_none() is None:
+                        alert = Alert(
+                            workspace_id=workspace_id,
+                            title=title,
+                            message=(
+                                f"Spending in '{budget.category}' is at "
+                                f"${float(budget.current_spend):,.0f} "
+                                f"({ratio:.0%} of ${float(budget.monthly_limit):,.0f} limit)."
+                            ),
+                            severity=AlertSeverity.warning,
+                            category="budget",
+                        )
+                        db.add(alert)
+                        alerts_created += 1
 
         # ── Rule 2: Revenue drop ─────────────────────────────────
         # Compare current month income to trailing 3-month average
@@ -75,7 +100,7 @@ async def run_alert_engine(db: AsyncSession, workspace_id) -> int:
             .where(and_(
                 Transaction.workspace_id == workspace_id,
                 Transaction.type == TransactionType.income,
-                Transaction.date >= datetime(now.year, max(1, now.month - 3), 1),
+                Transaction.date >= (now - relativedelta(months=3)).replace(day=1),
             ))
             .group_by("m")
             .order_by("m")
@@ -85,19 +110,31 @@ async def run_alert_engine(db: AsyncSession, workspace_id) -> int:
             prior_avg = sum(monthly_incomes[:-1]) / len(monthly_incomes[:-1])
             current = monthly_incomes[-1]
             if prior_avg > 0 and current < prior_avg * 0.7:
-                alert = Alert(
-                    workspace_id=workspace_id,
-                    title="Revenue decline detected",
-                    message=(
-                        f"Current month revenue (${current:,.0f}) is "
-                        f"{((1 - current / prior_avg) * 100):.0f}% below the "
-                        f"trailing average (${prior_avg:,.0f})."
-                    ),
-                    severity=AlertSeverity.warning,
-                    category="revenue",
+                title = "Revenue decline detected"
+                # LOW-001: Check for existing undismissed alert before creating
+                existing = await db.execute(
+                    select(Alert).where(
+                        and_(
+                            Alert.workspace_id == workspace_id,
+                            Alert.title == title,
+                            Alert.is_dismissed.is_(False),
+                        )
+                    )
                 )
-                db.add(alert)
-                alerts_created += 1
+                if existing.scalar_one_or_none() is None:
+                    alert = Alert(
+                        workspace_id=workspace_id,
+                        title=title,
+                        message=(
+                            f"Current month revenue (${current:,.0f}) is "
+                            f"{((1 - current / prior_avg) * 100):.0f}% below the "
+                            f"trailing average (${prior_avg:,.0f})."
+                        ),
+                        severity=AlertSeverity.warning,
+                        category="revenue",
+                    )
+                    db.add(alert)
+                    alerts_created += 1
 
         if alerts_created > 0:
             await db.commit()
@@ -120,7 +157,7 @@ async def run_all_workspace_alerts() -> dict[str, int]:
     alerts (e.g. "cash runway below 2 months") fire even when no user
     action triggers them.
     """
-    from database import get_db_context
+    from database import get_db_context, get_rls_db_context
     from models import Workspace
 
     results: dict[str, int] = {}
@@ -133,7 +170,8 @@ async def run_all_workspace_alerts() -> dict[str, int]:
 
     for ws_id in workspace_ids:
         try:
-            async with get_db_context() as db:
+            # CRIT-002: Use RLS-bound session so queries are tenant-isolated
+            async with get_rls_db_context(str(ws_id)) as db:
                 count = await run_alert_engine(db, ws_id)
                 results[str(ws_id)] = count
         except Exception:

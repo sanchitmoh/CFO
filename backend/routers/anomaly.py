@@ -4,6 +4,7 @@ Thin HTTP adapter over anomaly_service (ML-003).
 L-001: SSE streaming endpoint for large scan results.
 L-002: Redis-backed scan cooldown for multi-worker deployments.
 """
+import asyncio
 import json
 import logging
 from typing import Optional
@@ -13,7 +14,6 @@ from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import StreamingResponse
 
-from database import get_db_context
 from dependencies import get_rls_db
 from auth import get_current_user
 from cache import get_redis
@@ -36,6 +36,9 @@ async def _check_scan_cooldown(workspace_id: str) -> None:
     Uses a Redis key with TTL so the cooldown is shared across all
     Uvicorn workers.  Degrades gracefully — if Redis is unreachable
     the scan is allowed (fail-open).
+    
+    INFRA-002: Circuit breaker pattern — catches Redis errors and allows
+    operation to continue rather than hard-failing.
     """
     try:
         r = await get_redis()
@@ -51,9 +54,9 @@ async def _check_scan_cooldown(workspace_id: str) -> None:
         await r.setex(cd_key, _SCAN_COOLDOWN_SECONDS, "1")
     except HTTPException:
         raise  # re-raise 429
-    except Exception:
-        # Redis down → fail-open, allow the scan
-        logger.warning("Redis cooldown check failed — allowing scan")
+    except Exception as exc:
+        # INFRA-002: Redis down → fail-open, allow the scan
+        logger.warning("Redis cooldown check failed — allowing scan: %s", exc)
 
 
 @router.get("/scan", response_model=ScanResult)
@@ -83,7 +86,9 @@ async def scan_anomalies_endpoint(
 
         # ARCH-004: Trigger alert engine in background
         async def _run_alerts():
-            async with get_db_context() as bg_db:
+            # HIGH-003: Use RLS-bound session for tenant-isolated alerts
+            from database import get_rls_db_context
+            async with get_rls_db_context(str(user.workspace_id)) as bg_db:
                 await run_alert_engine(bg_db, user.workspace_id)
 
         background_tasks.add_task(_run_alerts)
@@ -108,30 +113,52 @@ async def scan_anomalies_sse(
     """
     await _check_scan_cooldown(str(user.workspace_id))
 
+    # MED-004: Max SSE stream duration to prevent indefinite DB session hold
+    _SSE_TIMEOUT_SECONDS = 120
+
     async def _event_generator():
+        import time
+        deadline = time.monotonic() + _SSE_TIMEOUT_SECONDS
         scanned = 0
         found = 0
-        async for event_type, payload in scan_anomalies_stream(
-            db, user.workspace_id, z_threshold, days
-        ):
-            if event_type == "anomaly":
-                found += 1
-                data = json.dumps(payload, default=str)
-                yield f"event: anomaly\ndata: {data}\n\n"
-            elif event_type == "progress":
-                scanned = payload.get("scanned", scanned)
-                yield f"event: progress\ndata: {json.dumps(payload)}\n\n"
-            elif event_type == "done":
-                scanned = payload.get("scanned", scanned)
-                found = payload.get("anomalies_found", found)
-                yield f"event: done\ndata: {json.dumps(payload)}\n\n"
+        try:
+            async for event_type, payload in scan_anomalies_stream(
+                db, user.workspace_id, z_threshold, days
+            ):
+                # MED-004: Enforce hard deadline per iteration
+                if time.monotonic() > deadline:
+                    logger.warning(
+                        "SSE stream timed out after %ds (scanned=%d, found=%d)",
+                        _SSE_TIMEOUT_SECONDS, scanned, found,
+                    )
+                    yield f'event: error\ndata: {{"error": "Stream timeout after {_SSE_TIMEOUT_SECONDS}s"}}\n\n'
+                    return
 
-        # Log if anomalies found
-        if found > 0:
-            await log_action(
-                db, user, "anomaly.scan.stream", "transaction",
-                new_value={"scanned": scanned, "found": found},
-            )
+                if event_type == "anomaly":
+                    found += 1
+                    data = json.dumps(payload, default=str)
+                    yield f"event: anomaly\ndata: {data}\n\n"
+                elif event_type == "progress":
+                    scanned = payload.get("scanned", scanned)
+                    yield f"event: progress\ndata: {json.dumps(payload)}\n\n"
+                elif event_type == "done":
+                    scanned = payload.get("scanned", scanned)
+                    found = payload.get("anomalies_found", found)
+                    yield f"event: done\ndata: {json.dumps(payload)}\n\n"
+
+            # Log if anomalies found
+            if found > 0:
+                await log_action(
+                    db, user, "anomaly.scan.stream", "transaction",
+                    new_value={"scanned": scanned, "found": found},
+                )
+        except asyncio.CancelledError:
+            # Client disconnected — release resources cleanly
+            logger.info("SSE client disconnected (scanned=%d, found=%d)", scanned, found)
+            return
+        except GeneratorExit:
+            logger.info("SSE generator closed (scanned=%d, found=%d)", scanned, found)
+            return
 
     return StreamingResponse(
         _event_generator(),
@@ -164,7 +191,7 @@ async def list_flagged_anomalies(
             amount=float(txn.amount),
             category=txn.category,
             type=txn.type.value,
-            account=txn.account,
+            account=txn.account or "Unknown",  # LOW-002: Handle None account
             anomaly_score=txn.anomaly_score or 0,
             reason=f"Previously flagged anomaly (score: {txn.anomaly_score:.1f})",
         )

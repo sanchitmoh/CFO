@@ -23,6 +23,24 @@ from cache import cache_get, cache_set, make_cache_key
 
 logger = logging.getLogger(__name__)
 
+
+async def _anchored_cutoff(db: AsyncSession, workspace_id, days: int) -> datetime:
+    """Compute a date cutoff anchored to the latest transaction, not 'now'.
+
+    This ensures historical CSVs (e.g. 2024 data imported in 2026) are
+    visible to the anomaly scanner.
+    """
+    result = await db.execute(
+        select(func.max(Transaction.date))
+        .where(Transaction.workspace_id == workspace_id)
+    )
+    latest = result.scalar()
+    if latest is None:
+        return datetime.now(timezone.utc) - timedelta(days=days)
+    if latest.tzinfo is None:
+        latest = latest.replace(tzinfo=timezone.utc)
+    return latest - timedelta(days=days)
+
 # ── M-004: Per-category threshold calibration ─────────────────────────
 # CV (Coefficient of Variation) = stddev / mean.
 # Dimensionless → works across currencies and business sizes.
@@ -35,25 +53,29 @@ logger = logging.getLogger(__name__)
 _MIN_CATEGORY_SAMPLE = 5
 
 # Workspace-wide fallback when total expense count is sparse.
-_SPARSE_DATA_THRESHOLD = 2.0
+_SPARSE_DATA_THRESHOLD = 1.5
 _SPARSE_DATA_CUTOFF = 30  # transactions
+
+# When no anomalies exceed calibrated thresholds, surface top-N outliers
+_TOP_OUTLIER_FALLBACK = 5
+_TOP_OUTLIER_MIN_ZSCORE = 0.8  # minimum z-score to even be "noteworthy"
 
 
 def _cv_to_threshold(cv: float) -> float:
     """Map a Coefficient of Variation to a z-score threshold.
 
-    Uses a continuous linear interpolation clamped to [1.8, 3.5] so
+    Uses a continuous linear interpolation clamped to [1.2, 3.0] so
     that there are no arbitrary cliff edges.
 
     CV range         Threshold   Typical categories
     ─────────────    ─────────   ──────────────────
-    ≤ 0.15           1.8        Rent, loan payments
-    0.15 – 0.50      ~2.0–2.5   Utilities, SaaS subscriptions
-    0.50 – 1.00      ~2.5–3.0   Marketing, travel
-    ≥ 1.50           3.5        Highly volatile / one-off spend
+    ≤ 0.10           1.2        Rent, loan payments
+    0.10 – 0.30      ~1.3–1.6   Utilities, SaaS subscriptions
+    0.30 – 0.80      ~1.6–2.2   Marketing, travel
+    ≥ 1.50           3.0        Highly volatile / one-off spend
     """
-    # Linear interpolation: threshold = 1.8 + cv * 1.13, clamped [1.8, 3.5]
-    return max(1.8, min(3.5, 1.8 + cv * 1.13))
+    # Linear interpolation: threshold = 1.2 + cv * 1.2, clamped [1.2, 3.0]
+    return max(1.2, min(3.0, 1.2 + cv * 1.2))
 
 
 async def calibrate_category_thresholds(
@@ -245,7 +267,7 @@ async def scan_anomalies(
     )
     default_threshold = cat_thresholds["__default__"]
 
-    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    cutoff = await _anchored_cutoff(db, workspace_id, days)
     cache_key = make_cache_key("anomaly_stats", str(workspace_id))
 
     # Check if model rebuild is needed
@@ -363,6 +385,47 @@ async def scan_anomalies(
 
     await db.commit()
 
+    # ── Top-outlier fallback ──────────────────────────────────────
+    # If no anomalies exceeded calibrated thresholds, surface the
+    # top N highest z-score transactions as "noteworthy" so the CFO
+    # dashboard always has actionable insights.
+    if not anomalies and len(transactions) >= 10:
+        scored = [
+            (txn, float(txn.anomaly_score or 0))
+            for txn in transactions
+            if (txn.anomaly_score or 0) >= _TOP_OUTLIER_MIN_ZSCORE
+        ]
+        scored.sort(key=lambda x: x[1], reverse=True)
+        for txn, z_score in scored[:_TOP_OUTLIER_FALLBACK]:
+            cat = txn.category
+            stats = (cached_stats or category_stats).get(cat, {})
+            mean = stats.get("mean", 0)
+            effective_threshold = cat_thresholds.get(cat, default_threshold)
+            direction = "above" if float(txn.amount) > mean else "below"
+            reason = (
+                f"Noteworthy: Amount ${float(txn.amount):,.2f} is {z_score:.1f}σ "
+                f"{direction} the {cat} average of ${mean:,.2f} "
+                f"(below threshold {effective_threshold:.1f}σ, surfaced as top outlier)"
+            )
+            txn.is_anomaly = True
+            anomalies.append(AnomalyOut(
+                id=txn.id,
+                date=txn.date,
+                description=txn.description,
+                amount=float(txn.amount),
+                category=txn.category,
+                type=txn.type.value,
+                account=txn.account,
+                anomaly_score=round(z_score, 3),
+                reason=reason,
+            ))
+        if anomalies:
+            await db.commit()
+            logger.info(
+                "No calibrated anomalies — surfaced %d top outliers for workspace %s",
+                len(anomalies), workspace_id,
+            )
+
     return ScanResult(
         scanned=len(transactions),
         anomalies_found=len(anomalies),
@@ -391,7 +454,7 @@ async def scan_anomalies_stream(
     )
     default_threshold = cat_thresholds["__default__"]
 
-    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    cutoff = await _anchored_cutoff(db, workspace_id, days)
     cache_key = make_cache_key("anomaly_stats", str(workspace_id))
 
     # Reuse the same model-caching logic as scan_anomalies

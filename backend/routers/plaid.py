@@ -83,6 +83,7 @@ async def plaid_webhook(
     ):
         # Trigger sync in the background
         async def _sync_item():
+            # Phase 1: Lookup PlaidItem with plain session (no user context)
             async with get_db_context() as db:
                 result = await db.execute(
                     select(PlaidItem).where(
@@ -90,15 +91,28 @@ async def plaid_webhook(
                     )
                 )
                 plaid_item = result.scalar_one_or_none()
+                if not plaid_item:
+                    logger.warning("Plaid item not found: %s", item_id)
+                    return
+                ws_id = str(plaid_item.workspace_id)
+
+            # Phase 2: Sync under RLS-bound session for tenant isolation
+            from database import get_rls_db_context
+            async with get_rls_db_context(ws_id) as rls_db:
+                # Re-fetch the item within the RLS session
+                result = await rls_db.execute(
+                    select(PlaidItem).where(
+                        and_(PlaidItem.item_id == item_id, PlaidItem.is_active.is_(True))
+                    )
+                )
+                plaid_item = result.scalar_one_or_none()
                 if plaid_item:
-                    stats = await sync_transactions(db, plaid_item)
+                    stats = await sync_transactions(rls_db, plaid_item)
                     logger.info(
                         "Background sync for %s: %s", item_id, stats
                     )
                     # Invalidate dashboard cache for this workspace
-                    await invalidate_workspace_cache(str(plaid_item.workspace_id))
-                else:
-                    logger.warning("Plaid item not found: %s", item_id)
+                    await invalidate_workspace_cache(ws_id)
 
         background_tasks.add_task(_sync_item)
 

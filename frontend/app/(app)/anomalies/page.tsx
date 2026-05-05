@@ -33,20 +33,20 @@ const fmt = (n: number) =>
   }).format(n);
 
 const scoreColor = (score: number) => {
-  if (score >= 0.85) return "var(--danger)";
-  if (score >= 0.75) return "var(--warning)";
+  if (score >= 3.0) return "var(--danger)";
+  if (score >= 2.5) return "var(--warning)";
   return "var(--info)";
 };
 
 const scoreBg = (score: number) => {
-  if (score >= 0.85) return "var(--danger-soft)";
-  if (score >= 0.75) return "var(--warning-soft)";
+  if (score >= 3.0) return "var(--danger-soft)";
+  if (score >= 2.5) return "var(--warning-soft)";
   return "var(--info-soft)";
 };
 
 const scoreLabel = (score: number) => {
-  if (score >= 0.85) return "High Risk";
-  if (score >= 0.75) return "Medium Risk";
+  if (score >= 3.0) return "High Risk";
+  if (score >= 2.5) return "Medium Risk";
   return "Low Risk";
 };
 
@@ -88,7 +88,7 @@ export default function AnomaliesPage() {
   const runScan = useCallback(async () => {
     setScanning(true);
     try {
-      const result = await anomalyApi.scan(2.0, 90);
+      const result = await anomalyApi.scan(undefined, 365);
       if (result?.anomalies?.length) {
         setAnomalies(result.anomalies.map((a: any, i: number) => ({
           id: a.id || i + 1,
@@ -299,7 +299,7 @@ export default function AnomaliesPage() {
                   >
                     <div
                       style={{
-                        width: `${anomaly.anomaly_score * 100}%`,
+                        width: `${Math.min((anomaly.anomaly_score / 4) * 100, 100)}%`,
                         height: "100%",
                         borderRadius: 3,
                         background: scoreColor(anomaly.anomaly_score),
@@ -308,7 +308,7 @@ export default function AnomaliesPage() {
                     />
                   </div>
                   <span className="text-xs font-bold" style={{ color: scoreColor(anomaly.anomaly_score) }}>
-                    {(anomaly.anomaly_score * 100).toFixed(0)}%
+                    {anomaly.anomaly_score.toFixed(1)}σ
                   </span>
                 </div>
               </div>

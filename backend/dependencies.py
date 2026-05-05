@@ -45,10 +45,14 @@ async def get_rls_db(user: User = Depends(get_current_user)):
         # themselves without prematurely closing the transaction scope.
         if not session.in_transaction():
             await session.begin()
-        # SEC-FIX: Use parameterized query to prevent SQL injection
+        # SEC-FIX: SET LOCAL doesn't support bind parameters in PostgreSQL
+        # We validate the UUID format first to ensure it's safe to interpolate
+        workspace_id_str = str(user.workspace_id)
+        # Validate UUID format (raises ValueError if invalid)
+        import uuid
+        uuid.UUID(workspace_id_str)  # This ensures it's a valid UUID
         await session.execute(
-            text("SET LOCAL app.workspace_id = :ws_id"),
-            {"ws_id": str(user.workspace_id)}
+            text(f"SET LOCAL app.workspace_id = '{workspace_id_str}'")
         )
         try:
             yield session

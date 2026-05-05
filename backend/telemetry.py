@@ -185,10 +185,14 @@ def setup_telemetry(app) -> None:
         })
 
         # ── Tracer provider + OTLP exporter ───────────────────────
+        # HIGH-009: Use secure connections by default. Only allow insecure
+        # connections when explicitly configured via OTEL_INSECURE=true.
+        # This prevents trace data (SQL queries, user IDs, API calls) from
+        # being transmitted over unencrypted gRPC on shared networks.
         provider = TracerProvider(resource=resource)
         exporter = OTLPSpanExporter(
             endpoint=settings.OTEL_EXPORTER_OTLP_ENDPOINT,
-            insecure=True,
+            insecure=settings.OTEL_INSECURE,
         )
         provider.add_span_processor(BatchSpanProcessor(exporter))
         trace.set_tracer_provider(provider)

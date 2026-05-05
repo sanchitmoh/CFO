@@ -280,10 +280,11 @@ export const forecastApi = {
 // ── Anomaly Detection ────────────────────────────────────────────
 
 export const anomalyApi = {
-  scan: (threshold = 2.0, days = 90) =>
-    fetchApi<ScanResult>(
-      `/anomaly/scan?z_threshold=${threshold}&days=${days}`
-    ),
+  scan: (threshold?: number, days = 365) => {
+    const params = new URLSearchParams({ days: String(days) });
+    if (threshold !== undefined) params.set("z_threshold", String(threshold));
+    return fetchApi<ScanResult>(`/anomaly/scan?${params.toString()}`);
+  },
 
   list: () => fetchApi<ScanResult["anomalies"]>("/anomaly"),
 };
@@ -561,8 +562,15 @@ export const api = {
     const formData = new FormData();
     formData.append("file", file);
     const url = `${API_BASE}/transactions/upload-csv`;
+    
+    // Use provided token or fall back to token provider
+    let token = _token;
+    if (!token && _tokenProvider) {
+      try { token = await _tokenProvider(); } catch { /* ignore */ }
+    }
+    
     const headers: Record<string, string> = {};
-    if (_token) headers["Authorization"] = `Bearer ${_token}`;
+    if (token) headers["Authorization"] = `Bearer ${token}`;
     const resp = await fetch(url, { method: "POST", headers, body: formData });
     return resp.json();
   },

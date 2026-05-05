@@ -22,11 +22,15 @@ router = APIRouter()
 def _budget_to_out(budget: Budget) -> BudgetOut:
     spent = float(budget.current_spend or 0)
     limit_val = float(budget.monthly_limit or 1)
-    pct = round(spent / limit_val * 100, 1) if limit_val > 0 else 0
+    pct = round(spent / limit_val * 100, 1) if limit_val > 0 else 0.0
+
+    # HIGH-007: Use rounded comparison to avoid IEEE 754 floating-point
+    # edge cases (e.g. 0.8 * 100 = 80.00000000000001).
+    threshold_pct = round(float(budget.alert_threshold) * 100, 1)
 
     if pct >= 100:
         status_ = "over_budget"
-    elif pct >= budget.alert_threshold * 100:
+    elif pct >= threshold_pct:
         status_ = "warning"
     else:
         status_ = "on_track"
@@ -63,6 +67,12 @@ async def list_budgets(
     budgets = list(result.scalars())
 
     # ── Recalculate current_spend from actual transactions ────────
+    # HIGH-004: Compute at read time WITHOUT persisting. We expunge
+    # each budget from the session so the attribute change is not
+    # tracked and never flushed to the database.  This prevents:
+    #   - Write amplification (N update queries per dashboard load)
+    #   - Race conditions (concurrent GETs overwriting each other)
+    #   - Audit log pollution (spurious write events on reads)
     for budget in budgets:
         month_start = datetime.strptime(budget.month, "%Y-%m")
         if month_start.month == 12:
@@ -83,9 +93,9 @@ async def list_budgets(
             )
         )
         actual_spend = float(spend_q.scalar() or 0)
+        db.expunge(budget)
         budget.current_spend = actual_spend
 
-    await db.commit()
     return [_budget_to_out(b) for b in budgets]
 
 

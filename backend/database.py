@@ -44,10 +44,13 @@ async def get_db_with_rls(workspace_id: str):
     Or use the dependency helper `get_rls_db` below.
     """
     async with AsyncSessionLocal() as session:
-        # SEC-FIX: Use parameterized query to prevent SQL injection
+        # SEC-FIX: SET LOCAL doesn't support bind parameters in PostgreSQL
+        # We validate the UUID format first to ensure it's safe to interpolate
+        import uuid
+        workspace_id_str = str(workspace_id)
+        uuid.UUID(workspace_id_str)  # Validate UUID format (raises ValueError if invalid)
         await session.execute(
-            text("SET LOCAL app.workspace_id = :ws_id"),
-            {"ws_id": str(workspace_id)}
+            text(f"SET LOCAL app.workspace_id = '{workspace_id_str}'")
         )
         yield session
 
@@ -56,6 +59,30 @@ async def get_db_with_rls(workspace_id: str):
 async def get_db_context():
     """Standalone async context manager for background tasks / non-DI usage."""
     async with AsyncSessionLocal() as session:
+        yield session
+
+
+@asynccontextmanager
+async def get_rls_db_context(workspace_id: str):
+    """RLS-enabled async context manager for background tasks.
+
+    CRIT-002/CRIT-003/HIGH-003: Background tasks spawned from request
+    handlers lose RLS context when they use ``get_db_context()``.  This
+    helper creates a session with ``app.workspace_id`` set so that
+    PostgreSQL Row-Level Security policies are enforced.
+
+    Usage::
+
+        async with get_rls_db_context(str(workspace_id)) as db:
+            await run_alert_engine(db, workspace_id)
+    """
+    import uuid
+    workspace_id_str = str(workspace_id)
+    uuid.UUID(workspace_id_str)  # Validate UUID format (raises ValueError if invalid)
+    async with AsyncSessionLocal() as session:
+        await session.execute(
+            text(f"SET LOCAL app.workspace_id = '{workspace_id_str}'")
+        )
         yield session
 
 

@@ -5,13 +5,16 @@ Async Redis with JSON serialization for dashboard summaries, forecasts, etc.
 SEC-004: Uses per-workspace key tracking sets for efficient bulk deletion.
 PERF-002: Adds versioned cache keys — cache invalidation increments a version
 counter instead of scanning/deleting keys. Old entries expire naturally via TTL.
+INFRA-002: Redis operations degrade gracefully with circuit breaker pattern.
 """
 import json
 import hashlib
 import logging
+import ssl as _ssl
 from typing import Any, Optional
 
 import redis.asyncio as redis
+from redis.exceptions import ConnectionError, TimeoutError, RedisError
 
 from config import settings
 
@@ -25,15 +28,35 @@ async def get_redis() -> redis.Redis:
 
     PERF-005: Module-level singleton — redis.from_url returns a client backed
     by an internal connection pool. Created once, reused for all callers.
+
+    Handles both plain ``redis://`` (local) and ``rediss://`` (Upstash TLS)
+    URLs transparently.
     """
     global _pool
     if _pool is None:
-        _pool = redis.from_url(
-            settings.REDIS_URL,
-            decode_responses=True,
-            socket_connect_timeout=5,
-            retry_on_timeout=True,
-        )
+        url = settings.REDIS_URL
+
+        # Build connection kwargs
+        kwargs: dict = {
+            "decode_responses": True,
+            "socket_connect_timeout": 5,
+            "retry_on_timeout": True,
+        }
+
+        # For rediss:// (TLS) — Upstash and similar hosted Redis providers
+        # require relaxed SSL cert verification.
+        if url.startswith("rediss://"):
+            kwargs["ssl_cert_reqs"] = None
+
+        _pool = redis.from_url(url, **kwargs)
+
+        # Startup connectivity check — log once so silent failures are visible
+        try:
+            await _pool.ping()
+            logger.info("Redis connected successfully (%s)", url.split("@")[-1] if "@" in url else url)
+        except Exception as exc:
+            logger.warning("Redis startup ping failed: %s — caching will degrade gracefully", exc)
+
     return _pool
 
 
@@ -42,9 +65,16 @@ async def get_redis() -> redis.Redis:
 # ═══════════════════════════════════════════════════════════════════
 
 async def _get_version(r: redis.Redis, workspace_id: str) -> str:
-    """Get the current cache version for a workspace."""
-    version = await r.get(f"cache_version:{workspace_id}")
-    return version or "0"
+    """Get the current cache version for a workspace.
+    
+    INFRA-002: Degrades gracefully on Redis failure.
+    """
+    try:
+        version = await r.get(f"cache_version:{workspace_id}")
+        return version or "0"
+    except (ConnectionError, TimeoutError, RedisError) as exc:
+        logger.warning("Redis unavailable for version check: %s", exc)
+        return "0"
 
 
 async def invalidate_workspace_cache(workspace_id: str) -> None:
@@ -52,12 +82,14 @@ async def invalidate_workspace_cache(workspace_id: str) -> None:
 
     PERF-002: O(1) operation — no scanning, no key deletion.
     Old cache entries expire naturally via TTL.
+    INFRA-002: Degrades gracefully on Redis failure.
     """
     try:
         r = await get_redis()
         await r.incr(f"cache_version:{workspace_id}")
-    except Exception:
-        pass  # Cache failures are non-fatal
+    except (ConnectionError, TimeoutError, RedisError) as exc:
+        logger.warning("Redis unavailable for cache invalidation: %s", exc)
+        # Degrade gracefully — cache will be stale but system continues
 
 
 def _tracking_key(workspace_id: str) -> str:
@@ -70,14 +102,18 @@ def _tracking_key(workspace_id: str) -> str:
 # ═══════════════════════════════════════════════════════════════════
 
 async def cache_get(key: str) -> Optional[Any]:
-    """Get a cached value, returns None on miss or error."""
+    """Get a cached value, returns None on miss or error.
+    
+    INFRA-002: Degrades gracefully on Redis failure (returns None).
+    """
     try:
         r = await get_redis()
         val = await r.get(key)
         if val is not None:
             return json.loads(val)
-    except Exception:
-        pass  # Cache failures are non-fatal
+    except (ConnectionError, TimeoutError, RedisError) as exc:
+        logger.warning("Redis unavailable for cache_get(%s): %s", key, exc)
+        # Degrade gracefully — treat as cache miss
     return None
 
 
@@ -86,6 +122,7 @@ async def cache_set(key: str, value: Any, ttl: int | None = None) -> None:
 
     Also registers the key in a per-workspace tracking set for efficient
     bulk deletion (SEC-004).
+    INFRA-002: Degrades gracefully on Redis failure.
     """
     try:
         r = await get_redis()
@@ -101,8 +138,9 @@ async def cache_set(key: str, value: Any, ttl: int | None = None) -> None:
             await r.sadd(tracking, key)
             # Keep tracking set alive as long as any cache key could exist
             await r.expire(tracking, effective_ttl * 2)
-    except Exception:
-        pass  # Cache failures are non-fatal
+    except (ConnectionError, TimeoutError, RedisError) as exc:
+        logger.warning("Redis unavailable for cache_set(%s): %s", key, exc)
+        # Degrade gracefully — cache write fails but system continues
 
 
 async def cache_delete(pattern: str) -> None:
@@ -113,6 +151,7 @@ async def cache_delete(pattern: str) -> None:
 
     Falls back to scan_iter with COUNT hint if tracking set is empty
     (e.g., keys created before the tracking migration).
+    INFRA-002: Degrades gracefully on Redis failure.
     """
     try:
         r = await get_redis()
@@ -147,8 +186,9 @@ async def cache_delete(pattern: str) -> None:
             keys_to_delete.append(key)
         if keys_to_delete:
             await r.delete(*keys_to_delete)
-    except Exception:
-        pass
+    except (ConnectionError, TimeoutError, RedisError) as exc:
+        logger.warning("Redis unavailable for cache_delete(%s): %s", pattern, exc)
+        # Degrade gracefully — cache entries will expire via TTL
 
 
 def make_cache_key(prefix: str, workspace_id: str, *parts: str) -> str:
@@ -165,11 +205,13 @@ async def make_versioned_cache_key(prefix: str, workspace_id: str, *parts: str) 
     PERF-002: Key format includes the workspace cache version so that
     after invalidate_workspace_cache(), all new lookups miss automatically.
     Old versioned entries expire naturally via TTL — no scan/delete needed.
+    INFRA-002: Degrades gracefully on Redis failure (uses version "0").
     """
     try:
         r = await get_redis()
         version = await _get_version(r, workspace_id)
-    except Exception:
+    except (ConnectionError, TimeoutError, RedisError) as exc:
+        logger.warning("Redis unavailable for versioned key: %s", exc)
         version = "0"
 
     key = f"ws:{workspace_id}:v{version}:{prefix}"

@@ -33,10 +33,15 @@ security = HTTPBearer(auto_error=False)
 # ── JWKS cache with TTL ──────────────────────────────────────────
 _jwks_cache: dict | None = None
 _jwks_fetched_at: float = 0.0
+_jwks_last_failure: float = 0.0  # MED-001: negative-cache sentinel
 _jwks_lock = asyncio.Lock()
 
 # Cache JWKS for 5 minutes — balances key-rotation speed vs. availability
 JWKS_CACHE_TTL_SECONDS = 300
+
+# MED-001: Cache fetch failures for 30s to avoid hammering Clerk during outages.
+# Without this, every request retries the failing HTTP call (2-5s latency each).
+JWKS_NEGATIVE_CACHE_TTL_SECONDS = 30
 
 
 async def _get_jwks(force_refresh: bool = False) -> dict:
@@ -49,8 +54,11 @@ async def _get_jwks(force_refresh: bool = False) -> dict:
 
     If Clerk's JWKS endpoint is down, stale cache is returned as fallback
     for up to 10× the TTL window (50 min) before raising.
+
+    MED-001: Negative caching — failed fetches are cached for 30s so
+    subsequent requests use stale cache immediately without re-attempting.
     """
-    global _jwks_cache, _jwks_fetched_at
+    global _jwks_cache, _jwks_fetched_at, _jwks_last_failure
 
     now = time.monotonic()
     cache_age = now - _jwks_fetched_at
@@ -74,6 +82,21 @@ async def _get_jwks(force_refresh: bool = False) -> dict:
         ):
             return _jwks_cache
 
+        # MED-001: If we recently failed, don't retry — return stale or raise.
+        # This prevents every request from adding 2-5s latency during a Clerk outage.
+        failure_age = now - _jwks_last_failure
+        if _jwks_last_failure > 0 and failure_age < JWKS_NEGATIVE_CACHE_TTL_SECONDS:
+            if _jwks_cache is not None:
+                logger.debug(
+                    "JWKS negative cache active (%.0fs ago) — returning stale keys",
+                    failure_age,
+                )
+                return _jwks_cache
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Authentication service temporarily unavailable",
+            )
+
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
                 resp = await client.get(
@@ -83,9 +106,18 @@ async def _get_jwks(force_refresh: bool = False) -> dict:
                 resp.raise_for_status()
                 _jwks_cache = resp.json()
                 _jwks_fetched_at = time.monotonic()
+                _jwks_last_failure = 0.0  # Clear negative cache on success
                 return _jwks_cache
 
         except (httpx.HTTPError, httpx.TimeoutException) as exc:
+            # MED-001: Record the failure timestamp for negative caching
+            _jwks_last_failure = time.monotonic()
+            logger.warning(
+                "JWKS fetch failed — negative-cached for %ds: %s",
+                JWKS_NEGATIVE_CACHE_TTL_SECONDS,
+                exc,
+            )
+
             # If we have stale cache within 10× TTL, use it (graceful degradation)
             if _jwks_cache is not None and cache_age < JWKS_CACHE_TTL_SECONDS * 10:
                 return _jwks_cache

@@ -29,6 +29,10 @@ async def get_benchmarks(
     ws_id = user.workspace_id
     cache_key = await make_versioned_cache_key("benchmarks", str(ws_id))
 
+    # LOW-003: Cache check and compute are atomic per request, but concurrent
+    # requests may still both miss and compute. This is acceptable as it only
+    # wastes compute, not correctness. A distributed lock would add complexity
+    # for minimal benefit.
     cached = await cache_get(cache_key)
     if cached:
         return [BenchmarkInsight(**item) for item in cached]
@@ -38,8 +42,20 @@ async def get_benchmarks(
     workspace = ws_q.scalar_one_or_none()
     industry = workspace.industry if workspace else "general_smb"
 
-    # Get last 12 months of data
-    cutoff = datetime.now(timezone.utc) - timedelta(days=365)
+    # CRIT-006: Use MAX(Transaction.date) as the temporal anchor instead of
+    # datetime.now(). For historical-data workspaces (e.g. 2022-2024 CSV
+    # imported in 2026), now()-365d returns zero results.
+    date_anchor_q = await db.execute(
+        select(func.max(Transaction.date)).where(
+            Transaction.workspace_id == ws_id
+        )
+    )
+    latest_date = date_anchor_q.scalar()
+    if latest_date is None:
+        latest_date = datetime.now(timezone.utc)
+    elif latest_date.tzinfo is None:
+        latest_date = latest_date.replace(tzinfo=timezone.utc)
+    cutoff = latest_date - timedelta(days=365)
 
     totals = await db.execute(
         select(
@@ -63,7 +79,7 @@ async def get_benchmarks(
         else:
             expenses = float(row[1] or 0)
 
-    # Compute workspace metrics (income used directly below)
+    # LOW-005: Compute workspace metrics
     profit_margin = ((income - expenses) / income * 100) if income > 0 else 0
     expense_ratio = (expenses / income * 100) if income > 0 else 0
 

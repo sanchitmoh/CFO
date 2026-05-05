@@ -33,6 +33,10 @@ async def log_action(
         new_value=new_value,
     )
     db.add(entry)
-    await db.commit()
+    # MED-002: Use flush (not commit) so the caller controls commit
+    # boundaries.  flush() writes to the DB buffer — assigns IDs and
+    # satisfies FK constraints — without finalising the transaction.
+    # This prevents partial commits if an error occurs after logging.
+    await db.flush()
     return entry
 

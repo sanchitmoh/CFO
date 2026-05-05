@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useUser, useAuth } from "@clerk/nextjs";
 import Sidebar from "@/components/Sidebar";
 import { onboardingApi, setTokenProvider } from "@/lib/api";
@@ -9,6 +9,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { isLoaded, isSignedIn } = useUser();
   const { getToken } = useAuth();
   const provisionedRef = useRef(false);
+  const [isProvisioning, setIsProvisioning] = useState(true);
+  const [provisionError, setProvisionError] = useState<string | null>(null);
 
   // ⚡ Register Clerk's getToken SYNCHRONOUSLY during render.
   // This MUST happen before children mount, not in useEffect (which
@@ -22,14 +24,28 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isLoaded && isSignedIn && !provisionedRef.current) {
       provisionedRef.current = true;
-      onboardingApi.provision().catch((err) => {
-        console.error("[onboarding] Provision failed:", err);
-        provisionedRef.current = false; // allow retry on next render
-      });
+      setIsProvisioning(true);
+      setProvisionError(null);
+      
+      onboardingApi
+        .provision()
+        .then(() => {
+          console.log("[onboarding] Provision successful");
+          setIsProvisioning(false);
+        })
+        .catch((err) => {
+          console.error("[onboarding] Provision failed:", err);
+          setProvisionError(err instanceof Error ? err.message : "Provisioning failed");
+          setIsProvisioning(false);
+          provisionedRef.current = false; // allow retry on next render
+        });
+    } else if (isLoaded && isSignedIn && provisionedRef.current) {
+      // Already provisioned in a previous render
+      setIsProvisioning(false);
     }
   }, [isLoaded, isSignedIn]);
 
-  if (!isLoaded) {
+  if (!isLoaded || isProvisioning) {
     return (
       <div
         className="flex items-center justify-center"
@@ -39,7 +55,41 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           className="animate-pulse text-sm font-medium"
           style={{ color: "var(--text-muted)" }}
         >
-          Loading…
+          {!isLoaded ? "Loading…" : "Setting up your workspace…"}
+        </div>
+      </div>
+    );
+  }
+
+  if (provisionError) {
+    return (
+      <div
+        className="flex items-center justify-center"
+        style={{ height: "100vh", background: "var(--bg-deep)" }}
+      >
+        <div className="text-center">
+          <div
+            className="text-sm font-medium mb-2"
+            style={{ color: "var(--danger)" }}
+          >
+            Failed to set up workspace
+          </div>
+          <div
+            className="text-xs mb-4"
+            style={{ color: "var(--text-muted)" }}
+          >
+            {provisionError}
+          </div>
+          <button
+            onClick={() => {
+              provisionedRef.current = false;
+              setProvisionError(null);
+              setIsProvisioning(true);
+            }}
+            className="btn btn-primary"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );

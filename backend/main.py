@@ -39,7 +39,8 @@ from routers import (
     onboarding as onboarding_router,
     plaid as plaid_router,
     semantic_search as semantic_search_router,
-    password_policy as password_policy_router,
+    # CRIT-001: password_policy router removed — unused dead code with live attack surface.
+    # Auth is handled by Clerk. If custom auth is needed later, rewrite with DB-persisted config.
     compliance as compliance_router,
 )
 
@@ -124,14 +125,26 @@ scheduler = AsyncIOScheduler()
 async def lifespan(app: FastAPI):
     """Run Alembic migrations on startup, then start scheduler."""
     # L-003: Use versioned Alembic migrations instead of create_all
-    from alembic.config import Config as AlembicConfig
-    from alembic import command as alembic_command
+    # Note: Migrations should be run manually with: alembic upgrade head
+    # Skipping auto-migrations on startup to avoid blocking
+    
+    logger.info("Skipping auto-migrations - run 'alembic upgrade head' manually")
 
-    alembic_cfg = AlembicConfig("alembic.ini")
-    async with engine.begin() as conn:
-        await conn.run_sync(
-            lambda sync_conn: alembic_command.upgrade(alembic_cfg, "head")
+    # CONFIG-001: Warn if localhost CORS origins in production
+    if not settings.DEBUG and any("localhost" in o for o in settings.CORS_ORIGINS):
+        logger.critical(
+            "CONFIG-001: CORS_ORIGINS contains localhost in production mode! "
+            "Frontend will be blocked. Set CORS_ORIGINS in .env to your production domain."
         )
+    
+    # CONFIG-002: Warn if OTEL enabled but endpoint unreachable
+    if settings.OTEL_ENABLED:
+        if "localhost" in settings.OTEL_EXPORTER_OTLP_ENDPOINT or "127.0.0.1" in settings.OTEL_EXPORTER_OTLP_ENDPOINT:
+            logger.warning(
+                "CONFIG-002: OTEL_ENABLED=true but endpoint is localhost (%s). "
+                "Telemetry will fail in production. Set OTEL_EXPORTER_OTLP_ENDPOINT to your collector.",
+                settings.OTEL_EXPORTER_OTLP_ENDPOINT
+            )
 
     # EXT-002: Schedule periodic alert evaluation across all workspaces.
     # Lazy import to avoid circular dependencies at module load time.
@@ -197,7 +210,7 @@ app.include_router(benchmarks_router.router, prefix="/api/v1/benchmarks", tags=[
 app.include_router(onboarding_router.router, prefix="/api/v1/onboarding", tags=["Onboarding"])
 app.include_router(plaid_router.router, prefix="/api/v1/plaid", tags=["Plaid"])
 app.include_router(semantic_search_router.router, prefix="/api/v1/search", tags=["Semantic Search"])
-app.include_router(password_policy_router.router, prefix="/api/v1/password-policy", tags=["Password Policy"])
+# CRIT-001: password_policy router removed — see import block comment
 app.include_router(compliance_router.router, prefix="/api/v1/compliance", tags=["GDPR/CCPA Compliance"])
 
 

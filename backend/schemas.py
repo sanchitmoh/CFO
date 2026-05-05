@@ -349,7 +349,7 @@ class GoalUpdate(BaseModel):
     title: Optional[str] = None
     target_value: Optional[float] = None
     current_value: Optional[float] = None
-    status: Optional[str] = None
+    status: Optional[str] = Field(None, pattern="^(active|completed|cancelled|on_hold)$")  # LOW-006: Add validation
     deadline: Optional[date] = None
 
 

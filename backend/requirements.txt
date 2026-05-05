@@ -25,6 +25,7 @@ python-multipart>=0.0.6
 
 # Utilities
 email-validator>=2.1.0
+python-dateutil>=2.8.0
 
 # Encryption (field-level for webhooks, API keys)
 cryptography>=42.0.0
@@ -57,3 +58,11 @@ apscheduler>=3.10.0
 # Uncomment to enable Prophet time-series forecasting:
 # prophet>=1.1.5
 # pandas>=2.0.0
+
+# Email providers (INTEGRATIONS)
+aiosmtplib>=3.0.1      # SMTP (Gmail, Outlook, etc.)
+sendgrid>=6.11.0       # SendGrid
+boto3>=1.34.0          # AWS SES
+
+# Slack notifications (INTEGRATIONS)
+slack-sdk>=3.27.0      # Slack Bot API

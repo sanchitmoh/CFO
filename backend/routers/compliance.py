@@ -18,12 +18,12 @@ from sqlalchemy.orm import selectinload
 
 from auth import get_current_user
 from config import settings
-from database import get_rls_db
+from dependencies import get_rls_db
 from models import (
     User, Workspace, Transaction, Budget, Goal, Alert, ChatSession, 
     ChatMessage, AuditLog, FileUpload, UserConsent, DataExport, 
     DataDeletion, RetentionPolicy, ConsentStatus, DataExportStatus, 
-    DataDeletionStatus
+    DataDeletionStatus, UserRole
 )
 from schemas import (
     DataExportRequest, DataExportResponse, DataDeletionRequest, 
@@ -459,7 +459,7 @@ async def trigger_retention_cleanup(
     This endpoint allows administrators to manually trigger data cleanup
     based on retention policies instead of waiting for scheduled cleanup.
     """
-    if user.role not in ["owner", "admin"]:
+    if user.role not in (UserRole.owner, UserRole.admin):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only admin users can trigger retention cleanup"

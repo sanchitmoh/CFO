@@ -44,7 +44,21 @@ async def _fetch_monthly_data(
     db: AsyncSession, workspace_id
 ) -> tuple[dict[str, dict], str]:
     """Fetch historical monthly aggregates and compute a data hash."""
-    cutoff = datetime.now(timezone.utc) - timedelta(days=365)
+    # Anchor the lookback to the LATEST transaction, not "now",
+    # so historical CSVs (e.g. 2024 data imported in 2026) are visible.
+    date_range = await db.execute(
+        select(func.max(Transaction.date))
+        .where(Transaction.workspace_id == workspace_id)
+    )
+    latest_date = date_range.scalar()
+    if latest_date is None:
+        return {}, hashlib.sha256(b"[]").hexdigest()
+
+    if latest_date.tzinfo is None:
+        from datetime import timezone as tz
+        latest_date = latest_date.replace(tzinfo=tz.utc)
+
+    cutoff = latest_date - timedelta(days=365)
 
     monthly_q = await db.execute(
         select(
@@ -98,13 +112,16 @@ def _compute_forecast(
     expense_slope = _slope(expenses)
 
     mult = SCENARIO_MULTIPLIERS[scenario]
-    now = datetime.now(timezone.utc)
+    # Start forecasting from the month AFTER the latest historical period,
+    # not from "now", so historical CSV data projects forward correctly.
+    last_period = periods[-1]  # e.g. "2024-11"
+    last_year, last_month = int(last_period[:4]), int(last_period[5:])
     cumulative = 0.0
     data_points = []
 
     for i in range(months_ahead):
-        future_month = now.month + i
-        future_year = now.year + (future_month - 1) // 12
+        future_month = last_month + 1 + i
+        future_year = last_year + (future_month - 1) // 12
         future_month = ((future_month - 1) % 12) + 1
         period = f"{future_year}-{future_month:02d}"
 

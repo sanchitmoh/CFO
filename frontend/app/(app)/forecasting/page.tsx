@@ -5,56 +5,96 @@ import { useAuth } from "@clerk/nextjs";
 import { api } from "@/lib/api";
 import type { ForecastResponse, ForecastPoint } from "@/lib/types";
 import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
+  ComposedChart, Bar, Line, Area,
+  XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, Legend, ReferenceLine,
 } from "recharts";
-import { TrendingUp, SlidersHorizontal, Sparkles } from "lucide-react";
+import {
+  TrendingUp, TrendingDown, SlidersHorizontal, Sparkles,
+  Target, BarChart3, Activity, ArrowDownRight, ArrowUpRight,
+  ChevronDown, Zap,
+} from "lucide-react";
 
 const SCENARIOS = [
-  { value: "base", label: "Base Case" },
-  { value: "optimistic", label: "Optimistic" },
-  { value: "pessimistic", label: "Pessimistic" },
+  { value: "base", label: "Base Case", icon: Target, color: "#3B82F6" },
+  { value: "optimistic", label: "Optimistic", icon: TrendingUp, color: "#00E5CC" },
+  { value: "pessimistic", label: "Pessimistic", icon: TrendingDown, color: "#FF4D6A" },
 ];
 
 const MONTH_OPTIONS = [
-  { value: 3, label: "3 months" },
-  { value: 6, label: "6 months" },
-  { value: 12, label: "12 months" },
+  { value: 3, label: "3 mo" },
+  { value: 6, label: "6 mo" },
+  { value: 12, label: "12 mo" },
+  { value: 24, label: "24 mo" },
 ];
 
 const fmt = (n: number) =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
+  new Intl.NumberFormat("en-IN", {
+    style: "currency", currency: "INR",
+    maximumFractionDigits: 0, notation: Math.abs(n) >= 1e6 ? "compact" : "standard",
   }).format(n);
 
-const CustomTooltip = ({
-  active,
-  payload,
-  label,
-}: {
-  active?: boolean;
-  payload?: Array<{ color: string; name: string; value: number }>;
-  label?: string;
-}) => {
-  if (!active || !payload) return null;
+const fmtShort = (n: number) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency", currency: "INR",
+    maximumFractionDigits: 1, notation: "compact",
+  }).format(n);
+
+const formatPeriod = (p: string) => {
+  const [y, m] = p.split("-");
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return `${months[parseInt(m) - 1]} '${y.slice(2)}`;
+};
+
+/* ── Custom Tooltip ─────────────────────────────────────────────── */
+const ChartTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null;
   return (
-    <div className="glass p-3 text-xs space-y-1" style={{ minWidth: 160 }}>
-      <p className="font-semibold mb-2" style={{ color: "var(--text)" }}>{label}</p>
-      {payload.map((p) => (
-        <div key={p.name} className="flex justify-between gap-4">
-          <span style={{ color: p.color }}>{p.name}</span>
-          <span style={{ color: "var(--text)" }}>{fmt(p.value)}</span>
+    <div style={{
+      background: "rgba(15, 20, 35, 0.95)", backdropFilter: "blur(12px)",
+      border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12,
+      padding: "14px 18px", minWidth: 220, boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+    }}>
+      <p style={{ color: "#8B95A8", fontSize: 11, fontWeight: 600, marginBottom: 10, letterSpacing: "0.05em" }}>
+        {formatPeriod(label)}
+      </p>
+      {payload.map((p: any) => (
+        <div key={p.dataKey} style={{ display: "flex", justifyContent: "space-between", gap: 24, marginBottom: 4 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 8, height: 8, borderRadius: "50%", background: p.color }} />
+            <span style={{ color: "#A0ABBE", fontSize: 12 }}>{p.name}</span>
+          </div>
+          <span style={{ color: "#E8ECF4", fontSize: 12, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+            {fmt(p.value)}
+          </span>
         </div>
       ))}
     </div>
+  );
+};
+
+/* ── Sparkline mini-chart ───────────────────────────────────────── */
+const Sparkline = ({ data, color, height = 32 }: { data: number[]; color: string; height?: number }) => {
+  if (!data.length) return null;
+  const max = Math.max(...data.map(Math.abs));
+  const min = Math.min(...data);
+  const range = max - min || 1;
+  const w = 80;
+  const points = data.map((v, i) => `${(i / (data.length - 1)) * w},${height - ((v - min) / range) * (height - 4)}`).join(" ");
+  return (
+    <svg width={w} height={height} style={{ opacity: 0.7 }}>
+      <defs>
+        <linearGradient id={`spark-${color.replace("#","")}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity={0.3} />
+          <stop offset="100%" stopColor={color} stopOpacity={0} />
+        </linearGradient>
+      </defs>
+      <polygon
+        points={`0,${height} ${points} ${w},${height}`}
+        fill={`url(#spark-${color.replace("#","")})`}
+      />
+      <polyline points={points} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 };
 
@@ -66,6 +106,7 @@ export default function ForecastingPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [revenueGrowth, setRevenueGrowth] = useState(12);
+  const [activeTab, setActiveTab] = useState<"chart" | "table">("chart");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -84,53 +125,107 @@ export default function ForecastingPage() {
     }
   }, [getToken, scenario, months]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
 
   const points: ForecastPoint[] = useMemo(() => {
     if (!data?.data_points) return [];
     const baseGrowth = Number(data.assumptions?.income_growth_rate ?? 0.12);
     const baseGrowthPct = Math.round(baseGrowth * 100);
     if (revenueGrowth === baseGrowthPct) return data.data_points;
-
     const ratio = revenueGrowth / (baseGrowthPct || 1);
     let cumNet = 0;
     return data.data_points.map((p) => {
       const adjustedIncome = Math.round(p.projected_income * ratio);
       const net = adjustedIncome - p.projected_expenses;
       cumNet += net;
-      return {
-        ...p,
-        projected_income: adjustedIncome,
-        projected_net: net,
-        cumulative_net: cumNet,
+      return { ...p, projected_income: adjustedIncome, projected_net: net, cumulative_net: cumNet,
         confidence_lower: Math.round(p.confidence_lower * ratio),
         confidence_upper: Math.round(p.confidence_upper * ratio),
       };
     });
   }, [data, revenueGrowth]);
 
-  const totalProjectedNet = points.reduce((s, p) => s + p.projected_net, 0);
-  const lastCumulative = points[points.length - 1]?.cumulative_net ?? 0;
+  /* ── Derived metrics ──────────────────────────────────────────── */
+  const totalNet = points.reduce((s, p) => s + p.projected_net, 0);
+  const lastCum = points[points.length - 1]?.cumulative_net ?? 0;
   const avgIncome = points.length > 0 ? points.reduce((s, p) => s + p.projected_income, 0) / points.length : 0;
   const avgExpenses = points.length > 0 ? points.reduce((s, p) => s + p.projected_expenses, 0) / points.length : 0;
+  const expenseTrend = points.length >= 2
+    ? ((points[points.length-1].projected_expenses - points[0].projected_expenses) / points[0].projected_expenses * 100)
+    : 0;
+
+  const chartData = points.map((p) => ({
+    ...p,
+    period: p.period,
+    label: formatPeriod(p.period),
+    confidenceRange: [p.confidence_lower, p.confidence_upper],
+  }));
+
+  const scenarioConfig = SCENARIOS.find(s => s.value === scenario)!;
+
+  const kpis = [
+    { label: "Projected Net", value: totalNet, color: totalNet >= 0 ? "#00E5CC" : "#FF4D6A",
+      icon: totalNet >= 0 ? TrendingUp : TrendingDown, sparkData: points.map(p => p.projected_net),
+      sub: `Over ${months} months` },
+    { label: "Cumulative End", value: lastCum, color: lastCum >= 0 ? "#00E5CC" : "#FF4D6A",
+      icon: Activity, sparkData: points.map(p => p.cumulative_net),
+      sub: `${formatPeriod(points[points.length-1]?.period ?? "")}` },
+    { label: "Avg Income/mo", value: avgIncome, color: "#00E5CC",
+      icon: ArrowUpRight, sparkData: points.map(p => p.projected_income),
+      sub: `${points.length} months projected` },
+    { label: "Avg Expense/mo", value: avgExpenses, color: "#FF4D6A",
+      icon: ArrowDownRight, sparkData: points.map(p => p.projected_expenses),
+      sub: `Trend: ${expenseTrend > 0 ? "+" : ""}${expenseTrend.toFixed(1)}%` },
+  ];
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      {/* Header */}
+    <div className="max-w-7xl mx-auto space-y-6">
+      {/* ── Header ─────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fade-up">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--text)" }}>Forecasting</h1>
-          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>AI-powered revenue and expense projections</p>
+          <div className="flex items-center gap-3">
+            <div style={{ width: 40, height: 40, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center",
+              background: "linear-gradient(135deg, rgba(59,130,246,0.15), rgba(139,92,246,0.15))",
+              border: "1px solid rgba(59,130,246,0.2)" }}>
+              <BarChart3 size={20} style={{ color: "#3B82F6" }} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold" style={{ color: "var(--text)" }}>Forecasting</h1>
+              <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>
+                AI-powered projections • {data?.historical_months ?? 0} months historical data •{" "}
+                <span style={{ color: scenarioConfig.color }}>{scenarioConfig.label}</span>
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <select value={scenario} onChange={(e) => setScenario(e.target.value)} style={{ width: "auto" }}>
-            {SCENARIOS.map((s) => (<option key={s.value} value={s.value}>{s.label}</option>))}
-          </select>
-          <select value={months} onChange={(e) => setMonths(Number(e.target.value))} style={{ width: "auto" }}>
-            {MONTH_OPTIONS.map((m) => (<option key={m.value} value={m.value}>{m.label}</option>))}
-          </select>
+        <div className="flex items-center gap-2">
+          {SCENARIOS.map((s) => (
+            <button key={s.value} onClick={() => setScenario(s.value)}
+              style={{
+                padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600,
+                border: scenario === s.value ? `1px solid ${s.color}` : "1px solid var(--border)",
+                background: scenario === s.value ? `${s.color}15` : "transparent",
+                color: scenario === s.value ? s.color : "var(--text-muted)",
+                cursor: "pointer", transition: "all 0.2s ease",
+              }}
+            >
+              {s.label}
+            </button>
+          ))}
+          <div style={{ width: 1, height: 24, background: "var(--border)", margin: "0 4px" }} />
+          {MONTH_OPTIONS.map((m) => (
+            <button key={m.value} onClick={() => setMonths(m.value)}
+              style={{
+                padding: "6px 10px", borderRadius: 8, fontSize: 12, fontWeight: 600,
+                border: months === m.value ? "1px solid var(--accent)" : "1px solid var(--border)",
+                background: months === m.value ? "var(--accent-soft)" : "transparent",
+                color: months === m.value ? "var(--accent)" : "var(--text-dim)",
+                cursor: "pointer", transition: "all 0.2s ease",
+              }}
+            >
+              {m.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -138,123 +233,202 @@ export default function ForecastingPage() {
         <div className="glass px-4 py-3 text-sm rounded-xl" style={{ background: "var(--danger-soft)", color: "var(--danger)" }}>{error}</div>
       )}
 
-      {/* Revenue Growth Slider */}
+      {/* ── KPI Cards ──────────────────────────────────────────── */}
       {!loading && points.length > 0 && (
-        <div className="glass p-5 animate-fade-up delay-1">
-          <div className="flex items-center gap-2 mb-3">
-            <SlidersHorizontal size={14} style={{ color: "var(--accent)" }} />
-            <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-              Scenario Slider — What if revenue growth changes?
-            </span>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-xs shrink-0" style={{ color: "var(--text-dim)" }}>0%</span>
-            <input type="range" min={0} max={30} step={1} value={revenueGrowth} onChange={(e) => setRevenueGrowth(Number(e.target.value))} className="flex-1" style={{ accentColor: "var(--accent)", height: 6 }} />
-            <span className="text-xs shrink-0" style={{ color: "var(--text-dim)" }}>30%</span>
-          </div>
-          <div className="flex items-center justify-between mt-2">
-            <span className="text-sm font-bold" style={{ color: "var(--accent)" }}>{revenueGrowth}% MoM revenue growth</span>
-            <div className="flex items-center gap-1 text-xs" style={{ color: "var(--text-dim)" }}>
-              <Sparkles size={11} style={{ color: "var(--accent)" }} />
-              Projected net: <strong style={{ color: totalProjectedNet >= 0 ? "var(--income)" : "var(--expense)" }}>{fmt(totalProjectedNet)}</strong> over {months}mo
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* KPI Cards */}
-      {!loading && points.length > 0 && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-up delay-2">
-          {[
-            { label: "Total Net", value: fmt(totalProjectedNet), color: totalProjectedNet >= 0 ? "var(--income)" : "var(--expense)" },
-            { label: "Cumulative at End", value: fmt(lastCumulative), color: lastCumulative >= 0 ? "var(--income)" : "var(--expense)" },
-            { label: "Avg Monthly Income", value: fmt(avgIncome), color: "var(--income)" },
-            { label: "Avg Monthly Expenses", value: fmt(avgExpenses), color: "var(--expense)" },
-          ].map((kpi) => (
-            <div key={kpi.label} className="glass p-4 space-y-1">
-              <p className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>{kpi.label}</p>
-              <p className="text-xl font-bold" style={{ color: kpi.color }}>{kpi.value}</p>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-up delay-1">
+          {kpis.map((kpi, idx) => (
+            <div key={kpi.label} className="glass glass-hover p-5" style={{ position: "relative", overflow: "hidden" }}>
+              <div style={{ position: "absolute", right: 12, bottom: 8, opacity: 0.5 }}>
+                <Sparkline data={kpi.sparkData} color={kpi.color} />
+              </div>
+              <div className="flex items-center gap-2 mb-2">
+                <div style={{
+                  width: 28, height: 28, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
+                  background: `${kpi.color}15`,
+                }}>
+                  <kpi.icon size={14} style={{ color: kpi.color }} />
+                </div>
+                <span className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>{kpi.label}</span>
+              </div>
+              <p className="text-xl font-bold" style={{ color: kpi.color, fontVariantNumeric: "tabular-nums" }}>{fmt(kpi.value)}</p>
+              <p className="text-xs mt-1" style={{ color: "var(--text-dim)" }}>{kpi.sub}</p>
             </div>
           ))}
         </div>
       )}
 
-      {/* Chart */}
+      {/* ── Scenario Slider ────────────────────────────────────── */}
+      {!loading && points.length > 0 && (
+        <div className="glass p-5 animate-fade-up delay-2">
+          <div className="flex items-center gap-2 mb-3">
+            <div style={{ width: 24, height: 24, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center",
+              background: "linear-gradient(135deg, rgba(139,92,246,0.2), rgba(59,130,246,0.2))" }}>
+              <SlidersHorizontal size={12} style={{ color: "#8B5CF6" }} />
+            </div>
+            <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+              Revenue Growth Sensitivity
+            </span>
+          </div>
+          <div className="flex items-center gap-4">
+            <span className="text-xs font-mono" style={{ color: "var(--text-dim)", width: 28 }}>0%</span>
+            <div style={{ flex: 1, position: "relative" }}>
+              <input type="range" min={0} max={30} step={1} value={revenueGrowth}
+                onChange={(e) => setRevenueGrowth(Number(e.target.value))}
+                style={{ width: "100%", accentColor: "#8B5CF6", height: 6 }} />
+              <div style={{
+                position: "absolute", top: -28, left: `${(revenueGrowth / 30) * 100}%`, transform: "translateX(-50%)",
+                background: "#8B5CF6", color: "#fff", fontSize: 10, fontWeight: 700,
+                padding: "2px 8px", borderRadius: 6, whiteSpace: "nowrap",
+              }}>
+                {revenueGrowth}% MoM
+              </div>
+            </div>
+            <span className="text-xs font-mono" style={{ color: "var(--text-dim)", width: 28 }}>30%</span>
+          </div>
+          <div className="flex items-center justify-end mt-2 gap-2">
+            <Zap size={11} style={{ color: "#8B5CF6" }} />
+            <span className="text-xs" style={{ color: "var(--text-dim)" }}>
+              Projected net:{" "}
+              <strong style={{ color: totalNet >= 0 ? "#00E5CC" : "#FF4D6A" }}>{fmt(totalNet)}</strong>
+              {" "}over {months}mo
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* ── Main Chart ─────────────────────────────────────────── */}
       <div className="glass p-6 animate-fade-up delay-3">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-sm font-semibold" style={{ color: "var(--text)" }}>
-            Projected Cash Flow — <span style={{ color: "var(--accent)" }}>{SCENARIOS.find((s) => s.value === scenario)?.label}</span>
-          </h2>
-          <div className="text-xs" style={{ color: "var(--text-dim)" }}>Growth: {revenueGrowth}% MoM</div>
+          <div>
+            <h2 className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+              Cash Flow Projection
+            </h2>
+            <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>
+              {formatPeriod(points[0]?.period ?? "")} — {formatPeriod(points[points.length-1]?.period ?? "")} •{" "}
+              <span style={{ color: scenarioConfig.color }}>{scenarioConfig.label} scenario</span>
+            </p>
+          </div>
+          <div className="flex gap-1" style={{ background: "var(--card)", borderRadius: 8, padding: 2, border: "1px solid var(--border)" }}>
+            {(["chart", "table"] as const).map(t => (
+              <button key={t} onClick={() => setActiveTab(t)}
+                style={{
+                  padding: "4px 12px", borderRadius: 6, fontSize: 11, fontWeight: 600,
+                  background: activeTab === t ? "var(--accent-soft)" : "transparent",
+                  color: activeTab === t ? "var(--accent)" : "var(--text-dim)",
+                  border: "none", cursor: "pointer", textTransform: "capitalize",
+                }}>
+                {t}
+              </button>
+            ))}
+          </div>
         </div>
 
         {loading ? (
-          <div className="skeleton" style={{ height: 320 }} />
+          <div className="skeleton" style={{ height: 380 }} />
         ) : points.length === 0 ? (
-          <div className="flex flex-col items-center justify-center" style={{ height: 320 }}>
-            <TrendingUp size={36} className="mb-3" style={{ color: "var(--text-dim)" }} />
-            <p className="text-sm" style={{ color: "var(--text-dim)" }}>No forecast data available. Add transactions first.</p>
+          <div className="flex flex-col items-center justify-center" style={{ height: 380 }}>
+            <BarChart3 size={40} className="mb-3" style={{ color: "var(--text-dim)" }} />
+            <p className="text-sm" style={{ color: "var(--text-dim)" }}>No forecast data. Add transactions first.</p>
           </div>
-        ) : (
-          <ResponsiveContainer width="100%" height={320}>
-            <AreaChart data={points} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+        ) : activeTab === "chart" ? (
+          <ResponsiveContainer width="100%" height={380}>
+            <ComposedChart data={chartData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
               <defs>
-                <linearGradient id="fcIncomeGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--income)" stopOpacity={0.2} />
-                  <stop offset="95%" stopColor="var(--income)" stopOpacity={0} />
+                <linearGradient id="fcIncG" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#00E5CC" stopOpacity={0.15} />
+                  <stop offset="95%" stopColor="#00E5CC" stopOpacity={0} />
                 </linearGradient>
-                <linearGradient id="fcExpenseGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--expense)" stopOpacity={0.2} />
-                  <stop offset="95%" stopColor="var(--expense)" stopOpacity={0} />
+                <linearGradient id="fcExpG" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#FF4D6A" stopOpacity={0.15} />
+                  <stop offset="95%" stopColor="#FF4D6A" stopOpacity={0} />
                 </linearGradient>
-                <linearGradient id="fcNetGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.2} />
-                  <stop offset="95%" stopColor="var(--accent)" stopOpacity={0} />
+                <linearGradient id="fcConfG" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={scenarioConfig.color} stopOpacity={0.08} />
+                  <stop offset="100%" stopColor={scenarioConfig.color} stopOpacity={0.02} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis dataKey="period" tick={{ fontSize: 11, fill: "var(--text-dim)" }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: "var(--text-dim)" }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend wrapperStyle={{ fontSize: 11, color: "var(--text-muted)" }} />
-              <Area type="monotone" dataKey="projected_income" name="Income" stroke="var(--income)" fill="url(#fcIncomeGrad)" strokeWidth={2} dot={false} />
-              <Area type="monotone" dataKey="projected_expenses" name="Expenses" stroke="var(--expense)" fill="url(#fcExpenseGrad)" strokeWidth={2} dot={false} />
-              <Area type="monotone" dataKey="projected_net" name="Net" stroke="var(--accent)" fill="url(#fcNetGrad)" strokeWidth={2} dot={false} />
-            </AreaChart>
-          </ResponsiveContainer>
-        )}
-      </div>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+              <XAxis dataKey="period" tick={{ fontSize: 11, fill: "#6B7A8D" }} axisLine={false} tickLine={false}
+                tickFormatter={formatPeriod} />
+              <YAxis tick={{ fontSize: 11, fill: "#6B7A8D" }} axisLine={false} tickLine={false}
+                tickFormatter={(v) => fmtShort(v)} width={65} />
+              <Tooltip content={<ChartTooltip />} cursor={{ stroke: "rgba(255,255,255,0.06)", strokeWidth: 1 }} />
+              <Legend wrapperStyle={{ fontSize: 11, paddingTop: 12 }}
+                formatter={(value: string) => <span style={{ color: "#8B95A8" }}>{value}</span>} />
 
-      {/* Monthly Breakdown Table */}
-      {!loading && points.length > 0 && (
-        <div className="glass p-6 animate-fade-up delay-4">
-          <h2 className="text-sm font-semibold mb-4" style={{ color: "var(--text)" }}>Monthly Breakdown</h2>
+              {/* Confidence band */}
+              <Area type="monotone" dataKey="confidence_upper" name="Confidence Upper"
+                stroke="none" fill="url(#fcConfG)" legendType="none" />
+              <Area type="monotone" dataKey="confidence_lower" name="Confidence Lower"
+                stroke="none" fill="var(--card)" legendType="none" />
+
+              {/* Income & Expense bars */}
+              <Bar dataKey="projected_income" name="Income" fill="#00E5CC" radius={[3, 3, 0, 0]}
+                barSize={16} fillOpacity={0.85} />
+              <Bar dataKey="projected_expenses" name="Expenses" fill="#FF4D6A" radius={[3, 3, 0, 0]}
+                barSize={16} fillOpacity={0.85} />
+
+              {/* Net & Cumulative lines */}
+              <Line type="monotone" dataKey="projected_net" name="Net Cash Flow"
+                stroke={scenarioConfig.color} strokeWidth={2.5} dot={{ r: 4, fill: scenarioConfig.color, strokeWidth: 0 }}
+                activeDot={{ r: 6, fill: scenarioConfig.color, stroke: "#fff", strokeWidth: 2 }} />
+              <Line type="monotone" dataKey="cumulative_net" name="Cumulative"
+                stroke="#8B5CF6" strokeWidth={2} strokeDasharray="6 3"
+                dot={false} />
+
+              <ReferenceLine y={0} stroke="rgba(255,255,255,0.1)" strokeDasharray="3 3" />
+            </ComposedChart>
+          </ResponsiveContainer>
+        ) : (
+          /* ── Table View ───────────────────────────────────────── */
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>
-                  <th className="text-left pb-3">Period</th>
-                  <th className="text-right pb-3">Income</th>
-                  <th className="text-right pb-3">Expenses</th>
-                  <th className="text-right pb-3">Net</th>
-                  <th className="text-right pb-3">Cumulative</th>
-                  <th className="text-right pb-3">Range</th>
+                <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                  {["Period","Income","Expenses","Net","Cumulative","Confidence","Range"].map(h => (
+                    <th key={h} className="text-xs font-medium uppercase tracking-wider pb-3 text-right first:text-left"
+                      style={{ color: "var(--text-dim)" }}>{h}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {points.map((p: ForecastPoint) => (
-                  <tr key={p.period} className="border-t" style={{ borderColor: "var(--border)" }}>
-                    <td className="py-2.5 font-medium" style={{ color: "var(--text)" }}>{p.period}</td>
-                    <td className="py-2.5 text-right" style={{ color: "var(--income)" }}>{fmt(p.projected_income)}</td>
-                    <td className="py-2.5 text-right" style={{ color: "var(--expense)" }}>{fmt(p.projected_expenses)}</td>
-                    <td className="py-2.5 text-right font-semibold" style={{ color: p.projected_net >= 0 ? "var(--income)" : "var(--expense)" }}>{fmt(p.projected_net)}</td>
-                    <td className="py-2.5 text-right" style={{ color: "var(--text-muted)" }}>{fmt(p.cumulative_net)}</td>
-                    <td className="py-2.5 text-right text-xs" style={{ color: "var(--text-dim)" }}>{fmt(p.confidence_lower)} – {fmt(p.confidence_upper)}</td>
+                {points.map((p, idx) => (
+                  <tr key={p.period} style={{ borderBottom: "1px solid var(--border)" }}
+                    className="transition-colors hover:bg-[rgba(255,255,255,0.02)]">
+                    <td className="py-3 font-medium" style={{ color: "var(--text)" }}>{formatPeriod(p.period)}</td>
+                    <td className="py-3 text-right font-mono" style={{ color: "#00E5CC" }}>{fmt(p.projected_income)}</td>
+                    <td className="py-3 text-right font-mono" style={{ color: "#FF4D6A" }}>{fmt(p.projected_expenses)}</td>
+                    <td className="py-3 text-right font-semibold font-mono"
+                      style={{ color: p.projected_net >= 0 ? "#00E5CC" : "#FF4D6A" }}>{fmt(p.projected_net)}</td>
+                    <td className="py-3 text-right font-mono" style={{ color: "var(--text-muted)" }}>{fmt(p.cumulative_net)}</td>
+                    <td className="py-3 text-right">
+                      <span style={{
+                        display: "inline-block", padding: "2px 8px", borderRadius: 6, fontSize: 10, fontWeight: 600,
+                        background: `${scenarioConfig.color}15`, color: scenarioConfig.color,
+                      }}>
+                        {(p.confidence * 100).toFixed(0)}%
+                      </span>
+                    </td>
+                    <td className="py-3 text-right text-xs font-mono" style={{ color: "var(--text-dim)" }}>
+                      {fmtShort(p.confidence_lower)} — {fmtShort(p.confidence_upper)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+        )}
+      </div>
+
+      {/* ── Model Info Footer ──────────────────────────────────── */}
+      {!loading && data && (
+        <div className="flex items-center justify-between text-xs animate-fade-up delay-4"
+          style={{ color: "var(--text-dim)", padding: "0 4px" }}>
+          <div className="flex items-center gap-4">
+            <span>Model: <strong style={{ color: "var(--text-muted)" }}>{data.model_version}</strong></span>
+            <span>Historical: <strong style={{ color: "var(--text-muted)" }}>{data.historical_months} months</strong></span>
+          </div>
+          <span>Last computed: {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
         </div>
       )}
     </div>

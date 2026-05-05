@@ -42,6 +42,7 @@ SKILL.md
 .windsurfrules
 frontendskills.md
 implementation_plan.md
+.kiro
 
 # Obsidian vault
 CFO/
@@ -53,3 +54,6 @@ frontend/AGENTS.md
 
 # Code review graph DB
 .code-review-graph/
+
+# Documentation (internal)
+docs/

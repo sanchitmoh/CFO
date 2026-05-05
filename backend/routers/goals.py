@@ -40,13 +40,17 @@ def _goal_to_out(goal: Goal) -> GoalOut:
 
 @router.get("/", response_model=list[GoalOut])
 async def list_goals(
-    status_filter: str | None = None,
+    status_filter: GoalStatus | None = None,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_rls_db),
 ):
-    """List all goals for the workspace."""
+    """List all goals for the workspace.
+
+    MED-006: status_filter is validated against GoalStatus enum.
+    Valid values: active, completed, abandoned.
+    """
     query = select(Goal).where(Goal.workspace_id == user.workspace_id)
-    if status_filter:
+    if status_filter is not None:
         query = query.where(Goal.status == status_filter)
     query = query.order_by(Goal.created_at.desc())
 

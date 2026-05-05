@@ -2,16 +2,32 @@
 AI CFO — Password Policy Framework
 Configurable password validation for future custom authentication implementations.
 
+⚠️ DEPRECATION NOTICE (ARCH-002):
+This module is currently UNUSED in production. Authentication is handled by Clerk (JWT-based).
+The password policy framework is maintained for potential future custom authentication but
+should be considered for removal or moved to a _future/ directory to reduce attack surface.
+
 Note: This framework is designed for future custom authentication use.
 Current Clerk authentication does not use these validation functions.
 """
 import re
 import string
+import warnings
 from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
 from dataclasses import dataclass
 
 from config import settings
+
+
+# Issue deprecation warning when module is imported
+warnings.warn(
+    "password_policy module is currently unused. "
+    "Authentication is handled by Clerk. "
+    "Consider removing or moving to _future/ directory. (ARCH-002)",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 
 @dataclass

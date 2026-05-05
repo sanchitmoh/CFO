@@ -2,14 +2,20 @@
 AI CFO — Password Policy Router
 Configuration endpoints for password policy framework.
 
+⚠️ DEPRECATION NOTICE (ARCH-002):
+This router is currently UNUSED in production. Authentication is handled by Clerk (JWT-based).
+The password policy endpoints are maintained for potential future custom authentication but
+should be considered for removal to reduce attack surface and maintenance burden.
+
 Note: This router provides configuration for future custom authentication implementations.
 Current Clerk authentication does not use these password validation settings.
 """
+import warnings
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from auth import get_current_user
-from database import get_rls_db
+from dependencies import get_rls_db
 from models import User
 from password_policy import (
     validate_password, 
@@ -25,6 +31,15 @@ from schemas import (
 )
 
 router = APIRouter()
+
+# Issue deprecation warning
+warnings.warn(
+    "password_policy router is currently unused. "
+    "Authentication is handled by Clerk. "
+    "Consider removing this router. (ARCH-002)",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 
 @router.get("/info", response_model=PasswordPolicyInfo)

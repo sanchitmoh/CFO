@@ -11,7 +11,6 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, U
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import get_db_context
 from dependencies import get_rls_db
 from auth import get_current_user
 from models import User, Transaction, TransactionType, FileUpload, FileUploadStatus
@@ -21,6 +20,7 @@ from services.alert_engine import run_alert_engine
 from services.embedding_service import embed_transaction
 from services.file_storage import save_upload, compute_content_hash
 from cache import invalidate_workspace_cache
+from utils.sql_utils import escape_like
 
 router = APIRouter()
 
@@ -36,7 +36,7 @@ async def list_transactions(
     type: str | None = None,
     search: str | None = None,
     sort_by: str = "date",
-    sort_order: str = "desc",
+    sort_order: str = Query("desc", pattern="^(asc|desc)$"),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_rls_db),
 ):
@@ -57,7 +57,8 @@ async def list_transactions(
     if type:
         filters.append(Transaction.type == type)
     if search:
-        filters.append(Transaction.description.ilike(f"%{search}%"))
+        # SEC-CRIT-002: Escape SQL wildcards to prevent pattern injection
+        filters.append(Transaction.description.ilike(f"%{escape_like(search)}%"))
 
     combined = and_(*filters)
 
@@ -119,7 +120,8 @@ async def create_transaction(
 
     # ADVANCE-005: Generate embedding in background (non-blocking)
     async def _embed():
-        async with get_db_context() as bg_db:
+        from database import get_rls_db_context
+        async with get_rls_db_context(str(user.workspace_id)) as bg_db:
             await embed_transaction(
                 txn.id, txn.description, txn.category, txn.vendor, bg_db,
                 workspace_id=user.workspace_id,  # M-005: tenant isolation
@@ -160,11 +162,171 @@ REQUIRED_COLUMNS = {"date", "amount", "type"}
 VALID_TYPES = {"income", "expense"}
 BATCH_SIZE = 500
 
+# ── Intelligent column mapping ────────────────────────────────────
+# Maps common column name variations to our standard fields.
+# NOTE: Checked in order — first match wins.  Keep the most specific
+#       variations first within each list.
+COLUMN_MAPPINGS: dict[str, list[str]] = {
+    "date": [
+        "date", "transaction date", "trans date", "posted date",
+        "posting date", "dt", "transaction_date", "txn date",
+        "trade date", "payment date", "invoice date",
+    ],
+    "amount": [
+        "amount", "amount_inr", "amount_usd", "amount_eur", "amount_gbp",
+        "transaction amount", "transaction_amount", "value", "total",
+        "net amount", "gross amount", "sum", "price", "cost",
+        "debit", "credit",
+    ],
+    "type": [
+        "type", "transaction type", "trans type", "category type",
+        "debit/credit", "dr/cr", "txn type",
+    ],
+    "description": [
+        "description", "desc", "memo", "note", "notes", "details",
+        "transaction description", "narration", "remarks", "particulars",
+    ],
+    "category": [
+        "category", "cat", "expense category", "income category",
+        "classification", "subcategory", "sub_category", "gl code",
+    ],
+    "account": [
+        "account", "account name", "bank account", "acct",
+        "account_name", "ledger",
+    ],
+    "vendor": [
+        "vendor", "merchant", "payee", "supplier", "customer",
+        "counterparty", "counter_party", "company", "party name",
+        "beneficiary",
+    ],
+}
+
+# Prefixes used in the fuzzy fallback pass (e.g. "amount_inr" starts with "amount")
+_FIELD_PREFIXES: dict[str, list[str]] = {
+    "amount": ["amount", "amt", "total", "value"],
+    "date":   ["date", "dt"],
+}
+
+
+def auto_map_columns(csv_headers: list[str]) -> dict[str, str | None]:
+    """Automatically map CSV column names to our standard fields.
+
+    Pass 1 — exact match against the ``COLUMN_MAPPINGS`` alias lists.
+    Pass 2 — for still-unmapped *required* fields, try a fuzzy prefix
+    match (e.g. ``Amount_INR`` starts with ``amount``).
+
+    Returns ``{"date": "Date", "amount": "Amount_INR", ...}``
+    where values are the *original* header strings from the CSV.
+    """
+    header_lower = {h.strip().lower().replace(" ", "_"): h for h in csv_headers}
+    # Also keep a version without underscores for space-delimited matching
+    header_nospace = {h.strip().lower().replace("_", " "): h for h in csv_headers}
+    mapping: dict[str, str | None] = {}
+
+    # ── Pass 1: exact match ────────────────────────────────────────
+    for standard_field, variations in COLUMN_MAPPINGS.items():
+        for variation in variations:
+            norm = variation.replace(" ", "_")
+            if norm in header_lower:
+                mapping[standard_field] = header_lower[norm]
+                break
+            if variation in header_nospace:
+                mapping[standard_field] = header_nospace[variation]
+                break
+        if standard_field not in mapping:
+            mapping[standard_field] = None
+
+    # ── Pass 2: fuzzy prefix fallback for unmapped fields ──────────
+    for field, prefixes in _FIELD_PREFIXES.items():
+        if mapping.get(field) is not None:
+            continue  # already resolved
+        for col_lower, col_original in header_lower.items():
+            for pfx in prefixes:
+                if col_lower.startswith(pfx):
+                    mapping[field] = col_original
+                    break
+            if mapping.get(field) is not None:
+                break
+
+    return mapping
+
+
+@router.post("/upload-csv/preview")
+async def preview_csv(
+    file: UploadFile = File(...),
+    user: User = Depends(get_current_user),
+):
+    """
+    Preview CSV file and suggest column mappings.
+    Returns the first few rows and auto-detected column mappings.
+    
+    MED-009: Enforces MAX_CSV_BYTES size limit before processing.
+    """
+    if not file.filename or not file.filename.lower().endswith(".csv"):
+        raise HTTPException(status_code=400, detail="Only .csv files are supported")
+    
+    # MED-009: Read file content with size limit enforcement
+    chunks: list[bytes] = []
+    total_bytes = 0
+    while True:
+        chunk = await file.read(CHUNK_SIZE)
+        if not chunk:
+            break
+        total_bytes += len(chunk)
+        # MED-009: Reject files exceeding size limit BEFORE parsing
+        if total_bytes > MAX_CSV_BYTES:
+            raise HTTPException(
+                status_code=413,
+                detail=f"File too large. Maximum allowed size is {MAX_CSV_BYTES // (1024 * 1024)} MB.",
+            )
+        chunks.append(chunk)
+    
+    raw_content = b"".join(chunks)
+    
+    try:
+        text = raw_content.decode("utf-8")
+    except UnicodeDecodeError:
+        raise HTTPException(status_code=400, detail="File is not valid UTF-8 text.")
+    
+    reader = csv.DictReader(io.StringIO(text))
+    
+    if reader.fieldnames is None:
+        raise HTTPException(status_code=400, detail="CSV file is empty or has no header row.")
+    
+    # Get column headers
+    headers = [h.strip() for h in reader.fieldnames]
+    
+    # Auto-detect column mappings
+    suggested_mapping = auto_map_columns(headers)
+    
+    # Get first 5 rows as preview
+    preview_rows = []
+    for i, row in enumerate(reader):
+        if i >= 5:
+            break
+        preview_rows.append({k.strip(): v.strip() if v else "" for k, v in row.items()})
+    
+    # Check which required columns are missing
+    missing_required = []
+    for req_col in REQUIRED_COLUMNS:
+        if not suggested_mapping.get(req_col):
+            missing_required.append(req_col)
+    
+    return {
+        "filename": file.filename,
+        "headers": headers,
+        "suggested_mapping": suggested_mapping,
+        "preview_rows": preview_rows,
+        "missing_required": missing_required,
+        "total_rows_estimate": text.count('\n') - 1,  # Rough estimate
+    }
+
 
 @router.post("/upload-csv")
 async def upload_csv(
     file: UploadFile = File(...),
     force: bool = Query(False, description="Skip duplicate detection"),
+    column_mapping: str | None = Query(None, description="JSON string of column mappings, e.g. {'date':'Transaction Date','amount':'Amount'}"),
     background_tasks: BackgroundTasks = BackgroundTasks(),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_rls_db),
@@ -174,6 +336,11 @@ async def upload_csv(
     FILE-001: The original file is persisted to disk BEFORE parsing.
     A FileUpload record tracks every upload for audit, reprocessing,
     and duplicate detection via SHA-256 content hash.
+    
+    MED-009: Enforces MAX_CSV_BYTES (5MB) size limit to prevent memory exhaustion.
+    
+    Supports intelligent column mapping - if column_mapping is not provided,
+    will attempt to auto-detect common column name variations.
     """
 
     # ── 1. Filename extension ─────────────────────────────────────
@@ -187,7 +354,9 @@ async def upload_csv(
             detail=f"Invalid file type '{file.content_type}'. Expected text/csv.",
         )
 
-    # ── 3. Read with size cap (chunked to prevent OOM) ────────────
+    # ── 3. MED-009: Read with size cap (chunked to prevent OOM) ───
+    # Reject files > MAX_CSV_BYTES (5MB) BEFORE parsing to prevent
+    # memory exhaustion attacks via large file uploads.
     chunks: list[bytes] = []
     total_bytes = 0
     while True:
@@ -195,6 +364,7 @@ async def upload_csv(
         if not chunk:
             break
         total_bytes += len(chunk)
+        # MED-009: Size limit enforcement - reject before processing
         if total_bytes > MAX_CSV_BYTES:
             raise HTTPException(
                 status_code=413,
@@ -255,23 +425,45 @@ async def upload_csv(
 
     reader = csv.DictReader(io.StringIO(text))
 
-    # ── 8. Validate required columns ──────────────────────────────
+    # ── 8. Parse column mapping or auto-detect ────────────────────
     if reader.fieldnames is None:
         upload_record.status = FileUploadStatus.failed
         upload_record.error_details = {"reason": "Empty CSV or no header row"}
         await db.commit()
         raise HTTPException(status_code=400, detail="CSV file is empty or has no header row.")
 
-    header_set = {h.strip().lower() for h in reader.fieldnames}
-    missing = REQUIRED_COLUMNS - header_set
+    headers = [h.strip() for h in reader.fieldnames]
+    
+    # Parse provided mapping or auto-detect
+    if column_mapping:
+        import json
+        try:
+            mapping = json.loads(column_mapping)
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=400, detail="Invalid column_mapping JSON")
+    else:
+        # Auto-detect column mappings
+        mapping = auto_map_columns(headers)
+    
+    # Validate required columns are mapped
+    missing = []
+    for req_col in REQUIRED_COLUMNS:
+        if not mapping.get(req_col) or mapping[req_col] not in headers:
+            missing.append(req_col)
+    
     if missing:
         upload_record.status = FileUploadStatus.failed
-        upload_record.error_details = {"reason": f"Missing columns: {sorted(missing)}"}
+        upload_record.error_details = {
+            "reason": f"Missing required columns: {sorted(missing)}",
+            "available_headers": headers,
+            "suggested_mapping": auto_map_columns(headers),
+        }
         await db.commit()
         raise HTTPException(
             status_code=400,
             detail=f"CSV missing required columns: {', '.join(sorted(missing))}. "
-                   f"Required: {', '.join(sorted(REQUIRED_COLUMNS))}.",
+                   f"Available columns: {', '.join(headers)}. "
+                   f"Use /upload-csv/preview to see suggested mappings.",
         )
 
     # ── 9. Parse & validate rows with row-count cap ───────────────
@@ -290,21 +482,39 @@ async def upload_csv(
                        f"Please split the file into smaller batches.",
             )
 
-        # Normalise keys
-        row = {k.strip().lower(): (v.strip() if v else "") for k, v in row.items()}
+        # Normalise keys and apply mapping
+        row_normalized = {k.strip(): (v.strip() if v else "") for k, v in row.items()}
+        
+        # Map columns to our standard fields
+        mapped_row = {}
+        for standard_field, csv_column in mapping.items():
+            if csv_column and csv_column in row_normalized:
+                mapped_row[standard_field] = row_normalized[csv_column]
+            else:
+                mapped_row[standard_field] = ""
 
         # Validate date
-        raw_date = row.get("date", "")
+        raw_date = mapped_row.get("date", "")
         try:
             parsed_date = datetime.strptime(raw_date, "%Y-%m-%d")
         except ValueError:
-            errors.append({"row": row_num, "error": f"Invalid date '{raw_date}'. Expected YYYY-MM-DD."})
-            continue
+            # Try other common date formats
+            for fmt in ["%m/%d/%Y", "%d/%m/%Y", "%Y/%m/%d", "%m-%d-%Y", "%d-%m-%Y"]:
+                try:
+                    parsed_date = datetime.strptime(raw_date, fmt)
+                    break
+                except ValueError:
+                    continue
+            else:
+                errors.append({"row": row_num, "error": f"Invalid date '{raw_date}'. Expected YYYY-MM-DD or MM/DD/YYYY."})
+                continue
 
         # Validate amount
-        raw_amount = row.get("amount", "")
+        raw_amount = mapped_row.get("amount", "")
         try:
-            amount = float(raw_amount)
+            # Remove currency symbols and commas
+            clean_amount = raw_amount.replace("$", "").replace(",", "").replace("£", "").replace("€", "").strip()
+            amount = float(clean_amount)
             if amount <= 0:
                 raise ValueError("must be positive")
         except ValueError:
@@ -312,21 +522,25 @@ async def upload_csv(
             continue
 
         # Validate type
-        raw_type = row.get("type", "").lower()
+        raw_type = mapped_row.get("type", "").lower()
+        # Auto-detect type if not provided or invalid
         if raw_type not in VALID_TYPES:
-            errors.append({"row": row_num, "error": f"Invalid type '{raw_type}'. Must be 'income' or 'expense'."})
-            continue
+            # Try to infer from amount or other indicators
+            if raw_amount.startswith("-") or "debit" in raw_type or "expense" in raw_type:
+                raw_type = "expense"
+            else:
+                raw_type = "income"  # Default to income if unclear
 
         txn = Transaction(
             workspace_id=user.workspace_id,
             user_id=user.id,
             date=parsed_date,
-            description=row.get("description") or "CSV Import",
-            amount=amount,
-            category=row.get("category") or "Uncategorized",
+            description=mapped_row.get("description") or "CSV Import",
+            amount=abs(amount),  # Always store as positive
+            category=mapped_row.get("category") or "Uncategorized",
             type=TransactionType(raw_type),
-            account=row.get("account") or "Main Account",
-            vendor=row.get("vendor") or None,
+            account=mapped_row.get("account") or "Main Account",
+            vendor=mapped_row.get("vendor") or None,
             source="csv",
         )
         batch.append(txn)
@@ -357,7 +571,8 @@ async def upload_csv(
 
     # ARCH-004: Trigger alert checks in the background after data mutation
     async def _run_alerts():
-        async with get_db_context() as bg_db:
+        from database import get_rls_db_context
+        async with get_rls_db_context(str(user.workspace_id)) as bg_db:
             await run_alert_engine(bg_db, user.workspace_id)
 
     background_tasks.add_task(_run_alerts)

@@ -121,11 +121,17 @@ async def invite_member(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_rls_db),
 ):
-    """Invite a new team member (creates a placeholder user)."""
+    """
+    Invite a new team member.
+
+    HIGH-002 FIX: Creates a pending invite record instead of a User row.
+    User creation only happens via the Clerk SSO flow (auth.py provision_user_and_workspace).
+    The invite record is stored in the audit log so it can be matched during SSO provisioning.
+    """
     if user.role not in (UserRole.owner, UserRole.admin):
         raise HTTPException(status_code=403, detail="Insufficient permissions")
 
-    # Check for existing
+    # Check for existing user already in this workspace
     existing = await db.execute(
         select(User).where(
             and_(User.email == data.email, User.workspace_id == user.workspace_id)
@@ -134,19 +140,24 @@ async def invite_member(
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=409, detail="User already in workspace")
 
-    new_user = User(
-        workspace_id=user.workspace_id,
-        email=data.email,
-        full_name=data.full_name,
-        role=UserRole(data.role),
+    # HIGH-002: Do NOT create a User row — that should only happen via Clerk SSO.
+    # Instead, record the invite as an audit log entry with the intended role.
+    # When the invited user signs up via Clerk, provision_user_and_workspace
+    # can check for pending invites to assign the correct workspace and role.
+    await log_action(
+        db, user, "team.invite", "workspace", user.workspace_id,
+        new_value={
+            "email": data.email,
+            "full_name": data.full_name,
+            "role": data.role,
+            "status": "pending",
+        },
     )
-    db.add(new_user)
-    await db.commit()
 
-    await log_action(db, user, "team.invite", "user", new_user.id,
-                     new_value={"email": data.email, "role": data.role})
+    # TODO: Send invite email via Clerk Invitations API or transactional email service.
+    # For now, the invite is tracked in audit_logs and can be matched during SSO provisioning.
 
-    return {"status": "invited", "email": data.email}
+    return {"status": "invited", "email": data.email, "note": "User will be created when they sign up via SSO"}
 
 
 @router.put("/team/{member_id}/role")

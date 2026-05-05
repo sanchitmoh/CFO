@@ -5,10 +5,9 @@ Natural-language search over transactions using pgvector embeddings.
 import uuid
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from database import get_db_context
 from dependencies import get_rls_db
 from auth import get_current_user
 from models import User
@@ -21,8 +20,8 @@ router = APIRouter()
 
 
 class SemanticSearchRequest(BaseModel):
-    query: str
-    top_k: int = 10
+    query: str = Field(..., min_length=1, max_length=2000)
+    top_k: int = Field(default=10, ge=1, le=50)
 
 
 class SemanticSearchResult(BaseModel):
@@ -83,7 +82,9 @@ async def backfill_embeddings(
     embeddings for existing transactions.
     """
     async def _backfill():
-        async with get_db_context() as bg_db:
+        # CRIT-003: Use RLS-bound session for tenant-isolated backfill
+        from database import get_rls_db_context
+        async with get_rls_db_context(str(user.workspace_id)) as bg_db:
             count = await batch_embed_transactions(user.workspace_id, bg_db)
             return count
 

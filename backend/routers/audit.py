@@ -12,6 +12,7 @@ from dependencies import get_rls_db
 from auth import get_current_user
 from models import User, AuditLog
 from schemas import AuditLogOut, PaginatedAuditLogs
+from utils.sql_utils import escape_like
 
 router = APIRouter()
 
@@ -37,7 +38,8 @@ async def list_audit_logs(
     if entity_type:
         base_filter = and_(base_filter, AuditLog.entity_type == entity_type)
     if action:
-        base_filter = and_(base_filter, AuditLog.action.ilike(f"%{action}%"))
+        # SEC-CRIT-002: Escape SQL wildcards to prevent pattern injection
+        base_filter = and_(base_filter, AuditLog.action.ilike(f"%{escape_like(action)}%"))
 
     # Count
     count_q = await db.execute(

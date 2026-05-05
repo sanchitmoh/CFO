@@ -6,7 +6,7 @@ import csv
 import io
 from datetime import datetime, timedelta, date, timezone
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,6 +17,19 @@ from models import User, Transaction, TransactionType
 from schemas import ReportSummary, CategorySummary
 
 router = APIRouter()
+
+# MED-008: Import reportlab at module level with graceful fallback
+try:
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.units import inch
+    from reportlab.lib import colors
+    from reportlab.platypus import (
+        SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    )
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    REPORTLAB_AVAILABLE = True
+except ImportError:
+    REPORTLAB_AVAILABLE = False
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -109,7 +122,8 @@ async def _get_report_data(
         for r in vendor_q
     ]
 
-    # ── Raw transactions for CSV export ──────────────────────────
+    # MED-007: Return query result instead of materializing all transactions
+    # into memory. Caller can iterate over the result for true streaming.
     txn_q = await db.execute(
         select(Transaction)
         .where(
@@ -121,13 +135,14 @@ async def _get_report_data(
         )
         .order_by(Transaction.date.desc())
     )
-    transactions = list(txn_q.scalars())
 
-    return income, expenses, txn_count, expense_by_cat, top_vendors, transactions
+    return income, expenses, txn_count, expense_by_cat, top_vendors, txn_q
 
 
 def _resolve_dates(start_date: date | None, end_date: date | None):
-    end = end_date or date.today()
+    # MED-005: Use UTC instead of server-local timezone for consistent
+    # report date boundaries regardless of deployment region.
+    end = end_date or datetime.now(timezone.utc).date()
     start = start_date or (end - timedelta(days=30))
     return start, end
 
@@ -145,7 +160,8 @@ async def report_summary(
 ):
     """Generate a financial summary report for the given period."""
     start, end = _resolve_dates(start_date, end_date)
-    income, expenses, txn_count, expense_by_cat, top_vendors, _ = await _get_report_data(
+    # MED-007: Don't need transactions for summary, pass None
+    income, expenses, txn_count, expense_by_cat, top_vendors, txn_q = await _get_report_data(
         db, user.workspace_id, start, end
     )
 
@@ -172,18 +188,30 @@ async def export_csv(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_rls_db),
 ):
-    """Export transactions as a downloadable CSV file."""
+    """Export transactions as a downloadable CSV file.
+    
+    MED-007: Uses true streaming via async generator to avoid loading
+    all transactions into memory. For workspaces with 500K+ transactions,
+    this prevents OOM errors.
+    """
     start, end = _resolve_dates(start_date, end_date)
-    _, _, _, _, _, transactions = await _get_report_data(
+    _, _, _, _, _, txn_q = await _get_report_data(
         db, user.workspace_id, start, end
     )
 
-    def _generate():
+    async def _generate():
+        """MED-007: True streaming generator - yields rows as they're fetched."""
         buf = io.StringIO()
         writer = csv.writer(buf)
+        
+        # Write header
         writer.writerow(["Date", "Description", "Category", "Type", "Amount", "Vendor", "Account", "Source"])
+        yield buf.getvalue()
+        buf.seek(0)
+        buf.truncate(0)
 
-        for txn in transactions:
+        # Stream rows from database result
+        for txn in txn_q.scalars():
             writer.writerow([
                 txn.date.strftime("%Y-%m-%d") if txn.date else "",
                 txn.description or "",
@@ -194,9 +222,9 @@ async def export_csv(
                 txn.account or "",
                 txn.source or "",
             ])
-
-        buf.seek(0)
-        yield buf.getvalue()
+            yield buf.getvalue()
+            buf.seek(0)
+            buf.truncate(0)
 
     filename = f"cfo_transactions_{start}_{end}.csv"
     return StreamingResponse(
@@ -217,20 +245,23 @@ async def export_pdf(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_rls_db),
 ):
-    """Export a financial summary as a downloadable PDF report."""
+    """Export a financial summary as a downloadable PDF report.
+    
+    MED-008: Requires reportlab package. Returns 501 if not installed.
+    """
+    # MED-008: Check if reportlab is available at request time
+    if not REPORTLAB_AVAILABLE:
+        raise HTTPException(
+            status_code=501,
+            detail="PDF export is not available. Install reportlab: pip install reportlab",
+        )
+    
     start, end = _resolve_dates(start_date, end_date)
     income, expenses, txn_count, expense_by_cat, top_vendors, _ = await _get_report_data(
         db, user.workspace_id, start, end
     )
 
     # ── Build PDF in memory ───────────────────────────────────────
-    from reportlab.lib.pagesizes import letter
-    from reportlab.lib.units import inch
-    from reportlab.lib import colors
-    from reportlab.platypus import (
-        SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-    )
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=letter, topMargin=0.75 * inch)

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { reportsApi } from "@/lib/api";
 import {
   FileText,
@@ -12,6 +12,9 @@ import {
   BarChart2,
   FileBarChart,
   CheckCircle,
+  Calendar,
+  ArrowUpCircle,
+  ArrowDownCircle,
 } from "lucide-react";
 
 type ReportType =
@@ -19,6 +22,8 @@ type ReportType =
   | "business-summary"
   | "investor-update"
   | "budget-actuals";
+
+type DateRangePreset = "this-month" | "last-month" | "last-3-months" | "last-6-months" | "last-12-months" | "ytd" | "custom";
 
 interface Report {
   id: ReportType;
@@ -33,10 +38,21 @@ const REPORTS: Report[] = [
   {
     id: "cash-flow",
     title: "Cash Flow Statement",
-    description: "Monthly cash in/out with ending balance. Standard financial format.",
+    description: "Industry-standard cash flow with operating, investing, and financing activities.",
     icon: TrendingUp,
-    tags: ["Standard", "Monthly"],
-    sections: ["Cash Inflows by Category", "Cash Outflows by Category", "Net Cash Flow", "Ending Cash Balance"],
+    tags: ["Standard", "GAAP"],
+    sections: [
+      "Operating Activities",
+      "Cash Inflows by Category",
+      "Cash Outflows by Category",
+      "Net Operating Cash Flow",
+      "Investing Activities",
+      "Financing Activities",
+      "Net Change in Cash",
+      "Beginning Cash Balance",
+      "Ending Cash Balance",
+      "Cash Flow Analysis",
+    ],
   },
   {
     id: "business-summary",
@@ -64,17 +80,92 @@ const REPORTS: Report[] = [
   },
 ];
 
+const DATE_PRESETS: { value: DateRangePreset; label: string }[] = [
+  { value: "this-month", label: "This Month" },
+  { value: "last-month", label: "Last Month" },
+  { value: "last-3-months", label: "Last 3 Months" },
+  { value: "last-6-months", label: "Last 6 Months" },
+  { value: "last-12-months", label: "Last 12 Months" },
+  { value: "ytd", label: "Year to Date" },
+  { value: "custom", label: "Custom Range" },
+];
+
 type ExportFormat = "pdf" | "csv" | "email";
 type ExportStatus = "idle" | "loading" | "done" | "error";
 
+function getDateRange(preset: DateRangePreset, customStart?: string, customEnd?: string): { start: string; end: string } {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth();
+
+  switch (preset) {
+    case "this-month":
+      return {
+        start: new Date(year, month, 1).toISOString().slice(0, 10),
+        end: today.toISOString().slice(0, 10),
+      };
+    case "last-month": {
+      const lastMonth = new Date(year, month - 1, 1);
+      const lastMonthEnd = new Date(year, month, 0);
+      return {
+        start: lastMonth.toISOString().slice(0, 10),
+        end: lastMonthEnd.toISOString().slice(0, 10),
+      };
+    }
+    case "last-3-months":
+      return {
+        start: new Date(year, month - 3, 1).toISOString().slice(0, 10),
+        end: today.toISOString().slice(0, 10),
+      };
+    case "last-6-months":
+      return {
+        start: new Date(year, month - 6, 1).toISOString().slice(0, 10),
+        end: today.toISOString().slice(0, 10),
+      };
+    case "last-12-months":
+      return {
+        start: new Date(year, month - 12, 1).toISOString().slice(0, 10),
+        end: today.toISOString().slice(0, 10),
+      };
+    case "ytd":
+      return {
+        start: new Date(year, 0, 1).toISOString().slice(0, 10),
+        end: today.toISOString().slice(0, 10),
+      };
+    case "custom":
+      return {
+        start: customStart || new Date(year, month - 1, 1).toISOString().slice(0, 10),
+        end: customEnd || today.toISOString().slice(0, 10),
+      };
+    default:
+      return {
+        start: new Date(year, month, 1).toISOString().slice(0, 10),
+        end: today.toISOString().slice(0, 10),
+      };
+  }
+}
+
 export default function ReportsPage() {
-  const [selected, setSelected] = useState<ReportType>("business-summary");
-  const [period, setPeriod] = useState("2025-01");
+  const [selected, setSelected] = useState<ReportType>("cash-flow");
+  const [datePreset, setDatePreset] = useState<DateRangePreset>("last-month");
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
   const [exportStatus, setExportStatus] = useState<ExportStatus>("idle");
   const [emailTarget, setEmailTarget] = useState("");
   const [showEmail, setShowEmail] = useState(false);
 
   const activeReport = REPORTS.find((r) => r.id === selected)!;
+  const dateRange = getDateRange(datePreset, customStartDate, customEndDate);
+
+  // Initialize custom dates when switching to custom preset
+  useEffect(() => {
+    if (datePreset === "custom" && !customStartDate) {
+      const today = new Date();
+      const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      setCustomStartDate(lastMonth.toISOString().slice(0, 10));
+      setCustomEndDate(today.toISOString().slice(0, 10));
+    }
+  }, [datePreset, customStartDate]);
 
   const handleExport = async (format: ExportFormat) => {
     if (format === "email") {
@@ -84,17 +175,11 @@ export default function ReportsPage() {
 
     setExportStatus("loading");
 
-    // Compute date range from selected month
-    const startDate = `${period}-01`;
-    const endMonth = new Date(startDate);
-    endMonth.setMonth(endMonth.getMonth() + 1);
-    const endDate = endMonth.toISOString().slice(0, 10);
-
     try {
       if (format === "pdf") {
-        await reportsApi.exportPdf(startDate, endDate);
+        await reportsApi.exportPdf(dateRange.start, dateRange.end);
       } else {
-        await reportsApi.exportCsv(startDate, endDate);
+        await reportsApi.exportCsv(dateRange.start, dateRange.end);
       }
       setExportStatus("done");
       setTimeout(() => setExportStatus("idle"), 3000);
@@ -113,6 +198,13 @@ export default function ReportsPage() {
       setExportStatus("done");
       setTimeout(() => setExportStatus("idle"), 3000);
     }, 1500);
+  };
+
+  const formatDateRange = () => {
+    const start = new Date(dateRange.start);
+    const end = new Date(dateRange.end);
+    const options: Intl.DateTimeFormatOptions = { month: "short", day: "numeric", year: "numeric" };
+    return `${start.toLocaleDateString("en-US", options)} - ${end.toLocaleDateString("en-US", options)}`;
   };
 
   return (
@@ -179,18 +271,69 @@ export default function ReportsPage() {
 
         {/* Preview + Export */}
         <div className="lg:col-span-2 space-y-4 animate-fade-up delay-2">
-          {/* Period selector */}
-          <div className="glass p-4 flex items-center gap-4">
-            <label className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-              Period
-            </label>
-            <input
-              type="month"
-              value={period}
-              onChange={(e) => setPeriod(e.target.value)}
-              className="flex-1"
-              style={{ maxWidth: 200 }}
-            />
+          {/* Date Range Selector */}
+          <div className="glass p-4 space-y-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Calendar size={16} style={{ color: "var(--accent)" }} />
+              <label className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+                Report Period
+              </label>
+            </div>
+            
+            {/* Preset buttons */}
+            <div className="flex flex-wrap gap-2">
+              {DATE_PRESETS.map((preset) => (
+                <button
+                  key={preset.value}
+                  onClick={() => setDatePreset(preset.value)}
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg transition-all"
+                  style={{
+                    background: datePreset === preset.value ? "var(--accent)" : "var(--surface-hover)",
+                    color: datePreset === preset.value ? "var(--bg)" : "var(--text)",
+                    border: `1px solid ${datePreset === preset.value ? "var(--accent)" : "var(--border)"}`,
+                  }}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Custom date inputs */}
+            {datePreset === "custom" && (
+              <div className="flex gap-3 items-center pt-2">
+                <div className="flex-1">
+                  <label className="text-xs" style={{ color: "var(--text-muted)" }}>Start Date</label>
+                  <input
+                    type="date"
+                    value={customStartDate}
+                    onChange={(e) => setCustomStartDate(e.target.value)}
+                    className="w-full mt-1"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="text-xs" style={{ color: "var(--text-muted)" }}>End Date</label>
+                  <input
+                    type="date"
+                    value={customEndDate}
+                    onChange={(e) => setCustomEndDate(e.target.value)}
+                    className="w-full mt-1"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Selected range display */}
+            <div
+              className="p-3 rounded-lg flex items-center justify-between"
+              style={{ background: "var(--accent-soft)", border: "1px solid var(--accent)22" }}
+            >
+              <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>
+                Selected Range:
+              </span>
+              <span className="text-sm font-semibold" style={{ color: "var(--accent)" }}>
+                {formatDateRange()}
+              </span>
+            </div>
           </div>
 
           {/* Report Preview */}
@@ -220,7 +363,7 @@ export default function ReportsPage() {
                     {activeReport.title}
                   </h2>
                   <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                    Luna Bakery · {new Date(period + "-01").toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+                    {formatDateRange()}
                   </p>
                 </div>
               </div>
@@ -237,7 +380,100 @@ export default function ReportsPage() {
               <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
                 Report Sections
               </p>
-              {activeReport.sections.map((section, i) => (
+              
+              {/* Enhanced Cash Flow Preview */}
+              {selected === "cash-flow" && (
+                <div className="space-y-3 mb-4">
+                  {/* Operating Activities */}
+                  <div
+                    className="p-4 rounded-lg"
+                    style={{ background: "var(--bg)", border: "1px solid var(--border)" }}
+                  >
+                    <div className="flex items-center gap-2 mb-3">
+                      <ArrowUpCircle size={16} style={{ color: "var(--success)" }} />
+                      <span className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+                        Operating Activities
+                      </span>
+                    </div>
+                    <div className="space-y-2 pl-6">
+                      <div className="flex justify-between text-xs">
+                        <span style={{ color: "var(--text-muted)" }}>Cash Inflows (Revenue, Sales)</span>
+                        <span className="font-mono" style={{ color: "var(--success)" }}>+$XX,XXX</span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span style={{ color: "var(--text-muted)" }}>Cash Outflows (Operating Expenses)</span>
+                        <span className="font-mono" style={{ color: "var(--danger)" }}>-$XX,XXX</span>
+                      </div>
+                      <div className="flex justify-between text-xs font-semibold pt-2 border-t" style={{ borderColor: "var(--border)" }}>
+                        <span style={{ color: "var(--text)" }}>Net Operating Cash Flow</span>
+                        <span className="font-mono" style={{ color: "var(--text)" }}>$XX,XXX</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Investing Activities */}
+                  <div
+                    className="p-4 rounded-lg"
+                    style={{ background: "var(--bg)", border: "1px solid var(--border)" }}
+                  >
+                    <div className="flex items-center gap-2 mb-3">
+                      <TrendingUp size={16} style={{ color: "var(--info)" }} />
+                      <span className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+                        Investing Activities
+                      </span>
+                    </div>
+                    <div className="space-y-2 pl-6">
+                      <div className="flex justify-between text-xs">
+                        <span style={{ color: "var(--text-muted)" }}>Capital Expenditures, Investments</span>
+                        <span className="font-mono" style={{ color: "var(--text-dim)" }}>$XX,XXX</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Financing Activities */}
+                  <div
+                    className="p-4 rounded-lg"
+                    style={{ background: "var(--bg)", border: "1px solid var(--border)" }}
+                  >
+                    <div className="flex items-center gap-2 mb-3">
+                      <DollarSign size={16} style={{ color: "var(--warning)" }} />
+                      <span className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+                        Financing Activities
+                      </span>
+                    </div>
+                    <div className="space-y-2 pl-6">
+                      <div className="flex justify-between text-xs">
+                        <span style={{ color: "var(--text-muted)" }}>Loans, Equity Funding</span>
+                        <span className="font-mono" style={{ color: "var(--text-dim)" }}>$XX,XXX</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Summary */}
+                  <div
+                    className="p-4 rounded-lg"
+                    style={{ background: "var(--accent-soft)", border: "1px solid var(--accent)44" }}
+                  >
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span style={{ color: "var(--text-muted)" }}>Beginning Cash Balance</span>
+                        <span className="font-mono" style={{ color: "var(--text)" }}>$XX,XXX</span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span style={{ color: "var(--text-muted)" }}>Net Change in Cash</span>
+                        <span className="font-mono" style={{ color: "var(--text)" }}>$XX,XXX</span>
+                      </div>
+                      <div className="flex justify-between text-sm font-bold pt-2 border-t" style={{ borderColor: "var(--accent)44" }}>
+                        <span style={{ color: "var(--accent)" }}>Ending Cash Balance</span>
+                        <span className="font-mono" style={{ color: "var(--accent)" }}>$XX,XXX</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Standard sections list for other reports */}
+              {selected !== "cash-flow" && activeReport.sections.map((section, i) => (
                 <div
                   key={section}
                   className="flex items-center gap-3 py-2.5 px-3 rounded-lg"

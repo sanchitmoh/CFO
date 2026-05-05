@@ -174,9 +174,9 @@ class TestPreservationProperties:
             f"Found {len(rls_patterns_found)} patterns: {rls_patterns_found}"
         )
         
-        # Verify parameterized query for security
-        assert 'text("SET LOCAL app.workspace_id = :ws_id")' in combined_content, (
-            "PRESERVATION REQUIREMENT: RLS must use parameterized queries for security"
+        # Verify UUID validation for security (new approach since SET LOCAL doesn't support bind params)
+        assert 'uuid.UUID(' in combined_content and 'SET LOCAL app.workspace_id' in combined_content, (
+            "PRESERVATION REQUIREMENT: RLS must validate UUID format before interpolation for security"
         )
         
         print("✓ PRESERVATION VERIFIED: RLS enforcement infrastructure preserved")
