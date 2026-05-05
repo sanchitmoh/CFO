@@ -4,6 +4,10 @@ node_modules/
 __pycache__/
 *.pyc
 
+# Testing
+.pytest_cache/
+.hypothesis/
+
 # Environment
 .env
 .env.local
@@ -36,12 +40,16 @@ AGENTS.md
 SKILL.md
 .claude/
 .agents/
+mcp.json
 .mcp.json
+opencode.json
 .opencode.json
+cursorrules
 .cursorrules
 .windsurfrules
 frontendskills.md
 implementation_plan.md
+compliance_changes.json
 .kiro
 
 # Obsidian vault
