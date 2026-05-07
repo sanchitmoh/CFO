@@ -1,589 +1,431 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { reportsApi } from "@/lib/api";
+import { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@clerk/nextjs";
 import {
   FileText,
   Download,
-  Mail,
-  AlertCircle,
-  TrendingUp,
-  DollarSign,
-  BarChart2,
-  FileBarChart,
-  CheckCircle,
+  FileSpreadsheet,
+  Copy,
+  Check,
   Calendar,
-  ArrowUpCircle,
-  ArrowDownCircle,
+  RefreshCw,
+  BarChart3,
+  TrendingUp,
+  PieChart,
+  GitCompare,
+  Layers,
+  Target,
 } from "lucide-react";
 
-type ReportType =
-  | "cash-flow"
-  | "business-summary"
-  | "investor-update"
-  | "budget-actuals";
+import {
+  reportsApi,
+  forecastApi,
+  budgetsApi,
+  dashboardApi,
+  transactionsApi,
+  setTokenProvider,
+} from "@/lib/api";
+import type {
+  ReportSummary,
+  ForecastResponse,
+  Budget,
+  DashboardSummary,
+  Transaction,
+} from "@/lib/types";
 
-type DateRangePreset = "this-month" | "last-month" | "last-3-months" | "last-6-months" | "last-12-months" | "ytd" | "custom";
+import {
+  CashFlowTab,
+  ForecastTab,
+  VarianceTab,
+  TrendsTab,
+  CategoriesTab,
+  CompareTab,
+  AnnotationBox,
+} from "@/components/ReportTabs";
+import { ChartSkeleton } from "@/components/ReportCharts";
 
-interface Report {
-  id: ReportType;
-  title: string;
-  description: string;
-  icon: React.ElementType;
-  tags: string[];
-  sections: string[];
+// ═══════════════════════════════════════════════════════════════
+// Date helpers
+// ═══════════════════════════════════════════════════════════════
+
+function toISO(d: Date) {
+  return d.toISOString().split("T")[0];
 }
 
-const REPORTS: Report[] = [
-  {
-    id: "cash-flow",
-    title: "Cash Flow Statement",
-    description: "Industry-standard cash flow with operating, investing, and financing activities.",
-    icon: TrendingUp,
-    tags: ["Standard", "GAAP"],
-    sections: [
-      "Operating Activities",
-      "Cash Inflows by Category",
-      "Cash Outflows by Category",
-      "Net Operating Cash Flow",
-      "Investing Activities",
-      "Financing Activities",
-      "Net Change in Cash",
-      "Beginning Cash Balance",
-      "Ending Cash Balance",
-      "Cash Flow Analysis",
-    ],
-  },
-  {
-    id: "business-summary",
-    title: "1-Page Business Summary",
-    description: "Key metrics snapshot for quick internal reviews — revenue, burn, runway, top expenses.",
-    icon: BarChart2,
-    tags: ["Executive", "1-Page"],
-    sections: ["Revenue & MRR", "Burn Rate", "Cash Runway", "Top Expenses", "Month-over-Month Trend"],
-  },
-  {
-    id: "investor-update",
-    title: "Investor Update",
-    description: "Pre-formatted for seed/Series A updates. Revenue, burns, runway, highlights, challenges.",
-    icon: FileBarChart,
-    tags: ["Investor", "Formal"],
-    sections: ["Key Metrics", "Monthly Revenue", "Burn Rate & Runway", "Highlights", "Challenges", "Ask / Next Steps"],
-  },
-  {
-    id: "budget-actuals",
-    title: "Budget vs. Actuals",
-    description: "Compare planned vs. real spending per category for the selected period.",
-    icon: DollarSign,
-    tags: ["Budget", "Detailed"],
-    sections: ["Budget Allocated by Category", "Actual Spend", "Variance ($)", "Variance (%)", "Status"],
-  },
-];
-
-const DATE_PRESETS: { value: DateRangePreset; label: string }[] = [
-  { value: "this-month", label: "This Month" },
-  { value: "last-month", label: "Last Month" },
-  { value: "last-3-months", label: "Last 3 Months" },
-  { value: "last-6-months", label: "Last 6 Months" },
-  { value: "last-12-months", label: "Last 12 Months" },
-  { value: "ytd", label: "Year to Date" },
-  { value: "custom", label: "Custom Range" },
-];
-
-type ExportFormat = "pdf" | "csv" | "email";
-type ExportStatus = "idle" | "loading" | "done" | "error";
-
-function getDateRange(preset: DateRangePreset, customStart?: string, customEnd?: string): { start: string; end: string } {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = today.getMonth();
+function getPresetDates(preset: string): [string, string] {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
 
   switch (preset) {
-    case "this-month":
-      return {
-        start: new Date(year, month, 1).toISOString().slice(0, 10),
-        end: today.toISOString().slice(0, 10),
-      };
-    case "last-month": {
-      const lastMonth = new Date(year, month - 1, 1);
-      const lastMonthEnd = new Date(year, month, 0);
-      return {
-        start: lastMonth.toISOString().slice(0, 10),
-        end: lastMonthEnd.toISOString().slice(0, 10),
-      };
-    }
-    case "last-3-months":
-      return {
-        start: new Date(year, month - 3, 1).toISOString().slice(0, 10),
-        end: today.toISOString().slice(0, 10),
-      };
-    case "last-6-months":
-      return {
-        start: new Date(year, month - 6, 1).toISOString().slice(0, 10),
-        end: today.toISOString().slice(0, 10),
-      };
-    case "last-12-months":
-      return {
-        start: new Date(year, month - 12, 1).toISOString().slice(0, 10),
-        end: today.toISOString().slice(0, 10),
-      };
+    case "this_month":
+      return [toISO(new Date(y, m, 1)), toISO(now)];
+    case "last_month":
+      return [toISO(new Date(y, m - 1, 1)), toISO(new Date(y, m, 0))];
+    case "last_3m":
+      return [toISO(new Date(y, m - 3, 1)), toISO(now)];
+    case "last_6m":
+      return [toISO(new Date(y, m - 6, 1)), toISO(now)];
     case "ytd":
-      return {
-        start: new Date(year, 0, 1).toISOString().slice(0, 10),
-        end: today.toISOString().slice(0, 10),
-      };
-    case "custom":
-      return {
-        start: customStart || new Date(year, month - 1, 1).toISOString().slice(0, 10),
-        end: customEnd || today.toISOString().slice(0, 10),
-      };
+      return [toISO(new Date(y, 0, 1)), toISO(now)];
+    case "last_year":
+      return [toISO(new Date(y - 1, 0, 1)), toISO(new Date(y - 1, 11, 31))];
+    case "all":
+      return ["2020-01-01", toISO(now)];
     default:
-      return {
-        start: new Date(year, month, 1).toISOString().slice(0, 10),
-        end: today.toISOString().slice(0, 10),
-      };
+      return [toISO(new Date(y, m - 3, 1)), toISO(now)];
   }
 }
 
+const PRESETS = [
+  { key: "this_month", label: "This Month" },
+  { key: "last_month", label: "Last Month" },
+  { key: "last_3m", label: "3 Months" },
+  { key: "last_6m", label: "6 Months" },
+  { key: "ytd", label: "YTD" },
+  { key: "all", label: "All Time" },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// Tab definitions
+// ═══════════════════════════════════════════════════════════════
+
+const TABS = [
+  { key: "cashflow", label: "Cash Flow", icon: BarChart3 },
+  { key: "forecast", label: "Forecast", icon: TrendingUp },
+  { key: "variance", label: "Variance", icon: Target },
+  { key: "trends", label: "Trends", icon: Layers },
+  { key: "categories", label: "Categories", icon: PieChart },
+  { key: "compare", label: "Compare", icon: GitCompare },
+] as const;
+
+type TabKey = (typeof TABS)[number]["key"];
+
+// ═══════════════════════════════════════════════════════════════
+// Main Page
+// ═══════════════════════════════════════════════════════════════
+
+interface Annotation { section: string; text: string; }
+interface DrillDownState { category: string | null; transactions: Transaction[]; loading: boolean; }
+
 export default function ReportsPage() {
-  const [selected, setSelected] = useState<ReportType>("cash-flow");
-  const [datePreset, setDatePreset] = useState<DateRangePreset>("last-month");
-  const [customStartDate, setCustomStartDate] = useState("");
-  const [customEndDate, setCustomEndDate] = useState("");
-  const [exportStatus, setExportStatus] = useState<ExportStatus>("idle");
-  const [emailTarget, setEmailTarget] = useState("");
-  const [showEmail, setShowEmail] = useState(false);
+  const { getToken } = useAuth();
 
-  const activeReport = REPORTS.find((r) => r.id === selected)!;
-  const dateRange = getDateRange(datePreset, customStartDate, customEndDate);
+  // ── State ────────────────────────────────────────────
+  const [tab, setTab] = useState<TabKey>("cashflow");
+  const [preset, setPreset] = useState("all");
+  const [startDate, setStartDate] = useState(() => getPresetDates("all")[0]);
+  const [endDate, setEndDate] = useState(() => getPresetDates("all")[1]);
 
-  // Initialize custom dates when switching to custom preset
+  const [summary, setSummary] = useState<ReportSummary | null>(null);
+  const [forecast, setForecast] = useState<ForecastResponse | null>(null);
+  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [dashboard, setDashboard] = useState<DashboardSummary | null>(null);
+  const [scenario, setScenario] = useState("base");
+
+  const [compareData, setCompareData] = useState<ReportSummary | null>(null);
+  const [comparePreset, setComparePreset] = useState("last_year");
+
+  const [loading, setLoading] = useState(true);
+  const [forecastLoading, setForecastLoading] = useState(false);
+  const [compareLoading, setCompareLoading] = useState(false);
+  const [exporting, setExporting] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const [annotations, setAnnotations] = useState<Annotation[]>([]);
+  const [drillDown, setDrillDown] = useState<DrillDownState>({ category: null, transactions: [], loading: false });
+
+  // ── Auth ─────────────────────────────────────────────
   useEffect(() => {
-    if (datePreset === "custom" && !customStartDate) {
-      const today = new Date();
-      const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-      setCustomStartDate(lastMonth.toISOString().slice(0, 10));
-      setCustomEndDate(today.toISOString().slice(0, 10));
-    }
-  }, [datePreset, customStartDate]);
+    setTokenProvider(getToken);
+  }, [getToken]);
 
-  const handleExport = async (format: ExportFormat) => {
-    if (format === "email") {
-      setShowEmail(true);
+  // ── Data fetch ───────────────────────────────────────
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [summaryRes, budgetRes, dashRes] = await Promise.allSettled([
+        reportsApi.summary(startDate, endDate),
+        budgetsApi.list(),
+        dashboardApi.getSummary(6),
+      ]);
+
+      if (summaryRes.status === "fulfilled") setSummary(summaryRes.value);
+      if (budgetRes.status === "fulfilled") setBudgets(budgetRes.value);
+      if (dashRes.status === "fulfilled") setDashboard(dashRes.value);
+    } catch (e) {
+      console.error("Reports fetch failed:", e);
+    } finally {
+      setLoading(false);
+    }
+  }, [startDate, endDate]);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  // ── Forecast fetch (separate, scenario-dependent) ───
+  const loadForecast = useCallback(async () => {
+    setForecastLoading(true);
+    try {
+      const res = await forecastApi.get(6, scenario);
+      setForecast(res);
+    } catch (e) {
+      console.error("Forecast fetch failed:", e);
+    } finally {
+      setForecastLoading(false);
+    }
+  }, [scenario]);
+
+  useEffect(() => {
+    if (tab === "forecast") loadForecast();
+  }, [tab, loadForecast]);
+
+  // ── Compare fetch ────────────────────────────────────
+  const loadCompare = useCallback(async () => {
+    setCompareLoading(true);
+    try {
+      const [s, e] = getPresetDates(comparePreset);
+      const res = await reportsApi.summary(s, e);
+      setCompareData(res);
+    } catch (err) {
+      console.error("Compare fetch failed:", err);
+    } finally {
+      setCompareLoading(false);
+    }
+  }, [comparePreset]);
+
+  useEffect(() => {
+    if (tab === "compare") loadCompare();
+  }, [tab, loadCompare]);
+
+  // ── Drill-down handler ──────────────────────────────
+  const handleDrillDown = useCallback(async (category: string) => {
+    if (drillDown.category === category) {
+      setDrillDown({ category: null, transactions: [], loading: false });
       return;
     }
-
-    setExportStatus("loading");
-
+    setDrillDown({ category, transactions: [], loading: true });
     try {
-      if (format === "pdf") {
-        await reportsApi.exportPdf(dateRange.start, dateRange.end);
-      } else {
-        await reportsApi.exportCsv(dateRange.start, dateRange.end);
-      }
-      setExportStatus("done");
-      setTimeout(() => setExportStatus("idle"), 3000);
-    } catch (err) {
-      console.error("Export failed:", err);
-      setExportStatus("error");
-      setTimeout(() => setExportStatus("idle"), 3000);
+      const res = await transactionsApi.list({ category, per_page: 50 });
+      setDrillDown({ category, transactions: res.items, loading: false });
+    } catch {
+      setDrillDown({ category, transactions: [], loading: false });
     }
+  }, [drillDown.category]);
+
+  // ── Annotation handler ──────────────────────────────
+  const handleAnnotate = (section: string, text: string) => {
+    setAnnotations((prev) => [...prev, { section, text }]);
   };
 
-  const handleEmailSend = () => {
-    if (!emailTarget) return;
-    setShowEmail(false);
-    setExportStatus("loading");
-    setTimeout(() => {
-      setExportStatus("done");
-      setTimeout(() => setExportStatus("idle"), 3000);
-    }, 1500);
+  // ── Preset change ───────────────────────────────────
+  const handlePreset = (key: string) => {
+    setPreset(key);
+    const [s, e] = getPresetDates(key);
+    setStartDate(s);
+    setEndDate(e);
   };
 
-  const formatDateRange = () => {
-    const start = new Date(dateRange.start);
-    const end = new Date(dateRange.end);
-    const options: Intl.DateTimeFormatOptions = { month: "short", day: "numeric", year: "numeric" };
-    return `${start.toLocaleDateString("en-US", options)} - ${end.toLocaleDateString("en-US", options)}`;
+  // ── Exports ─────────────────────────────────────────
+  const handleExportCsv = async () => {
+    setExporting("csv");
+    try { await reportsApi.exportCsv(startDate, endDate); }
+    catch (e) { console.error(e); }
+    finally { setExporting(null); }
   };
+
+  const handleExportPdf = async () => {
+    setExporting("pdf");
+    try { await reportsApi.exportPdf(startDate, endDate); }
+    catch (e) { console.error(e); }
+    finally { setExporting(null); }
+  };
+
+  const handleCopy = () => {
+    if (!summary) return;
+    const text = [
+      `Financial Report: ${startDate} → ${endDate}`,
+      `Income: $${summary.total_income.toLocaleString()}`,
+      `Expenses: $${summary.total_expenses.toLocaleString()}`,
+      `Net Cash Flow: $${summary.net_cash_flow.toLocaleString()}`,
+      `Transactions: ${summary.transaction_count}`,
+      `\nCategories:`,
+      ...summary.expense_by_category.map((c) => `  ${c.category}: $${c.total.toLocaleString()} (${c.count} txns)`),
+    ].join("\n");
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // ═══════════════════════════════════════════════════════
+  // Render
+  // ═══════════════════════════════════════════════════════
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="page-container" style={{ maxWidth: 1100, margin: "0 auto" }}>
       {/* Header */}
-      <div className="animate-fade-up">
-        <h1 className="text-2xl font-bold" style={{ color: "var(--text)" }}>
-          Reporting & Exports
-        </h1>
-        <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
-          Generate investor-friendly financial reports and export in multiple formats
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Report Selector */}
-        <div className="space-y-3 animate-fade-up delay-1">
-          <h2 className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-            Report Templates
-          </h2>
-          {REPORTS.map((report) => {
-            const Icon = report.icon;
-            const isActive = selected === report.id;
-            return (
-              <button
-                key={report.id}
-                onClick={() => setSelected(report.id)}
-                className="w-full text-left p-4 rounded-xl transition-all"
-                style={{
-                  background: isActive ? "var(--accent-soft)" : "var(--surface)",
-                  border: `1px solid ${isActive ? "var(--accent)44" : "var(--border)"}`,
-                }}
-              >
-                <div className="flex items-center gap-3 mb-1">
-                  <Icon size={16} style={{ color: isActive ? "var(--accent)" : "var(--text-muted)" }} />
-                  <span
-                    className="text-sm font-semibold"
-                    style={{ color: isActive ? "var(--accent)" : "var(--text)" }}
-                  >
-                    {report.title}
-                  </span>
-                </div>
-                <p className="text-xs pl-7" style={{ color: "var(--text-dim)" }}>
-                  {report.description}
-                </p>
-                <div className="flex gap-1.5 pl-7 mt-2">
-                  {report.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="badge"
-                      style={{
-                        background: isActive ? "var(--accent-soft)" : "var(--surface-hover)",
-                        color: isActive ? "var(--accent)" : "var(--text-dim)",
-                      }}
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </button>
-            );
-          })}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 className="page-title flex items-center gap-2">
+            <FileText size={22} style={{ color: "var(--accent)" }} />
+            Financial Reports
+          </h1>
+          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
+            Analyze, compare, and export financial data
+          </p>
         </div>
 
-        {/* Preview + Export */}
-        <div className="lg:col-span-2 space-y-4 animate-fade-up delay-2">
-          {/* Date Range Selector */}
-          <div className="glass p-4 space-y-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Calendar size={16} style={{ color: "var(--accent)" }} />
-              <label className="text-xs font-medium uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-                Report Period
-              </label>
-            </div>
-            
-            {/* Preset buttons */}
-            <div className="flex flex-wrap gap-2">
-              {DATE_PRESETS.map((preset) => (
-                <button
-                  key={preset.value}
-                  onClick={() => setDatePreset(preset.value)}
-                  className="px-3 py-1.5 text-xs font-medium rounded-lg transition-all"
-                  style={{
-                    background: datePreset === preset.value ? "var(--accent)" : "var(--surface-hover)",
-                    color: datePreset === preset.value ? "var(--bg)" : "var(--text)",
-                    border: `1px solid ${datePreset === preset.value ? "var(--accent)" : "var(--border)"}`,
-                  }}
-                >
-                  {preset.label}
-                </button>
-              ))}
-            </div>
+        {/* Export buttons */}
+        <div className="flex gap-2">
+          <button onClick={handleCopy} className="btn-secondary flex items-center gap-1.5 text-xs" disabled={!summary}>
+            {copied ? <Check size={14} /> : <Copy size={14} />}
+            {copied ? "Copied!" : "Copy"}
+          </button>
+          <button onClick={handleExportCsv} className="btn-secondary flex items-center gap-1.5 text-xs" disabled={exporting === "csv"}>
+            <FileSpreadsheet size={14} />
+            {exporting === "csv" ? "Exporting…" : "CSV"}
+          </button>
+          <button onClick={handleExportPdf} className="btn-primary flex items-center gap-1.5 text-xs" disabled={exporting === "pdf"}>
+            <Download size={14} />
+            {exporting === "pdf" ? "Exporting…" : "PDF"}
+          </button>
+        </div>
+      </div>
 
-            {/* Custom date inputs */}
-            {datePreset === "custom" && (
-              <div className="flex gap-3 items-center pt-2">
-                <div className="flex-1">
-                  <label className="text-xs" style={{ color: "var(--text-muted)" }}>Start Date</label>
-                  <input
-                    type="date"
-                    value={customStartDate}
-                    onChange={(e) => setCustomStartDate(e.target.value)}
-                    className="w-full mt-1"
-                  />
-                </div>
-                <div className="flex-1">
-                  <label className="text-xs" style={{ color: "var(--text-muted)" }}>End Date</label>
-                  <input
-                    type="date"
-                    value={customEndDate}
-                    onChange={(e) => setCustomEndDate(e.target.value)}
-                    className="w-full mt-1"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Selected range display */}
-            <div
-              className="p-3 rounded-lg flex items-center justify-between"
-              style={{ background: "var(--accent-soft)", border: "1px solid var(--accent)22" }}
-            >
-              <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>
-                Selected Range:
-              </span>
-              <span className="text-sm font-semibold" style={{ color: "var(--accent)" }}>
-                {formatDateRange()}
-              </span>
-            </div>
+      {/* Date Controls */}
+      <div className="glass p-4 mb-4">
+        <div className="flex flex-col md:flex-row md:items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Calendar size={14} style={{ color: "var(--text-dim)" }} />
+            <span className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>Period</span>
           </div>
-
-          {/* Report Preview */}
-          <div className="glass p-6">
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-3">
-                {(() => {
-                  const Icon = activeReport.icon;
-                  return (
-                    <div
-                      style={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: 10,
-                        background: "var(--accent-soft)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <Icon size={18} style={{ color: "var(--accent)" }} />
-                    </div>
-                  );
-                })()}
-                <div>
-                  <h2 className="font-bold text-sm" style={{ color: "var(--text)" }}>
-                    {activeReport.title}
-                  </h2>
-                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                    {formatDateRange()}
-                  </p>
-                </div>
-              </div>
-              <span
-                className="badge badge-info text-xs"
-                style={{ color: "var(--accent)", background: "var(--accent-soft)" }}
+          <div className="flex flex-wrap gap-1.5">
+            {PRESETS.map((p) => (
+              <button
+                key={p.key}
+                onClick={() => handlePreset(p.key)}
+                className="px-3 py-1 text-xs rounded-lg font-medium transition-all"
+                style={{
+                  background: preset === p.key ? "var(--accent)" : "var(--surface-hover)",
+                  color: preset === p.key ? "var(--bg)" : "var(--text)",
+                  border: `1px solid ${preset === p.key ? "var(--accent)" : "var(--border)"}`,
+                }}
               >
-                Preview
-              </span>
-            </div>
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2 ml-auto">
+            <input type="date" value={startDate} onChange={(e) => { setStartDate(e.target.value); setPreset(""); }} className="text-xs" />
+            <span className="text-xs" style={{ color: "var(--text-dim)" }}>→</span>
+            <input type="date" value={endDate} onChange={(e) => { setEndDate(e.target.value); setPreset(""); }} className="text-xs" />
+            <button onClick={loadData} className="p-1.5 rounded-md" style={{ color: "var(--text-dim)" }} title="Refresh">
+              <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+            </button>
+          </div>
+        </div>
+      </div>
 
-            {/* Sections preview */}
-            <div className="space-y-2 mb-6">
-              <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "var(--text-muted)" }}>
-                Report Sections
-              </p>
-              
-              {/* Enhanced Cash Flow Preview */}
-              {selected === "cash-flow" && (
-                <div className="space-y-3 mb-4">
-                  {/* Operating Activities */}
-                  <div
-                    className="p-4 rounded-lg"
-                    style={{ background: "var(--bg)", border: "1px solid var(--border)" }}
-                  >
-                    <div className="flex items-center gap-2 mb-3">
-                      <ArrowUpCircle size={16} style={{ color: "var(--success)" }} />
-                      <span className="text-sm font-semibold" style={{ color: "var(--text)" }}>
-                        Operating Activities
-                      </span>
-                    </div>
-                    <div className="space-y-2 pl-6">
-                      <div className="flex justify-between text-xs">
-                        <span style={{ color: "var(--text-muted)" }}>Cash Inflows (Revenue, Sales)</span>
-                        <span className="font-mono" style={{ color: "var(--success)" }}>+$XX,XXX</span>
-                      </div>
-                      <div className="flex justify-between text-xs">
-                        <span style={{ color: "var(--text-muted)" }}>Cash Outflows (Operating Expenses)</span>
-                        <span className="font-mono" style={{ color: "var(--danger)" }}>-$XX,XXX</span>
-                      </div>
-                      <div className="flex justify-between text-xs font-semibold pt-2 border-t" style={{ borderColor: "var(--border)" }}>
-                        <span style={{ color: "var(--text)" }}>Net Operating Cash Flow</span>
-                        <span className="font-mono" style={{ color: "var(--text)" }}>$XX,XXX</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Investing Activities */}
-                  <div
-                    className="p-4 rounded-lg"
-                    style={{ background: "var(--bg)", border: "1px solid var(--border)" }}
-                  >
-                    <div className="flex items-center gap-2 mb-3">
-                      <TrendingUp size={16} style={{ color: "var(--info)" }} />
-                      <span className="text-sm font-semibold" style={{ color: "var(--text)" }}>
-                        Investing Activities
-                      </span>
-                    </div>
-                    <div className="space-y-2 pl-6">
-                      <div className="flex justify-between text-xs">
-                        <span style={{ color: "var(--text-muted)" }}>Capital Expenditures, Investments</span>
-                        <span className="font-mono" style={{ color: "var(--text-dim)" }}>$XX,XXX</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Financing Activities */}
-                  <div
-                    className="p-4 rounded-lg"
-                    style={{ background: "var(--bg)", border: "1px solid var(--border)" }}
-                  >
-                    <div className="flex items-center gap-2 mb-3">
-                      <DollarSign size={16} style={{ color: "var(--warning)" }} />
-                      <span className="text-sm font-semibold" style={{ color: "var(--text)" }}>
-                        Financing Activities
-                      </span>
-                    </div>
-                    <div className="space-y-2 pl-6">
-                      <div className="flex justify-between text-xs">
-                        <span style={{ color: "var(--text-muted)" }}>Loans, Equity Funding</span>
-                        <span className="font-mono" style={{ color: "var(--text-dim)" }}>$XX,XXX</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Summary */}
-                  <div
-                    className="p-4 rounded-lg"
-                    style={{ background: "var(--accent-soft)", border: "1px solid var(--accent)44" }}
-                  >
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-xs">
-                        <span style={{ color: "var(--text-muted)" }}>Beginning Cash Balance</span>
-                        <span className="font-mono" style={{ color: "var(--text)" }}>$XX,XXX</span>
-                      </div>
-                      <div className="flex justify-between text-xs">
-                        <span style={{ color: "var(--text-muted)" }}>Net Change in Cash</span>
-                        <span className="font-mono" style={{ color: "var(--text)" }}>$XX,XXX</span>
-                      </div>
-                      <div className="flex justify-between text-sm font-bold pt-2 border-t" style={{ borderColor: "var(--accent)44" }}>
-                        <span style={{ color: "var(--accent)" }}>Ending Cash Balance</span>
-                        <span className="font-mono" style={{ color: "var(--accent)" }}>$XX,XXX</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Standard sections list for other reports */}
-              {selected !== "cash-flow" && activeReport.sections.map((section, i) => (
-                <div
-                  key={section}
-                  className="flex items-center gap-3 py-2.5 px-3 rounded-lg"
-                  style={{
-                    background: "var(--bg)",
-                    border: "1px solid var(--border)",
-                    animationDelay: `${i * 0.05}s`,
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: "50%",
-                      background: "var(--accent)",
-                      flexShrink: 0,
-                    }}
-                  />
-                  <span className="text-sm" style={{ color: "var(--text)" }}>
-                    {section}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            {/* Disclaimer */}
-            <div
-              className="p-3 rounded-lg flex items-start gap-2 mb-5"
+      {/* Tabs */}
+      <div className="flex gap-1 mb-5 overflow-x-auto pb-1">
+        {TABS.map((t) => {
+          const Icon = t.icon;
+          const active = tab === t.key;
+          return (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium rounded-lg whitespace-nowrap transition-all"
               style={{
-                background: "var(--warning-soft)",
-                border: "1px solid var(--warning)22",
+                background: active ? "var(--accent)" : "transparent",
+                color: active ? "var(--bg)" : "var(--text-muted)",
+                border: `1px solid ${active ? "var(--accent)" : "var(--border)"}`,
               }}
             >
-              <AlertCircle size={14} style={{ color: "var(--warning)", marginTop: 2, flexShrink: 0 }} />
-              <p className="text-xs" style={{ color: "var(--warning)" }}>
-                This report is generated for internal planning purposes. Consult a qualified accountant for official financial statements.
-              </p>
-            </div>
+              <Icon size={14} />
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
 
-            {/* Export buttons */}
-            {exportStatus === "done" ? (
-              <div
-                className="flex items-center gap-2 p-4 rounded-lg"
-                style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
-              >
-                <CheckCircle size={16} />
-                <span className="text-sm font-medium">Report ready! Download started.</span>
-              </div>
-            ) : (
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  { format: "pdf" as ExportFormat, label: "Export PDF", icon: FileText, primary: true },
-                  { format: "csv" as ExportFormat, label: "Export CSV", icon: Download, primary: false },
-                  { format: "email" as ExportFormat, label: "Send Email", icon: Mail, primary: false },
-                ].map(({ format, label, icon: Icon, primary }) => (
+      {/* Tab Content */}
+      {loading && !summary ? (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {[1, 2, 3, 4].map((i) => <ChartSkeleton key={i} height={90} />)}
+          </div>
+          <ChartSkeleton height={260} />
+        </div>
+      ) : !summary ? (
+        <div className="glass p-12 text-center">
+          <FileText size={32} className="mx-auto mb-3" style={{ color: "var(--text-dim)" }} />
+          <p className="text-sm" style={{ color: "var(--text-dim)" }}>
+            No data available for the selected period. Try a wider date range or upload transactions.
+          </p>
+        </div>
+      ) : (
+        <>
+          {tab === "cashflow" && (
+            <CashFlowTab data={summary} annotations={annotations} onAnnotate={handleAnnotate} onDrillDown={handleDrillDown} drillDown={drillDown} />
+          )}
+
+          {tab === "forecast" && (
+            <ForecastTab forecast={forecast} scenario={scenario} onScenarioChange={setScenario} loading={forecastLoading} annotations={annotations} onAnnotate={handleAnnotate} />
+          )}
+
+          {tab === "variance" && (
+            <VarianceTab summary={summary} budgets={budgets} annotations={annotations} onAnnotate={handleAnnotate} />
+          )}
+
+          {tab === "trends" && (
+            <TrendsTab dashboard={dashboard} loading={loading} annotations={annotations} onAnnotate={handleAnnotate} />
+          )}
+
+          {tab === "categories" && (
+            <CategoriesTab data={summary} annotations={annotations} onAnnotate={handleAnnotate} />
+          )}
+
+          {tab === "compare" && (
+            <div className="space-y-4">
+              {/* Compare period selector */}
+              <div className="glass p-3 flex items-center gap-3">
+                <span className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>Compare with:</span>
+                {PRESETS.filter((p) => p.key !== preset).map((p) => (
                   <button
-                    key={format}
-                    onClick={() => handleExport(format)}
-                    disabled={exportStatus === "loading"}
-                    className={primary ? "btn-primary flex items-center justify-center gap-2" : "btn-ghost flex items-center justify-center gap-2"}
+                    key={p.key}
+                    onClick={() => setComparePreset(p.key)}
+                    className="px-3 py-1 text-xs rounded-lg font-medium transition-all"
+                    style={{
+                      background: comparePreset === p.key ? "var(--info)" : "var(--surface-hover)",
+                      color: comparePreset === p.key ? "#fff" : "var(--text)",
+                      border: `1px solid ${comparePreset === p.key ? "var(--info)" : "var(--border)"}`,
+                    }}
                   >
-                    {exportStatus === "loading" && primary ? (
-                      <div
-                        className="animate-spin"
-                        style={{
-                          width: 14,
-                          height: 14,
-                          border: "2px solid var(--bg)",
-                          borderTopColor: "transparent",
-                          borderRadius: "50%",
-                        }}
-                      />
-                    ) : (
-                      <Icon size={14} />
-                    )}
-                    {exportStatus === "loading" && primary ? "Generating…" : label}
+                    {p.label}
                   </button>
                 ))}
               </div>
-            )}
-          </div>
-
-          {/* Email modal (inline) */}
-          {showEmail && (
-            <div
-              className="glass p-5"
-              style={{ borderColor: "var(--info)22" }}
-            >
-              <h3 className="text-sm font-semibold mb-3" style={{ color: "var(--text)" }}>
-                Send Report via Email
-              </h3>
-              <div className="flex gap-3">
-                <input
-                  type="email"
-                  placeholder="recipient@company.com"
-                  value={emailTarget}
-                  onChange={(e) => setEmailTarget(e.target.value)}
-                  className="flex-1"
-                />
-                <button onClick={handleEmailSend} className="btn-primary">
-                  Send
-                </button>
-                <button onClick={() => setShowEmail(false)} className="btn-ghost">
-                  Cancel
-                </button>
-              </div>
+              <CompareTab
+                periodA={summary}
+                periodB={compareData}
+                labelA={PRESETS.find((p) => p.key === preset)?.label ?? "Current"}
+                labelB={PRESETS.find((p) => p.key === comparePreset)?.label ?? "Compare"}
+                loading={compareLoading}
+                annotations={annotations}
+                onAnnotate={handleAnnotate}
+              />
             </div>
           )}
+        </>
+      )}
+
+      {/* Period info footer */}
+      {summary && (
+        <div className="mt-6 text-xs text-center" style={{ color: "var(--text-dim)" }}>
+          Report period: {summary.period_start} → {summary.period_end} · {summary.transaction_count} transactions
         </div>
-      </div>
+      )}
     </div>
   );
 }
