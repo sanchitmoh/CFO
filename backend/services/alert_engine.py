@@ -11,8 +11,15 @@ from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models import (
-    Transaction, TransactionType, Budget, Alert, AlertSeverity,
+    Transaction, TransactionType, Budget, Alert, AlertSeverity, Workspace
 )
+
+def get_currency_symbol(currency_code: str) -> str:
+    symbols = {
+        "USD": "$", "EUR": "€", "GBP": "£", "INR": "₹", 
+        "JPY": "¥", "CAD": "CA$", "AUD": "A$", "SGD": "S$", "CHF": "CHF"
+    }
+    return symbols.get(currency_code.upper(), currency_code.upper() + " ")
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +37,11 @@ async def run_alert_engine(db: AsyncSession, workspace_id) -> int:
     alerts_created = 0
 
     try:
+        # Fetch workspace currency
+        ws = await db.scalar(select(Workspace).where(Workspace.id == workspace_id))
+        currency = ws.currency if ws else "USD"
+        sym = get_currency_symbol(currency)
+
         # ── Rule 1: Budget overrun ───────────────────────────────
         budgets = await db.execute(
             select(Budget).where(Budget.workspace_id == workspace_id)
@@ -55,8 +67,8 @@ async def run_alert_engine(db: AsyncSession, workspace_id) -> int:
                             title=title,
                             message=(
                                 f"Spending in '{budget.category}' has reached "
-                                f"${float(budget.current_spend):,.0f} "
-                                f"({ratio:.0%} of ${float(budget.monthly_limit):,.0f} limit)."
+                                f"{sym}{float(budget.current_spend):,.0f} "
+                                f"({ratio:.0%} of {sym}{float(budget.monthly_limit):,.0f} limit)."
                             ),
                             severity=AlertSeverity.critical,
                             category="budget",
@@ -81,8 +93,8 @@ async def run_alert_engine(db: AsyncSession, workspace_id) -> int:
                             title=title,
                             message=(
                                 f"Spending in '{budget.category}' is at "
-                                f"${float(budget.current_spend):,.0f} "
-                                f"({ratio:.0%} of ${float(budget.monthly_limit):,.0f} limit)."
+                                f"{sym}{float(budget.current_spend):,.0f} "
+                                f"({ratio:.0%} of {sym}{float(budget.monthly_limit):,.0f} limit)."
                             ),
                             severity=AlertSeverity.warning,
                             category="budget",
@@ -126,9 +138,9 @@ async def run_alert_engine(db: AsyncSession, workspace_id) -> int:
                         workspace_id=workspace_id,
                         title=title,
                         message=(
-                            f"Current month revenue (${current:,.0f}) is "
+                            f"Current month revenue ({sym}{current:,.0f}) is "
                             f"{((1 - current / prior_avg) * 100):.0f}% below the "
-                            f"trailing average (${prior_avg:,.0f})."
+                            f"trailing average ({sym}{prior_avg:,.0f})."
                         ),
                         severity=AlertSeverity.warning,
                         category="revenue",

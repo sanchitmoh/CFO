@@ -309,3 +309,506 @@ export interface BenchmarkInsight {
   insight: string;
   status: "above" | "below" | "on_par";
 }
+
+// ════════════════════════════════════════════════════════════════
+// PHASE 2: Industry-Ready Feature Types
+// ════════════════════════════════════════════════════════════════
+
+// ── Vendor Management ────────────────────────────────────────────
+
+export interface VendorContact {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  role?: string;
+}
+
+export interface Vendor {
+  id: string;
+  name: string;
+  category?: string;
+  payment_terms?: string;
+  tax_id?: string;
+  is_active: boolean;
+  notes?: string;
+  contacts: VendorContact[];
+  total_spent: number;
+  transaction_count: number;
+  created_at: string;
+}
+
+export interface VendorCreate {
+  name: string;
+  category?: string;
+  payment_terms?: string;
+  tax_id?: string;
+  notes?: string;
+}
+
+export interface VendorUpdate {
+  name?: string;
+  category?: string;
+  payment_terms?: string;
+  tax_id?: string;
+  is_active?: boolean;
+  notes?: string;
+}
+
+export interface VendorContactCreate {
+  name: string;
+  email?: string;
+  phone?: string;
+  role?: string;
+}
+
+export interface VendorSpendAnalysis {
+  vendor_name: string;
+  total_spend: number;
+  transaction_count: number;
+  avg_transaction: number;
+  last_transaction_date?: string;
+  category?: string;
+}
+
+export interface DuplicateVendorGroup {
+  name: string;
+  matches: { id: string; name: string; score: number }[];
+}
+
+// ── Vendor Reviews & Scorecards ──────────────────────────────────
+
+export interface VendorReviewCreate {
+  delivery_rating: number;
+  quality_rating: number;
+  responsiveness_rating: number;
+  cost_rating: number;
+  comment?: string;
+}
+
+export interface VendorReview {
+  id: string;
+  vendor_id: string;
+  reviewer_user_id: string;
+  delivery_rating: number;
+  quality_rating: number;
+  responsiveness_rating: number;
+  cost_rating: number;
+  comment?: string;
+  review_date: string;
+}
+
+export interface VendorScorecard {
+  vendor_id: string;
+  vendor_name: string;
+  total_reviews: number;
+  avg_delivery: number;
+  avg_quality: number;
+  avg_responsiveness: number;
+  avg_cost: number;
+  composite_score: number;
+}
+
+// ── Vendor Contracts ─────────────────────────────────────────────
+
+export interface ContractCreate {
+  title: string;
+  contract_type: string;
+  start_date: string;
+  end_date: string;
+  value?: number;
+  auto_renew?: boolean;
+  renewal_notice_days?: number;
+  notes?: string;
+}
+
+export interface ContractUpdate {
+  title?: string;
+  contract_type?: string;
+  start_date?: string;
+  end_date?: string;
+  value?: number;
+  auto_renew?: boolean;
+  renewal_notice_days?: number;
+  status?: string;
+  notes?: string;
+}
+
+export interface VendorContract {
+  id: string;
+  vendor_id: string;
+  title: string;
+  contract_type: string;
+  start_date: string;
+  end_date: string;
+  value?: number;
+  auto_renew: boolean;
+  renewal_notice_days: number;
+  status: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ContractExpiringSoon {
+  contract: VendorContract;
+  vendor_name: string;
+  days_remaining: number;
+}
+
+// ── Tax Management ───────────────────────────────────────────────
+
+export interface TaxCategory {
+  id: string;
+  category: string;
+  tax_code: "fully_deductible" | "partially_deductible" | "non_deductible";
+  deduction_rate: number;
+  jurisdiction: string;
+  notes?: string;
+  created_at: string;
+}
+
+export interface TaxCategoryCreate {
+  category: string;
+  tax_code?: string;
+  deduction_rate?: number;
+  jurisdiction?: string;
+  notes?: string;
+}
+
+export interface TaxJurisdiction {
+  id: string;
+  code: string;
+  name: string;
+  tax_rates_json?: Record<string, unknown> | null;
+  filing_frequency: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface TaxJurisdictionCreate {
+  code: string;
+  name: string;
+  tax_rates_json?: Record<string, unknown>;
+  filing_frequency?: string;
+}
+
+export interface TaxEstimate {
+  id: string;
+  quarter: string;
+  jurisdiction: string;
+  jurisdiction_code: string;   // computed alias
+  gross_income: number;        // computed: taxable_income + deductions_total
+  total_deductions: number;    // computed alias for deductions_total
+  taxable_income: number;
+  estimated_tax: number;
+  effective_rate: number;
+  deductions_total: number;
+  status: string;
+  due_date: string | null;
+  paid_date: string | null;
+  created_at: string;
+}
+
+export interface TaxReport {
+  fiscal_year: number;
+  jurisdiction: string;
+  gross_income: number;
+  total_deductions: number;
+  taxable_income: number;
+  estimated_annual_tax: number;
+  effective_rate: number;
+  quarterly_estimates: TaxEstimate[];
+  deduction_breakdown: { category: string; amount: number; deductibility: string }[];
+}
+
+// ── External Tax Calculation APIs ────────────────────────────────
+
+export interface IndiaTaxCalculationRequest {
+  gross_income: number;
+  regime?: string;
+  apply_standard_deduction?: boolean;
+}
+
+export interface IndiaHRACalculationRequest {
+  basic_salary: number;
+  hra_received: number;
+  rent_paid: number;
+  is_metro?: boolean;
+}
+
+export interface IndiaGratuityCalculationRequest {
+  monthly_basic: number;
+  years_of_service: number;
+  covered_by_act?: boolean;
+}
+
+export interface USTaxCalculationRequest {
+  income: number;
+  filing_status?: string;
+  qbi_deduction?: boolean;
+}
+
+export interface MultiCountryTaxRequest {
+  country_code: string;
+  income: number;
+  extra_params?: Record<string, unknown>;
+}
+
+export interface IndiaRegimeComparisonRequest {
+  gross_income: number;
+}
+
+export interface EffectiveHourlyRateRequest {
+  country_code: string;
+  annual_income: number;
+  weekly_hours?: number;
+  paid_days_off?: number;
+}
+
+export interface ExternalTaxCalculationResponse {
+  source: string;
+  country: string;
+  data: Record<string, unknown>;
+}
+
+export interface IndiaRegimeComparisonResponse {
+  gross_income: number;
+  old_regime: Record<string, unknown>;
+  new_regime: Record<string, unknown>;
+  savings: number;
+  recommendation: string;
+}
+
+export interface EffectiveHourlyRateResponse {
+  country: string;
+  gross_income: number;
+  net_income: number;
+  hourly_rate: number;
+  daily_rate: number;
+  working_days: number;
+  effective_tax_rate: number;
+}
+
+export interface SupportedCountry {
+  code: string;
+  name: string;
+  features?: string;
+}
+
+// ── Invoice Management ───────────────────────────────────────────
+
+export interface InvoicePayment {
+  id: string;
+  amount: number;
+  payment_date: string;
+  method?: string;
+  reference?: string;
+}
+
+export interface Invoice {
+  id: string;
+  invoice_number: string;
+  client_name: string;
+  client_email?: string;
+  issue_date: string;
+  due_date: string;
+  line_items: { description: string; quantity: number; unit_price: number; amount: number }[];
+  subtotal: number;
+  tax_rate: number;
+  tax_amount: number;
+  total: number;
+  amount_paid: number;
+  amount_due: number;
+  status: "draft" | "sent" | "paid" | "partially_paid" | "overdue" | "cancelled";
+  notes?: string;
+  payments: InvoicePayment[];
+  created_at: string;
+}
+
+export interface InvoiceCreate {
+  client_name: string;
+  client_email?: string;
+  issue_date: string;
+  due_date: string;
+  line_items: { description: string; quantity: number; unit_price: number }[];
+  tax_rate?: number;
+  notes?: string;
+}
+
+export interface InvoiceUpdate {
+  client_name?: string;
+  client_email?: string;
+  due_date?: string;
+  line_items?: { description: string; quantity: number; unit_price: number }[];
+  tax_rate?: number;
+  notes?: string;
+  status?: string;
+}
+
+export interface InvoicePaymentCreate {
+  amount: number;
+  payment_date: string;
+  method?: string;
+  reference?: string;
+}
+
+export interface AgingBucket {
+  bucket: string;
+  count: number;
+  total: number;
+  invoices: { id: string; invoice_number: string; client_name: string; total: number; amount_due: number; due_date: string; days_overdue: number }[];
+}
+
+export interface AgingReport {
+  as_of: string;
+  total_outstanding: number;
+  buckets: AgingBucket[];
+}
+
+// ── Expense Approvals ────────────────────────────────────────────
+
+export interface ApprovalPolicy {
+  id: string;
+  name: string;
+  min_amount: number;
+  max_amount?: number;
+  categories: string[];
+  approver_roles: string[];
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface ApprovalPolicyCreate {
+  name: string;
+  min_amount: number;
+  max_amount?: number;
+  categories?: string[];
+  approver_roles?: string[];
+}
+
+export interface ExpenseApproval {
+  id: string;
+  transaction_id: string;
+  policy_id: string;
+  requested_by: string;
+  decided_by?: string;
+  status: "pending" | "approved" | "rejected";
+  notes?: string;
+  rejection_reason?: string;
+  requested_at: string;
+  decided_at?: string;
+}
+
+export interface ApprovalDecision {
+  notes?: string;
+  rejection_reason?: string;
+}
+
+// ── Scenario Planning ────────────────────────────────────────────
+
+export interface ScenarioAssumptions {
+  // Core
+  revenue_growth_pct: number;
+  expense_change_pct: number;
+  new_monthly_revenue?: number;
+  removed_monthly_expense?: number;
+  one_time_income?: number;
+  one_time_expense?: number;
+  // Extended
+  headcount_change?: number;
+  avg_salary_per_head?: number;
+  customer_churn_pct?: number;
+  pricing_change_pct?: number;
+  tax_rate_pct?: number;
+  capex_monthly?: number;
+  loan_repayment_monthly?: number;
+  seasonal_dip_months?: number[];
+}
+
+export interface Scenario {
+  id: string;
+  name: string;
+  description?: string;
+  assumptions: ScenarioAssumptions;
+  months_ahead: number;
+  created_by: string;
+  created_at: string;
+}
+
+export interface ScenarioCreate {
+  name: string;
+  description?: string;
+  assumptions: ScenarioAssumptions;
+  months_ahead?: number;
+}
+
+export interface ScenarioUpdate {
+  name?: string;
+  description?: string;
+  assumptions?: Partial<ScenarioAssumptions>;
+  months_ahead?: number;
+}
+
+export interface ScenarioProjection {
+  month: string;
+  revenue: number;
+  expenses: number;
+  net_cash_flow: number;
+  cumulative_cash: number;
+}
+
+export interface ScenarioComparison {
+  scenario_id: string;
+  scenario_name: string;
+  projections: ScenarioProjection[];
+  final_cash: number;
+  runway_months: number;
+}
+
+export interface SensitivityResult {
+  variable: string;
+  delta_pct: number;
+  runway_months: number;
+  final_cash: number;
+}
+
+export interface MonteCarloResult {
+  p10_runway: number;
+  p50_runway: number;
+  p90_runway: number;
+  p10_cash: number;
+  p50_cash: number;
+  p90_cash: number;
+  months_ahead: number;
+  num_simulations: number;
+  simulations?: number;      // Keep for backward compatibility
+  distribution: { percentile: number; runway: number; cash: number }[];
+  histogram?: { bucket: string; count: number }[];  // Keep for backward compatibility
+}
+
+// ── Scenario Templates ───────────────────────────────────────────
+
+export interface ScenarioTemplate {
+  id: string;
+  name: string;
+  description: string;
+  industry: string;
+  assumptions: ScenarioAssumptions;
+}
+
+// ── Scenario Sharing ─────────────────────────────────────────────
+
+export interface ScenarioShareCreate {
+  shared_with_user_id: string;
+  permission: "viewer" | "editor";
+}
+
+export interface ScenarioShare {
+  id: string;
+  scenario_id: string;
+  shared_by_user_id: string;
+  shared_with_user_id: string;
+  permission: string;
+  created_at: string;
+}

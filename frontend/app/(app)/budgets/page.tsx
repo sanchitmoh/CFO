@@ -137,7 +137,7 @@ function CreateBudgetForm({ onSuccess }: { onSuccess: () => void }) {
       await api.createBudget({
         category: fd.get("category") as string,
         limit_amount: parseFloat(fd.get("limit_amount") as string),
-        period: fd.get("period") as string,
+        month: fd.get("month") as string,
       }, token);
       onSuccess();
     } catch (err: unknown) {
@@ -153,11 +153,7 @@ function CreateBudgetForm({ onSuccess }: { onSuccess: () => void }) {
       <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <input name="category" placeholder="Category (e.g. Marketing)" required />
         <input name="limit_amount" type="number" step="0.01" min="0" placeholder="Budget Limit" required />
-        <select name="period" required>
-          <option value="monthly">Monthly</option>
-          <option value="quarterly">Quarterly</option>
-          <option value="yearly">Yearly</option>
-        </select>
+        <input name="month" type="month" defaultValue={new Date().toISOString().slice(0, 7)} required />
         <button type="submit" disabled={submitting} className="btn-primary">
           {submitting ? "Creating…" : "Create Budget"}
         </button>

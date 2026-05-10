@@ -30,16 +30,16 @@ const fmtShort = (n: number) =>
 const DashTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: "rgba(15,20,35,0.95)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.08)",
-      borderRadius: 12, padding: "12px 16px", minWidth: 180, boxShadow: "0 8px 32px rgba(0,0,0,0.4)" }}>
-      <p style={{ color: "#8B95A8", fontSize: 11, fontWeight: 600, marginBottom: 8 }}>{label}</p>
+    <div style={{ background: "rgba(8,8,8,0.96)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.06)",
+      borderRadius: 12, padding: "12px 16px", minWidth: 180, boxShadow: "0 8px 32px rgba(0,0,0,0.6)" }}>
+      <p style={{ color: "#9A948A", fontSize: 11, fontWeight: 600, marginBottom: 8 }}>{label}</p>
       {payload.map((p: any) => (
         <div key={p.dataKey} style={{ display: "flex", justifyContent: "space-between", gap: 20, marginBottom: 3 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <div style={{ width: 7, height: 7, borderRadius: "50%", background: p.color }} />
-            <span style={{ color: "#A0ABBE", fontSize: 11 }}>{p.name}</span>
+            <span style={{ color: "#9A948A", fontSize: 11 }}>{p.name}</span>
           </div>
-          <span style={{ color: "#E8ECF4", fontSize: 11, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{fmt(p.value)}</span>
+          <span style={{ color: "#E8E4DE", fontSize: 11, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{fmt(p.value)}</span>
         </div>
       ))}
     </div>
@@ -53,7 +53,7 @@ const fmt = (n: number) =>
     maximumFractionDigits: 0,
   }).format(n);
 
-const COLORS = ["#00E5CC", "#3B82F6", "#A855F7", "#FFB020", "#FF4D6A", "#6366F1"];
+const COLORS = ["#C9A962", "#6B8EC2", "#9B7CB8", "#D4965A", "#C75050", "#5E9E7E"];
 
 /** Compute a simple health score from dashboard data */
 function computeHealthScore(d: DashboardSummary): number {
@@ -129,7 +129,7 @@ export default function DashboardPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3">
+      <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3">
         {kpis.map((k, i) => (
           <div key={k.label} className={`glass glass-hover p-4 animate-fade-up delay-${i + 1}`}>
             <div className="flex items-center justify-between mb-2">
@@ -160,31 +160,31 @@ export default function DashboardPage() {
           <h3 className="text-sm font-semibold mb-1" style={{ color: "var(--text)" }}>Cash Flow Trend</h3>
           <p className="text-xs mb-4" style={{ color: "var(--text-dim)" }}>{cashFlowData.length} months with activity</p>
           {cashFlowData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={240}>
+            <ResponsiveContainer width="100%" height={220} minWidth={300}>
               <ComposedChart data={cashFlowData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="incomeGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#00E5CC" stopOpacity={0.15} />
-                    <stop offset="100%" stopColor="#00E5CC" stopOpacity={0} />
+                    <stop offset="0%" stopColor="#5E9E7E" stopOpacity={0.15} />
+                    <stop offset="100%" stopColor="#5E9E7E" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="expenseGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#FF4D6A" stopOpacity={0.15} />
-                    <stop offset="100%" stopColor="#FF4D6A" stopOpacity={0} />
+                    <stop offset="0%" stopColor="#C75050" stopOpacity={0.15} />
+                    <stop offset="100%" stopColor="#C75050" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-                <XAxis dataKey="month" tick={{ fill: "#6B7A8D", fontSize: 10 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: "#6B7A8D", fontSize: 10 }} axisLine={false} tickLine={false}
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                <XAxis dataKey="month" tick={{ fill: "#5C5750", fontSize: 10 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: "#5C5750", fontSize: 10 }} axisLine={false} tickLine={false}
                   tickFormatter={(v) => fmtShort(v)} width={60} />
-                <Tooltip content={<DashTooltip />} cursor={{ stroke: "rgba(255,255,255,0.06)" }} />
+                <Tooltip content={<DashTooltip />} cursor={{ stroke: "rgba(255,255,255,0.04)" }} />
                 <Legend wrapperStyle={{ fontSize: 10, paddingTop: 8 }}
-                  formatter={(v: string) => <span style={{ color: "#8B95A8" }}>{v}</span>} />
-                <Bar dataKey="income" name="Income" fill="#00E5CC" radius={[3,3,0,0]} barSize={14} fillOpacity={0.85} />
-                <Bar dataKey="expenses" name="Expenses" fill="#FF4D6A" radius={[3,3,0,0]} barSize={14} fillOpacity={0.85} />
-                <Line type="monotone" dataKey="net" name="Net" stroke="#3B82F6" strokeWidth={2.5}
-                  dot={{ r: 3, fill: "#3B82F6", strokeWidth: 0 }}
-                  activeDot={{ r: 5, fill: "#3B82F6", stroke: "#fff", strokeWidth: 2 }} />
-                <ReferenceLine y={0} stroke="rgba(255,255,255,0.08)" strokeDasharray="3 3" />
+                  formatter={(v: string) => <span style={{ color: "#9A948A" }}>{v}</span>} />
+                <Bar dataKey="income" name="Income" fill="#5E9E7E" radius={[3,3,0,0]} barSize={14} fillOpacity={0.85} />
+                <Bar dataKey="expenses" name="Expenses" fill="#C75050" radius={[3,3,0,0]} barSize={14} fillOpacity={0.85} />
+                <Line type="monotone" dataKey="net" name="Net" stroke="#C9A962" strokeWidth={2.5}
+                  dot={{ r: 3, fill: "#C9A962", strokeWidth: 0 }}
+                  activeDot={{ r: 5, fill: "#C9A962", stroke: "#E8E4DE", strokeWidth: 2 }} />
+                <ReferenceLine y={0} stroke="rgba(255,255,255,0.05)" strokeDasharray="3 3" />
               </ComposedChart>
             </ResponsiveContainer>
           ) : (
@@ -201,7 +201,7 @@ export default function DashboardPage() {
           <h3 className="text-sm font-semibold mb-4" style={{ color: "var(--text)" }}>Expense Breakdown</h3>
           {categoryData.length > 0 ? (
             <>
-              <ResponsiveContainer width="100%" height={160}>
+              <ResponsiveContainer width="100%" height={160} minWidth={200}>
                 <PieChart>
                   <Pie data={categoryData} cx="50%" cy="50%" innerRadius={45} outerRadius={70} paddingAngle={3} dataKey="value">
                     {categoryData.map((_, i) => (
@@ -209,7 +209,7 @@ export default function DashboardPage() {
                     ))}
                   </Pie>
                   <Tooltip
-                    contentStyle={{ background: "#141A2B", border: "1px solid #1E2A42", borderRadius: 8, fontSize: 12 }}
+                    contentStyle={{ background: "#111111", border: "1px solid #232323", borderRadius: 8, fontSize: 12 }}
                     formatter={(v) => fmt(Number(v ?? 0))}
                   />
                 </PieChart>
@@ -237,8 +237,8 @@ export default function DashboardPage() {
         <div className="lg:col-span-2 glass p-6 animate-fade-up delay-5">
           <h3 className="text-sm font-semibold mb-4" style={{ color: "var(--text)" }}>Recent Transactions</h3>
           {recentTx.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto -mx-2 px-2" style={{ WebkitOverflowScrolling: "touch" }}>
+              <table className="w-full text-sm" style={{ minWidth: 480 }}>
                 <thead>
                   <tr className="text-xs uppercase tracking-wider text-left" style={{ color: "var(--text-dim)", borderBottom: "1px solid var(--border)" }}>
                     <th className="pb-3 pr-4">Date</th>
@@ -284,7 +284,7 @@ function DashboardSkeleton() {
         <div className="skeleton" style={{ width: 160, height: 28 }} />
         <div className="skeleton mt-2" style={{ width: 240, height: 16 }} />
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+      <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
         {Array.from({ length: 7 }).map((_, i) => (
           <div key={i} className="skeleton" style={{ height: 80 }} />
         ))}

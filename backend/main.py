@@ -42,6 +42,12 @@ from routers import (
     # CRIT-001: password_policy router removed — unused dead code with live attack surface.
     # Auth is handled by Clerk. If custom auth is needed later, rewrite with DB-persisted config.
     compliance as compliance_router,
+    # PHASE 2: Industry-Ready Feature Routers
+    vendors as vendors_router,
+    tax as tax_router,
+    invoices as invoices_router,
+    approvals as approvals_router,
+    scenarios as scenarios_router,
 )
 
 # ── SEC-FIX: Security Headers Middleware ──────────────────────────
@@ -123,7 +129,7 @@ scheduler = AsyncIOScheduler()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Run Alembic migrations on startup, then start scheduler."""
+    """Run warm-up tasks on startup, then start scheduler."""
     # L-003: Use versioned Alembic migrations instead of create_all
     # Note: Migrations should be run manually with: alembic upgrade head
     # Skipping auto-migrations on startup to avoid blocking
@@ -145,6 +151,51 @@ async def lifespan(app: FastAPI):
                 "Telemetry will fail in production. Set OTEL_EXPORTER_OTLP_ENDPOINT to your collector.",
                 settings.OTEL_EXPORTER_OTLP_ENDPOINT
             )
+
+    # ── PERF-007: Connection warm-up ──────────────────────────────
+    # Neon serverless Postgres can take 30-40s to wake from sleep.
+    # Redis (Upstash) and Clerk JWKS also add 3s each on cold start.
+    # By warming all three concurrently on startup, the first user
+    # request doesn't eat 40+ seconds of latency.
+    async def _warmup_db():
+        """Wake Neon Postgres and establish the connection pool."""
+        import time as _t
+        t = _t.monotonic()
+        try:
+            from sqlalchemy import text as _text
+            async with engine.connect() as conn:
+                await conn.execute(_text("SELECT 1"))
+            logger.info("DB warm-up complete (%.1fs)", _t.monotonic() - t)
+        except Exception as exc:
+            logger.warning("DB warm-up failed (%.1fs): %s", _t.monotonic() - t, exc)
+
+    async def _warmup_redis():
+        """Pre-connect to Redis so rate-limiter and cache are ready."""
+        import time as _t
+        t = _t.monotonic()
+        try:
+            from cache import get_redis
+            r = await get_redis()
+            await r.ping()
+            logger.info("Redis warm-up complete (%.1fs)", _t.monotonic() - t)
+        except Exception as exc:
+            logger.warning("Redis warm-up failed (%.1fs): %s", _t.monotonic() - t, exc)
+
+    async def _warmup_jwks():
+        """Pre-fetch Clerk's JWKS so first auth doesn't block on HTTP."""
+        import time as _t
+        t = _t.monotonic()
+        try:
+            from auth import _get_jwks
+            await _get_jwks()
+            logger.info("JWKS warm-up complete (%.1fs)", _t.monotonic() - t)
+        except Exception as exc:
+            logger.warning("JWKS warm-up failed (%.1fs): %s", _t.monotonic() - t, exc)
+
+    # Run all warm-ups concurrently — total time = slowest single one
+    logger.info("Starting connection warm-up (DB + Redis + JWKS)...")
+    await asyncio.gather(_warmup_db(), _warmup_redis(), _warmup_jwks())
+    logger.info("Connection warm-up complete")
 
     # EXT-002: Schedule periodic alert evaluation across all workspaces.
     # Lazy import to avoid circular dependencies at module load time.
@@ -212,6 +263,13 @@ app.include_router(plaid_router.router, prefix="/api/v1/plaid", tags=["Plaid"])
 app.include_router(semantic_search_router.router, prefix="/api/v1/search", tags=["Semantic Search"])
 # CRIT-001: password_policy router removed — see import block comment
 app.include_router(compliance_router.router, prefix="/api/v1/compliance", tags=["GDPR/CCPA Compliance"])
+
+# ── PHASE 2: Industry-Ready Feature Routers ───────────────────────
+app.include_router(vendors_router.router, prefix="/api/v1/vendors", tags=["Vendor Management"])
+app.include_router(tax_router.router, prefix="/api/v1/tax", tags=["Tax Management"])
+app.include_router(invoices_router.router, prefix="/api/v1/invoices", tags=["Invoice Management"])
+app.include_router(approvals_router.router, prefix="/api/v1/approvals", tags=["Expense Approvals"])
+app.include_router(scenarios_router.router, prefix="/api/v1/scenarios", tags=["Scenario Planning"])
 
 
 @app.get("/api/v1/health", tags=["System"])

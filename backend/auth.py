@@ -401,6 +401,15 @@ async def provision_user_and_workspace(
         role=UserRole.owner,
     )
     db.add(user)
+    await db.flush()
+
+    # Seed default tax data (jurisdictions + categories) for the new workspace
+    from services.tax_service import seed_default_tax_data
+    try:
+        await seed_default_tax_data(db, workspace.id)
+    except Exception as e:
+        logger.warning("Tax seed failed (non-fatal): %s", e)
+
     await db.commit()
     await db.refresh(user)
 

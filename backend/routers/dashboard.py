@@ -12,6 +12,8 @@ from auth import get_current_user
 from models import User, UserRole
 from schemas import DashboardSummary
 from services.dashboard_service import get_dashboard_summary
+from services.alert_engine import get_currency_symbol
+from models import Workspace
 
 router = APIRouter()
 
@@ -76,10 +78,14 @@ async def investor_summary(
         else "Critical"
     )
 
+    ws = await db.scalar(select(Workspace).where(Workspace.id == user.workspace_id))
+    currency = ws.currency if ws else "USD"
+    sym = get_currency_symbol(currency)
+
     def fmt_currency(n: float) -> str:
         if abs(n) >= 1000:
-            return f"${n / 1000:,.0f}K" if n < 1_000_000 else f"${n / 1_000_000:,.1f}M"
-        return f"${n:,.0f}"
+            return f"{sym}{n / 1000:,.0f}K" if n < 1_000_000 else f"{sym}{n / 1_000_000:,.1f}M"
+        return f"{sym}{n:,.0f}"
 
     return {
         "health_score": health_score,

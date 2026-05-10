@@ -108,7 +108,7 @@ def detect_intent(question: str) -> list[str]:
 # Context Fetchers — each returns a text block for the prompt
 # ═══════════════════════════════════════════════════════════════════
 
-async def _fetch_balance(db: AsyncSession, ws_id, cutoff: datetime) -> tuple[str, dict]:
+async def _fetch_balance(db: AsyncSession, ws_id, cutoff: datetime, sym: str) -> tuple[str, dict]:
     """Income/expense totals and net cash flow."""
     totals = await db.execute(
         select(Transaction.type, func.sum(Transaction.amount), func.count(Transaction.id))
@@ -127,15 +127,15 @@ async def _fetch_balance(db: AsyncSession, ws_id, cutoff: datetime) -> tuple[str
 
     net = income - expenses
     text = (
-        f"Total Income (90d): ${income:,.2f}\n"
-        f"Total Expenses (90d): ${expenses:,.2f}\n"
-        f"Net Cash Flow: ${net:,.2f}\n"
+        f"Total Income (90d): {sym}{income:,.2f}\n"
+        f"Total Expenses (90d): {sym}{expenses:,.2f}\n"
+        f"Net Cash Flow: {sym}{net:,.2f}\n"
         f"Transaction Count: {txn_count}"
     )
     return text, {"income": income, "expenses": expenses, "txn_count": txn_count}
 
 
-async def _fetch_burn_rate(db: AsyncSession, ws_id, cutoff: datetime) -> tuple[str, dict]:
+async def _fetch_burn_rate(db: AsyncSession, ws_id, cutoff: datetime, sym: str) -> tuple[str, dict]:
     """Monthly burn rate and runway calculation."""
     result = await db.execute(
         select(Transaction.type, func.sum(Transaction.amount))
@@ -155,13 +155,13 @@ async def _fetch_burn_rate(db: AsyncSession, ws_id, cutoff: datetime) -> tuple[s
     runway = net / burn_rate if burn_rate > 0 else 99
 
     text = (
-        f"Monthly Burn Rate: ${burn_rate:,.2f}\n"
+        f"Monthly Burn Rate: {sym}{burn_rate:,.2f}\n"
         f"Estimated Runway: {runway:.1f} months"
     )
     return text, {"burn_rate": burn_rate, "runway": runway}
 
 
-async def _fetch_category_spend(db: AsyncSession, ws_id, cutoff: datetime) -> tuple[str, dict]:
+async def _fetch_category_spend(db: AsyncSession, ws_id, cutoff: datetime, sym: str) -> tuple[str, dict]:
     """Top 5 expense categories."""
     cats_q = await db.execute(
         select(Transaction.category, func.sum(Transaction.amount))
@@ -174,12 +174,12 @@ async def _fetch_category_spend(db: AsyncSession, ws_id, cutoff: datetime) -> tu
         .order_by(func.sum(Transaction.amount).desc())
         .limit(5)
     )
-    lines = [f"  - {sanitize_data_field(r[0])}: ${float(r[1]):,.2f}" for r in cats_q]
+    lines = [f"  - {sanitize_data_field(r[0])}: {sym}{float(r[1]):,.2f}" for r in cats_q]
     text = "Top Expense Categories:\n" + ("\n".join(lines) if lines else "  No expense data")
     return text, {"category_count": len(lines)}
 
 
-async def _fetch_cash_flow(db: AsyncSession, ws_id, cutoff: datetime) -> tuple[str, dict]:
+async def _fetch_cash_flow(db: AsyncSession, ws_id, cutoff: datetime, sym: str) -> tuple[str, dict]:
     """Monthly cash flow trend."""
     from sqlalchemy import extract
     monthly = await db.execute(
@@ -207,13 +207,13 @@ async def _fetch_cash_flow(db: AsyncSession, ws_id, cutoff: datetime) -> tuple[s
     for period in sorted(months_data.keys()):
         d = months_data[period]
         net = d["income"] - d["expenses"]
-        lines.append(f"  {period}: Income ${d['income']:,.0f} | Expenses ${d['expenses']:,.0f} | Net ${net:,.0f}")
+        lines.append(f"  {period}: Income {sym}{d['income']:,.0f} | Expenses {sym}{d['expenses']:,.0f} | Net {sym}{net:,.0f}")
 
     text = "Monthly Cash Flow Trend:\n" + ("\n".join(lines) if lines else "  No data")
     return text, {"months_of_data": len(months_data)}
 
 
-async def _fetch_budgets(db: AsyncSession, ws_id, _cutoff: datetime) -> tuple[str, dict]:
+async def _fetch_budgets(db: AsyncSession, ws_id, _cutoff: datetime, sym: str) -> tuple[str, dict]:
     """Budget adherence summary."""
     budgets_q = await db.execute(
         select(Budget).where(Budget.workspace_id == ws_id)
@@ -225,13 +225,13 @@ async def _fetch_budgets(db: AsyncSession, ws_id, _cutoff: datetime) -> tuple[st
         status = "OVER" if pct > 100 else "OK"
         if pct > 100:
             over_budget += 1
-        lines.append(f"  - {sanitize_data_field(b.category)}: ${float(b.current_spend):,.0f} / ${float(b.monthly_limit):,.0f} ({pct:.0f}%) [{status}]")
+        lines.append(f"  - {sanitize_data_field(b.category)}: {sym}{float(b.current_spend):,.0f} / {sym}{float(b.monthly_limit):,.0f} ({pct:.0f}%) [{status}]")
 
     text = "Budget Status:\n" + ("\n".join(lines) if lines else "  No budgets configured")
     return text, {"budget_count": len(lines), "over_budget": over_budget}
 
 
-async def _fetch_revenue_detail(db: AsyncSession, ws_id, cutoff: datetime) -> tuple[str, dict]:
+async def _fetch_revenue_detail(db: AsyncSession, ws_id, cutoff: datetime, sym: str) -> tuple[str, dict]:
     """Revenue breakdown by category."""
     rev_q = await db.execute(
         select(Transaction.category, func.sum(Transaction.amount), func.count(Transaction.id))
@@ -243,12 +243,12 @@ async def _fetch_revenue_detail(db: AsyncSession, ws_id, cutoff: datetime) -> tu
         .group_by(Transaction.category)
         .order_by(func.sum(Transaction.amount).desc())
     )
-    lines = [f"  - {sanitize_data_field(r[0])}: ${float(r[1]):,.2f} ({r[2]} transactions)" for r in rev_q]
+    lines = [f"  - {sanitize_data_field(r[0])}: {sym}{float(r[1]):,.2f} ({r[2]} transactions)" for r in rev_q]
     text = "Revenue Breakdown:\n" + ("\n".join(lines) if lines else "  No income data")
     return text, {"revenue_sources": len(lines)}
 
 
-async def _fetch_flagged(db: AsyncSession, ws_id, _cutoff: datetime) -> tuple[str, dict]:
+async def _fetch_flagged(db: AsyncSession, ws_id, _cutoff: datetime, sym: str) -> tuple[str, dict]:
     """Recently flagged anomalies."""
     from models import Transaction as T
     flagged_q = await db.execute(
@@ -258,7 +258,7 @@ async def _fetch_flagged(db: AsyncSession, ws_id, _cutoff: datetime) -> tuple[st
         .limit(5)
     )
     lines = [
-        f"  - {t.date.strftime('%Y-%m-%d')}: {sanitize_data_field(t.description)} — ${float(t.amount):,.2f} (score: {t.anomaly_score:.1f})"
+        f"  - {t.date.strftime('%Y-%m-%d')}: {sanitize_data_field(t.description)} — {sym}{float(t.amount):,.2f} (score: {t.anomaly_score:.1f})"
         for t in flagged_q.scalars()
     ]
     text = "Recent Anomalies:\n" + ("\n".join(lines) if lines else "  No anomalies flagged")
@@ -298,11 +298,16 @@ async def build_context(
     metadata: dict = {"intents": needed}
     seen_fetchers: set = set()
 
+    from models import Workspace
+    from services.alert_engine import get_currency_symbol
+    ws = await db.scalar(select(Workspace).where(Workspace.id == ws_id))
+    sym = get_currency_symbol(ws.currency if ws else "USD")
+
     for ctx_name in needed:
         fetcher = CONTEXT_FETCHERS.get(ctx_name)
         if fetcher and id(fetcher) not in seen_fetchers:
             seen_fetchers.add(id(fetcher))
-            text, meta = await fetcher(db, ws_id, cutoff)
+            text, meta = await fetcher(db, ws_id, cutoff, sym)
             sections.append(text)
             metadata.update(meta)
 
@@ -319,7 +324,7 @@ async def build_context(
                 date_str = row.date.strftime("%Y-%m-%d") if hasattr(row.date, "strftime") else str(row.date)
                 rag_lines.append(
                     f"  - {date_str}: {sanitize_data_field(row.description)} — "
-                    f"${float(row.amount):,.2f} ({sanitize_data_field(row.category)}) "
+                    f"{sym}{float(row.amount):,.2f} ({sanitize_data_field(row.category)}) "
                     f"[relevance: {float(row.similarity):.2f}]"
                 )
             sections.append(

@@ -263,6 +263,7 @@ class SlackService:
         amount: float,
         expected_range: str,
         channel: str | None = None,
+        currency_symbol: str = "$",
     ) -> bool:
         """
         Send an anomaly detection notification.
@@ -272,6 +273,7 @@ class SlackService:
             amount: Transaction amount
             expected_range: Expected range for this type of transaction
             channel: Channel to send to (optional)
+            currency_symbol: The currency symbol to use (default: $)
         
         Returns:
             True if notification sent successfully
@@ -293,7 +295,7 @@ class SlackService:
                     },
                     {
                         "type": "mrkdwn",
-                        "text": f"*Amount:*\n${amount:,.2f}",
+                        "text": f"*Amount:*\n{currency_symbol}{amount:,.2f}",
                     },
                     {
                         "type": "mrkdwn",
@@ -325,7 +327,7 @@ class SlackService:
         ]
         
         return await self.send_message(
-            text=f"🔍 Anomaly detected: {transaction_description} (${amount:,.2f})",
+            text=f"🔍 Anomaly detected: {transaction_description} ({currency_symbol}{amount:,.2f})",
             channel=channel,
             blocks=blocks,
         )

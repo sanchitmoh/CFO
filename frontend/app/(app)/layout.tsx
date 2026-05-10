@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useUser, useAuth } from "@clerk/nextjs";
 import Sidebar from "@/components/Sidebar";
 import { onboardingApi, setTokenProvider } from "@/lib/api";
+import { CurrencyProvider } from "@/components/CurrencyContext";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { isLoaded, isSignedIn } = useUser();
@@ -98,14 +99,29 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (!isSignedIn) return null;
 
   return (
-    <div className="flex min-h-screen" style={{ background: "var(--bg-deep)" }}>
-      <Sidebar />
-      <main
-        className="flex-1 p-8 overflow-y-auto"
-        style={{ marginLeft: 240, minHeight: "100vh" }}
-      >
-        {children}
-      </main>
-    </div>
+    <CurrencyProvider>
+      <div className="flex min-h-screen" style={{ background: "var(--bg-deep)" }}>
+        <Sidebar />
+        <main
+          className="flex-1 overflow-y-auto app-main"
+          style={{ minHeight: "100vh" }}
+        >
+          {children}
+        </main>
+        <style jsx>{`
+          .app-main {
+            margin-left: var(--sidebar-w);
+            padding: 32px;
+          }
+          @media (max-width: 768px) {
+            .app-main {
+              margin-left: 0;
+              padding: 16px;
+              padding-top: 68px;
+            }
+          }
+        `}</style>
+      </div>
+    </CurrencyProvider>
   );
 }

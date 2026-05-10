@@ -7,8 +7,9 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models import Transaction, TransactionType
+from models import Transaction, TransactionType, Workspace
 from schemas import AffordabilityRequest, AffordabilityResponse
+from services.alert_engine import get_currency_symbol
 
 
 async def check_affordability(
@@ -20,6 +21,9 @@ async def check_affordability(
     # ── Anchor to latest transaction date (not wall-clock) ─────────
     # HIGH-002: Historical CSV imports may have dates far in the past.
     # Using now() as anchor would exclude all data.
+    ws = await db.get(Workspace, workspace_id)
+    sym = get_currency_symbol(ws.currency if ws else "USD")
+
     latest_row = await db.execute(
         select(func.max(Transaction.date))
         .where(Transaction.workspace_id == workspace_id)
@@ -108,7 +112,7 @@ async def check_affordability(
             suggestion = (
                 f"🚫 '{req.expense_name}' would reduce your runway to {projected_runway:.1f} months. "
                 f"We recommend deferring this expense or increasing revenue by "
-                f"${break_even:,.2f} over 3 months to break even."
+                f"{sym}{break_even:,.2f} over 3 months to break even."
             )
         else:
             suggestion = (

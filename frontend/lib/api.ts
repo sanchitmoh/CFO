@@ -27,6 +27,55 @@ import type {
   PaginatedAuditLogs,
   BenchmarkInsight,
   Workspace,
+  // Phase 2
+  Vendor,
+  VendorCreate,
+  VendorUpdate,
+  VendorContactCreate,
+  VendorSpendAnalysis,
+  DuplicateVendorGroup,
+  TaxCategory,
+  TaxCategoryCreate,
+  TaxJurisdiction,
+  TaxJurisdictionCreate,
+  TaxEstimate,
+  TaxReport,
+  IndiaTaxCalculationRequest,
+  IndiaHRACalculationRequest,
+  IndiaGratuityCalculationRequest,
+  USTaxCalculationRequest,
+  MultiCountryTaxRequest,
+  IndiaRegimeComparisonRequest,
+  EffectiveHourlyRateRequest,
+  ExternalTaxCalculationResponse,
+  IndiaRegimeComparisonResponse,
+  EffectiveHourlyRateResponse,
+  SupportedCountry,
+  Invoice,
+  InvoiceCreate,
+  InvoiceUpdate,
+  InvoicePaymentCreate,
+  AgingReport,
+  ApprovalPolicy,
+  ApprovalPolicyCreate,
+  ExpenseApproval,
+  ApprovalDecision,
+  Scenario,
+  ScenarioCreate,
+  ScenarioUpdate,
+  ScenarioComparison,
+  SensitivityResult,
+  MonteCarloResult,
+  ScenarioTemplate,
+  ScenarioShare,
+  ScenarioShareCreate,
+  VendorReview,
+  VendorReviewCreate,
+  VendorScorecard,
+  VendorContract,
+  ContractCreate,
+  ContractUpdate,
+  ContractExpiringSoon,
 } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
@@ -78,7 +127,30 @@ async function fetchApi<T>(
 
 
 
-  const response = await fetch(url, { ...options, headers });
+  // Request timeout — no hanging requests (default 30s, overridable)
+  const timeoutMs = (options as any)._timeoutMs || 30_000;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  let response: Response;
+  try {
+    const { _timeoutMs, ...cleanOptions } = options as any;
+    response = await fetch(url, {
+      ...cleanOptions,
+      headers,
+      signal: controller.signal,
+      cache: "no-store",     // no caching of external API responses
+      keepalive: false,      // no connection pooling
+    });
+  } catch (err: any) {
+    clearTimeout(timeoutId);
+    if (err.name === "AbortError") {
+      throw new Error(`Request timeout: ${path} did not respond within ${timeoutMs / 1000}s`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: response.statusText }));
@@ -480,6 +552,335 @@ export const systemApi = {
 };
 
 
+// ════════════════════════════════════════════════════════════════
+// PHASE 2: Industry-Ready Feature API Clients
+// ════════════════════════════════════════════════════════════════
+
+// ── Vendor Management ────────────────────────────────────────────
+
+export const vendorsApi = {
+  syncFromTransactions: () =>
+    fetchApi<{ created: number; message: string }>("/vendors/sync-from-transactions", {
+      method: "POST",
+    }),
+
+  list: (activeOnly = false) =>
+    fetchApi<Vendor[]>(`/vendors?active_only=${activeOnly}`),
+
+  get: (id: string) =>
+    fetchApi<Vendor>(`/vendors/${id}`),
+
+  create: (data: VendorCreate) =>
+    fetchApi<Vendor>("/vendors", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  update: (id: string, data: VendorUpdate) =>
+    fetchApi<Vendor>(`/vendors/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  delete: (id: string) =>
+    fetchApi<void>(`/vendors/${id}`, { method: "DELETE" }),
+
+  addContact: (vendorId: string, data: VendorContactCreate) =>
+    fetchApi<Vendor>(`/vendors/${vendorId}/contacts`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  spendAnalysis: () =>
+    fetchApi<VendorSpendAnalysis[]>("/vendors/spend-analysis"),
+
+  monthlyTrend: () =>
+    fetchApi<{ month: string; vendor: string; total: number }[]>("/vendors/monthly-trend"),
+
+  vendorTransactions: (vendorName: string, skip = 0, limit = 50) =>
+    fetchApi<{ items: { id: string; date: string; description: string; amount: number; category: string; type: string }[]; total: number; skip: number; limit: number }>(
+      `/vendors/vendor-transactions?name=${encodeURIComponent(vendorName)}&skip=${skip}&limit=${limit}`
+    ),
+
+  duplicates: (threshold = 0.7) =>
+    fetchApi<DuplicateVendorGroup[]>(`/vendors/duplicates?threshold=${threshold}`),
+
+  // ── Reviews & Scorecards ─────────────────────────────────────
+
+  submitReview: (vendorId: string, data: VendorReviewCreate) =>
+    fetchApi<VendorReview>(`/vendors/${vendorId}/reviews`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  listReviews: (vendorId: string) =>
+    fetchApi<VendorReview[]>(`/vendors/${vendorId}/reviews`),
+
+  getScorecard: (vendorId: string) =>
+    fetchApi<VendorScorecard>(`/vendors/${vendorId}/scorecard`),
+
+  // ── Contract Management ──────────────────────────────────────
+
+  expiringContracts: (days = 30) =>
+    fetchApi<ContractExpiringSoon[]>(`/vendors/contracts/expiring?days=${days}`),
+
+  createContract: (vendorId: string, data: ContractCreate) =>
+    fetchApi<VendorContract>(`/vendors/${vendorId}/contracts`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  listContracts: (vendorId: string) =>
+    fetchApi<VendorContract[]>(`/vendors/${vendorId}/contracts`),
+
+  updateContract: (contractId: string, data: ContractUpdate) =>
+    fetchApi<VendorContract>(`/vendors/contracts/${contractId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+};
+
+
+// ── Tax Management ───────────────────────────────────────────────
+
+export const taxApi = {
+  listCategories: () =>
+    fetchApi<TaxCategory[]>("/tax/categories"),
+
+  createCategory: (data: TaxCategoryCreate) =>
+    fetchApi<TaxCategory>("/tax/categories", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  listJurisdictions: () =>
+    fetchApi<TaxJurisdiction[]>("/tax/jurisdictions"),
+
+  createJurisdiction: (data: TaxJurisdictionCreate) =>
+    fetchApi<TaxJurisdiction>("/tax/jurisdictions", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  listEstimates: (year?: number) => {
+    const q = year ? `?year=${year}` : "";
+    return fetchApi<TaxEstimate[]>(`/tax/estimates${q}`);
+  },
+
+  generateEstimate: (quarter: string, jurisdiction: string) =>
+    fetchApi<TaxEstimate>("/tax/estimates", {
+      method: "POST",
+      body: JSON.stringify({ quarter, jurisdiction }),
+    }),
+
+  availableQuarters: () => fetchApi<string[]>("/tax/available-quarters"),
+
+  getReport: (year?: number, jurisdiction?: string) => {
+    const q = new URLSearchParams();
+    if (year) q.set("year", String(year));
+    if (jurisdiction) q.set("jurisdiction", jurisdiction);
+    return fetchApi<TaxReport>(`/tax/report?${q}`);
+  },
+
+  // ── External Tax Calculation APIs ──────────────────────────────
+
+  calculateIndiaTax: (data: IndiaTaxCalculationRequest) =>
+    fetchApi<ExternalTaxCalculationResponse>("/tax/calculate/india", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  calculateIndiaHRA: (data: IndiaHRACalculationRequest) =>
+    fetchApi<ExternalTaxCalculationResponse>("/tax/calculate/india/hra", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  calculateIndiaGratuity: (data: IndiaGratuityCalculationRequest) =>
+    fetchApi<ExternalTaxCalculationResponse>("/tax/calculate/india/gratuity", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  calculateUSTax: (data: USTaxCalculationRequest) =>
+    fetchApi<ExternalTaxCalculationResponse>("/tax/calculate/us", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  calculateGlobalTax: (data: MultiCountryTaxRequest) =>
+    fetchApi<ExternalTaxCalculationResponse>("/tax/calculate/global", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  listSupportedCountries: () =>
+    fetchApi<SupportedCountry[]>("/tax/calculate/countries"),
+
+  compareIndiaRegimes: (data: IndiaRegimeComparisonRequest) =>
+    fetchApi<IndiaRegimeComparisonResponse>("/tax/calculate/india/compare-regimes", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  calculateHourlyRate: (data: EffectiveHourlyRateRequest) =>
+    fetchApi<EffectiveHourlyRateResponse>("/tax/calculate/hourly-rate", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+};
+
+
+// ── Invoice Management ───────────────────────────────────────────
+
+export const invoicesApi = {
+  list: (status?: string) => {
+    const q = status ? `?status=${status}` : "";
+    return fetchApi<Invoice[]>(`/invoices${q}`);
+  },
+
+  get: (id: string) =>
+    fetchApi<Invoice>(`/invoices/${id}`),
+
+  create: (data: InvoiceCreate) =>
+    fetchApi<Invoice>("/invoices", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  update: (id: string, data: InvoiceUpdate) =>
+    fetchApi<Invoice>(`/invoices/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  delete: (id: string) =>
+    fetchApi<void>(`/invoices/${id}`, { method: "DELETE" }),
+
+  send: (id: string) =>
+    fetchApi<Invoice>(`/invoices/${id}/send`, { method: "POST" }),
+
+  recordPayment: (id: string, data: InvoicePaymentCreate) =>
+    fetchApi<Invoice>(`/invoices/${id}/payments`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  aging: () =>
+    fetchApi<AgingReport>("/invoices/aging"),
+};
+
+
+// ── Expense Approvals ────────────────────────────────────────────
+
+export const approvalsApi = {
+  listPolicies: () =>
+    fetchApi<ApprovalPolicy[]>("/approvals/policies"),
+
+  createPolicy: (data: ApprovalPolicyCreate) =>
+    fetchApi<ApprovalPolicy>("/approvals/policies", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  list: (status?: string) => {
+    const q = status ? `?status=${status}` : "";
+    return fetchApi<ExpenseApproval[]>(`/approvals${q}`);
+  },
+
+  pending: () =>
+    fetchApi<ExpenseApproval[]>("/approvals/pending"),
+
+  submit: (transactionId: string) =>
+    fetchApi<ExpenseApproval>(`/approvals/submit/${transactionId}`, {
+      method: "POST",
+    }),
+
+  approve: (id: string, data: ApprovalDecision) =>
+    fetchApi<ExpenseApproval>(`/approvals/${id}/approve`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  reject: (id: string, data: ApprovalDecision) =>
+    fetchApi<ExpenseApproval>(`/approvals/${id}/reject`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+};
+
+
+// ── Scenario Planning ────────────────────────────────────────────
+
+export const scenariosApi = {
+  list: () =>
+    fetchApi<Scenario[]>("/scenarios"),
+
+  get: (id: string) =>
+    fetchApi<Scenario>(`/scenarios/${id}`),
+
+  create: (data: ScenarioCreate) =>
+    fetchApi<Scenario>("/scenarios", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  update: (id: string, data: ScenarioUpdate) =>
+    fetchApi<Scenario>(`/scenarios/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  delete: (id: string) =>
+    fetchApi<void>(`/scenarios/${id}`, { method: "DELETE" }),
+
+  compare: (ids: string[]) =>
+    fetchApi<{ comparisons: ScenarioComparison[] }>(`/scenarios/compare?ids=${ids.join(",")}`),
+
+  sensitivity: (id: string, variables: string[], rangePct = 20, steps = 5) =>
+    fetchApi<{ results: SensitivityResult[] }>(`/scenarios/${id}/sensitivity`, {
+      method: "POST",
+      body: JSON.stringify({ variables, range_pct: rangePct, steps }),
+    }),
+
+  monteCarlo: (revenueStd = 0.1, expenseStd = 0.08, months = 12, sims = 1000) =>
+    fetchApi<MonteCarloResult>("/scenarios/monte-carlo", {
+      method: "POST",
+      body: JSON.stringify({
+        revenue_std: revenueStd,
+        expense_std: expenseStd,
+        months_ahead: months,
+        num_simulations: sims,
+      }),
+    }),
+
+  // ── Templates ────────────────────────────────────────────────
+
+  listTemplates: () =>
+    fetchApi<ScenarioTemplate[]>("/scenarios/templates"),
+
+  getTemplate: (id: string) =>
+    fetchApi<ScenarioTemplate>(`/scenarios/templates/${id}`),
+
+  // ── Sharing ──────────────────────────────────────────────────
+
+  share: (scenarioId: string, data: ScenarioShareCreate) =>
+    fetchApi<ScenarioShare>(`/scenarios/${scenarioId}/share`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  listShares: (scenarioId: string) =>
+    fetchApi<ScenarioShare[]>(`/scenarios/${scenarioId}/shares`),
+
+  sharedWithMe: () =>
+    fetchApi<ScenarioShare[]>("/scenarios/shared"),
+
+  revokeShare: (scenarioId: string, shareId: string) =>
+    fetchApi<void>(`/scenarios/${scenarioId}/share/${shareId}`, { method: "DELETE" }),
+};
+
+
 // ── Investor View ────────────────────────────────────────────────
 
 export const investorApi = {
@@ -518,6 +919,12 @@ export const api = {
   settings: settingsApi,
   investor: investorApi,
   system: systemApi,
+  // Phase 2
+  vendors: vendorsApi,
+  tax: taxApi,
+  invoices: invoicesApi,
+  approvals: approvalsApi,
+  scenarios: scenariosApi,
 
   // ── Flat compatibility methods (used by existing pages) ────────
   // These accept an optional trailing `_token` param for backward
@@ -587,8 +994,8 @@ export const api = {
       body: JSON.stringify({
         category: data.category,
         monthly_limit: data.limit_amount ?? data.monthly_limit ?? 0,
-        alert_threshold: data.alert_threshold,
-        month: data.period ?? data.month,
+        alert_threshold: data.alert_threshold ?? 0.8,
+        month: data.month || new Date().toISOString().slice(0, 7),
       }),
     }, _token),
 

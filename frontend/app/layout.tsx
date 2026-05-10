@@ -28,11 +28,11 @@ export default function RootLayout({
     <ClerkProvider
       appearance={{
         variables: {
-          colorBackground: "#0D1321",
-          colorText: "#E8ECF4",
-          colorPrimary: "#00E5CC",
-          colorInputBackground: "#141A2B",
-          colorInputText: "#E8ECF4",
+          colorBackground: "#080808",
+          colorText: "#E8E4DE",
+          colorPrimary: "#C9A962",
+          colorInputBackground: "#111111",
+          colorInputText: "#E8E4DE",
         },
       }}
     >

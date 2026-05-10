@@ -264,7 +264,7 @@ export default function GoalsPage() {
 
               {isExpanded && (
                 <div className="px-5 pb-5" style={{ borderTop: "1px solid var(--border)" }}>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
                     <div>
                       <p className="text-xs uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>Target</p>
                       <p className="font-bold mt-0.5" style={{ color: "var(--text)" }}>

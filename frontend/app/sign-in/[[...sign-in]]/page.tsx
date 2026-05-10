@@ -7,14 +7,14 @@ export default function SignInPage() {
       style={{
         minHeight: "100vh",
         background:
-          "radial-gradient(ellipse at 50% 0%, #00E5CC08 0%, var(--bg-deep) 60%)",
+          "radial-gradient(ellipse at 50% 0%, #C9A96208 0%, var(--bg-deep) 60%)",
       }}
     >
       <SignIn
         appearance={{
           elements: {
             rootBox: "mx-auto",
-            card: "bg-[#0D1321] border border-[#1E2A42] shadow-2xl",
+            card: "bg-[#111111] border border-[#232323] shadow-2xl",
           },
         }}
       />

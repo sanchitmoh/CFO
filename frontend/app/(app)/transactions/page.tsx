@@ -96,7 +96,7 @@ export default function TransactionsPage() {
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--text-dim)" }} />
           <input type="text" placeholder="Search transactions…" value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-10" />
         </div>
-        <select value={filterType} onChange={(e) => setFilterType(e.target.value as "" | "income" | "expense")} style={{ width: 160 }}>
+        <select value={filterType} onChange={(e) => setFilterType(e.target.value as "" | "income" | "expense")} className="w-full sm:w-auto" style={{ minWidth: 140 }}>
           <option value="">All types</option>
           <option value="income">Income</option>
           <option value="expense">Expense</option>
@@ -118,8 +118,8 @@ export default function TransactionsPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
+            <table className="w-full text-sm" style={{ minWidth: 580 }}>
               <thead>
                 <tr className="text-xs uppercase tracking-wider text-left" style={{ color: "var(--text-dim)", borderBottom: "1px solid var(--border)", background: "var(--surface)" }}>
                   <th className="px-5 py-3">Date</th>

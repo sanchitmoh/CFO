@@ -54,6 +54,55 @@ class GoalStatus(str, enum.Enum):
     abandoned = "abandoned"
 
 
+class TaxDeductibility(str, enum.Enum):
+    deductible = "deductible"
+    partially_deductible = "partially_deductible"
+    non_deductible = "non_deductible"
+    exempt = "exempt"
+
+
+class TaxEstimateStatus(str, enum.Enum):
+    draft = "draft"
+    filed = "filed"
+    paid = "paid"
+
+
+class InvoiceStatus(str, enum.Enum):
+    draft = "draft"
+    sent = "sent"
+    paid = "paid"
+    overdue = "overdue"
+    cancelled = "cancelled"
+    partially_paid = "partially_paid"
+
+
+class ApprovalStatus(str, enum.Enum):
+    pending = "pending"
+    approved = "approved"
+    rejected = "rejected"
+    auto_approved = "auto_approved"
+
+
+class ContractType(str, enum.Enum):
+    service = "service"
+    license = "license"
+    lease = "lease"
+    subscription = "subscription"
+    maintenance = "maintenance"
+
+
+class ContractStatus(str, enum.Enum):
+    active = "active"
+    expired = "expired"
+    terminated = "terminated"
+    pending_renewal = "pending_renewal"
+
+
+class SharePermission(str, enum.Enum):
+    viewer = "viewer"
+    editor = "editor"
+
+
 # ═══════════════════════════════════════════════════════════════════
 # WORKSPACE — Multi-tenant container
 # ═══════════════════════════════════════════════════════════════════
@@ -92,6 +141,13 @@ class Workspace(Base):
     chat_messages: Mapped[list["ChatMessage"]] = relationship(back_populates="workspace")
     forecast_results: Mapped[list["ForecastResult"]] = relationship(back_populates="workspace")
     audit_logs: Mapped[list["AuditLog"]] = relationship(back_populates="workspace")
+    # Phase 2
+    vendors: Mapped[list["Vendor"]] = relationship(back_populates="workspace")
+    tax_categories: Mapped[list["TaxCategory"]] = relationship(back_populates="workspace")
+    tax_estimates: Mapped[list["TaxEstimate"]] = relationship(back_populates="workspace")
+    invoices: Mapped[list["Invoice"]] = relationship(back_populates="workspace")
+    approval_policies: Mapped[list["ApprovalPolicy"]] = relationship(back_populates="workspace")
+    scenarios: Mapped[list["Scenario"]] = relationship(back_populates="workspace")
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -166,6 +222,9 @@ class Transaction(Base):
     amount: Mapped[Decimal] = mapped_column(
         Numeric(14, 2), nullable=False
     )
+    currency_code: Mapped[str] = mapped_column(String(3), nullable=False, server_default="USD")
+    amount_original: Mapped[Decimal | None] = mapped_column(Numeric(14, 2), nullable=True)
+    exchange_rate: Mapped[Decimal | None] = mapped_column(Numeric(14, 6), nullable=True)
     category: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     type: Mapped[TransactionType] = mapped_column(SAEnum(TransactionType), nullable=False)
     account: Mapped[str] = mapped_column(
@@ -428,6 +487,7 @@ class ForecastResult(Base):
         ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
     )
     scenario: Mapped[str] = mapped_column(String(20), nullable=False)
+    base_currency: Mapped[str] = mapped_column(String(3), nullable=False, server_default="USD")
     horizon_months: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     result_json: Mapped[dict] = mapped_column(JSONB, nullable=False)
     model_version: Mapped[str] = mapped_column(
@@ -445,6 +505,28 @@ class ForecastResult(Base):
     workspace: Mapped["Workspace"] = relationship(back_populates="forecast_results")
 
 
+# ═══════════════════════════════════════════════════════════════════
+# EXCHANGE RATES — Currency Conversion Metadata
+# ═══════════════════════════════════════════════════════════════════
+
+class ExchangeRate(Base):
+    __tablename__ = "exchange_rates"
+    __table_args__ = (
+        Index("idx_exchange_rate_base_target_date", "base_currency", "target_currency", "date", unique=True),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    base_currency: Mapped[str] = mapped_column(String(3), nullable=False)
+    target_currency: Mapped[str] = mapped_column(String(3), nullable=False)
+    rate: Mapped[Decimal] = mapped_column(Numeric(14, 6), nullable=False)
+    date: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
 # ═══════════════════════════════════════════════════════════════════
 # AUDIT LOG — Change tracking (Feature D)
 # ═══════════════════════════════════════════════════════════════════
@@ -792,4 +874,510 @@ class RetentionPolicy(Base):
 
     # Relationships
     workspace: Mapped["Workspace"] = relationship("Workspace")
+
+
+# ═══════════════════════════════════════════════════════════════════
+# PHASE 2 — VENDOR MANAGEMENT
+# ═══════════════════════════════════════════════════════════════════
+
+class Vendor(Base):
+    __tablename__ = "vendors"
+    __table_args__ = (
+        Index("idx_vendor_ws_name", "workspace_id", "name"),
+        Index("idx_vendor_ws_active", "workspace_id", "is_active"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    display_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    phone: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    address: Mapped[str | None] = mapped_column(Text, nullable=True)
+    payment_terms_days: Mapped[int] = mapped_column(nullable=False, default=30)
+    category: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    tax_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    metadata_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc)
+    )
+
+    workspace: Mapped["Workspace"] = relationship(back_populates="vendors")
+    contacts: Mapped[list["VendorContact"]] = relationship(
+        back_populates="vendor", cascade="all, delete-orphan"
+    )
+
+
+class VendorContact(Base):
+    __tablename__ = "vendor_contacts"
+    __table_args__ = (Index("idx_vc_vendor", "vendor_id"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    vendor_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("vendors.id", ondelete="CASCADE"), nullable=False
+    )
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    phone: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    role: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    is_primary: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+    vendor: Mapped["Vendor"] = relationship(back_populates="contacts")
+
+
+# ═══════════════════════════════════════════════════════════════════
+# PHASE 2 — TAX MANAGEMENT
+# ═══════════════════════════════════════════════════════════════════
+
+class TaxCategory(Base):
+    __tablename__ = "tax_categories"
+    __table_args__ = (
+        Index("idx_taxcat_ws_category", "workspace_id", "category", unique=True),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
+    )
+    category: Mapped[str] = mapped_column(String(100), nullable=False)
+    tax_code: Mapped[TaxDeductibility] = mapped_column(
+        SAEnum(TaxDeductibility), nullable=False, default=TaxDeductibility.non_deductible
+    )
+    deduction_rate: Mapped[Decimal] = mapped_column(
+        Numeric(5, 2), nullable=False, default=Decimal("0.00")
+    )
+    jurisdiction: Mapped[str] = mapped_column(String(20), nullable=False, default="IN")
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc)
+    )
+
+    workspace: Mapped["Workspace"] = relationship(back_populates="tax_categories")
+
+
+class TaxEstimate(Base):
+    __tablename__ = "tax_estimates"
+    __table_args__ = (
+        Index("idx_taxest_ws_quarter", "workspace_id", "quarter"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
+    )
+    quarter: Mapped[str] = mapped_column(String(10), nullable=False)
+    jurisdiction: Mapped[str] = mapped_column(String(20), nullable=False, default="IN")
+    taxable_income: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False, default=Decimal("0"))
+    estimated_tax: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False, default=Decimal("0"))
+    effective_rate: Mapped[Decimal] = mapped_column(Numeric(5, 4), nullable=False, default=Decimal("0"))
+    deductions_total: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False, default=Decimal("0"))
+    status: Mapped[TaxEstimateStatus] = mapped_column(
+        SAEnum(TaxEstimateStatus), nullable=False, default=TaxEstimateStatus.draft
+    )
+    due_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    paid_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    notes_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc)
+    )
+
+    workspace: Mapped["Workspace"] = relationship(back_populates="tax_estimates")
+
+
+class TaxJurisdiction(Base):
+    __tablename__ = "tax_jurisdictions"
+    __table_args__ = (
+        Index("idx_taxjur_ws_code", "workspace_id", "code", unique=True),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
+    )
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    code: Mapped[str] = mapped_column(String(20), nullable=False)
+    tax_rates_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    filing_frequency: Mapped[str] = mapped_column(String(20), nullable=False, default="quarterly")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+    workspace: Mapped["Workspace"] = relationship("Workspace")
+
+
+# ═══════════════════════════════════════════════════════════════════
+# PHASE 2 — INVOICE MANAGEMENT
+# ═══════════════════════════════════════════════════════════════════
+
+class Invoice(Base):
+    __tablename__ = "invoices"
+    __table_args__ = (
+        Index("idx_inv_ws_status", "workspace_id", "status"),
+        Index("idx_inv_ws_client", "workspace_id", "client_name"),
+        Index("idx_inv_ws_number", "workspace_id", "invoice_number", unique=True),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    invoice_number: Mapped[str] = mapped_column(String(50), nullable=False)
+    client_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    client_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    client_address: Mapped[str | None] = mapped_column(Text, nullable=True)
+    items_json: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    subtotal: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False, default=Decimal("0"))
+    tax_rate: Mapped[Decimal] = mapped_column(Numeric(5, 4), nullable=False, default=Decimal("0"))
+    tax_amount: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False, default=Decimal("0"))
+    total: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False, default=Decimal("0"))
+    amount_paid: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False, default=Decimal("0"))
+    currency_code: Mapped[str] = mapped_column(String(3), nullable=False, default="INR")
+    status: Mapped[InvoiceStatus] = mapped_column(
+        SAEnum(InvoiceStatus), nullable=False, default=InvoiceStatus.draft
+    )
+    issue_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    due_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    paid_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    payment_method: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    recurring_config_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc)
+    )
+
+    workspace: Mapped["Workspace"] = relationship(back_populates="invoices")
+    user: Mapped["User"] = relationship("User")
+    payments: Mapped[list["InvoicePayment"]] = relationship(
+        back_populates="invoice", cascade="all, delete-orphan"
+    )
+
+
+class InvoicePayment(Base):
+    __tablename__ = "invoice_payments"
+    __table_args__ = (Index("idx_invpay_invoice", "invoice_id"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    invoice_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("invoices.id", ondelete="CASCADE"), nullable=False
+    )
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
+    )
+    amount: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
+    payment_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    payment_method: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    reference: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+    invoice: Mapped["Invoice"] = relationship(back_populates="payments")
+
+
+class InvoiceSequence(Base):
+    """Workspace-scoped sequential invoice numbering."""
+    __tablename__ = "invoice_sequences"
+
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="CASCADE"), primary_key=True
+    )
+    next_number: Mapped[int] = mapped_column(nullable=False, default=1)
+
+
+# ═══════════════════════════════════════════════════════════════════
+# PHASE 2 — EXPENSE APPROVAL WORKFLOWS
+# ═══════════════════════════════════════════════════════════════════
+
+class ApprovalPolicy(Base):
+    __tablename__ = "approval_policies"
+    __table_args__ = (Index("idx_ap_ws_active", "workspace_id", "is_active"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
+    )
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    min_amount: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False, default=Decimal("0"))
+    max_amount: Mapped[Decimal | None] = mapped_column(Numeric(14, 2), nullable=True)
+    required_approvers: Mapped[int] = mapped_column(nullable=False, default=1)
+    auto_approve_roles: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    categories: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc)
+    )
+
+    workspace: Mapped["Workspace"] = relationship(back_populates="approval_policies")
+
+
+class ExpenseApproval(Base):
+    __tablename__ = "expense_approvals"
+    __table_args__ = (
+        Index("idx_ea_ws_status", "workspace_id", "status"),
+        Index("idx_ea_ws_requester", "workspace_id", "requested_by"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
+    )
+    transaction_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("transactions.id", ondelete="CASCADE"), nullable=False
+    )
+    policy_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("approval_policies.id"), nullable=False
+    )
+    requested_by: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    status: Mapped[ApprovalStatus] = mapped_column(
+        SAEnum(ApprovalStatus), nullable=False, default=ApprovalStatus.pending
+    )
+    approved_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+    workspace: Mapped["Workspace"] = relationship("Workspace")
+    transaction: Mapped["Transaction"] = relationship("Transaction")
+    policy: Mapped["ApprovalPolicy"] = relationship("ApprovalPolicy")
+    requester: Mapped["User"] = relationship("User", foreign_keys=[requested_by])
+    approver: Mapped["User | None"] = relationship("User", foreign_keys=[approved_by])
+
+
+# ═══════════════════════════════════════════════════════════════════
+# PHASE 2 — CASH FLOW SCENARIO PLANNING
+# ═══════════════════════════════════════════════════════════════════
+
+class Scenario(Base):
+    __tablename__ = "scenarios"
+    __table_args__ = (Index("idx_scen_ws", "workspace_id"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    assumptions_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    result_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    is_baseline: Mapped[bool] = mapped_column(Boolean, default=False)
+    computed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc)
+    )
+
+    workspace: Mapped["Workspace"] = relationship(back_populates="scenarios")
+    user: Mapped["User"] = relationship("User")
+    sensitivity_analyses: Mapped[list["SensitivityAnalysis"]] = relationship(
+        back_populates="scenario", cascade="all, delete-orphan"
+    )
+
+
+class SensitivityAnalysis(Base):
+    __tablename__ = "sensitivity_analyses"
+    __table_args__ = (Index("idx_sa_scenario", "scenario_id"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
+    )
+    scenario_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("scenarios.id", ondelete="CASCADE"), nullable=False
+    )
+    variable_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    range_min: Mapped[float] = mapped_column(Float, nullable=False)
+    range_max: Mapped[float] = mapped_column(Float, nullable=False)
+    steps: Mapped[int] = mapped_column(nullable=False, default=10)
+    results_json: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+    scenario: Mapped["Scenario"] = relationship(back_populates="sensitivity_analyses")
+
+
+# ═══════════════════════════════════════════════════════════════════
+# PHASE 2 — SCENARIO SHARING
+# ═══════════════════════════════════════════════════════════════════
+
+class ScenarioShare(Base):
+    __tablename__ = "scenario_shares"
+    __table_args__ = (
+        Index("idx_ss_scenario", "scenario_id"),
+        Index("idx_ss_user", "shared_with_user_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    scenario_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("scenarios.id", ondelete="CASCADE"), nullable=False
+    )
+    shared_by_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id"), nullable=False
+    )
+    shared_with_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id"), nullable=False
+    )
+    permission: Mapped[str] = mapped_column(
+        SAEnum(SharePermission, name="share_permission_enum", create_constraint=False),
+        default=SharePermission.viewer,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+    scenario: Mapped["Scenario"] = relationship("Scenario")
+
+
+# ═══════════════════════════════════════════════════════════════════
+# PHASE 2 — VENDOR REVIEWS & PERFORMANCE SCORING
+# ═══════════════════════════════════════════════════════════════════
+
+class VendorReview(Base):
+    __tablename__ = "vendor_reviews"
+    __table_args__ = (
+        Index("idx_vr_vendor", "vendor_id"),
+        Index("idx_vr_ws", "workspace_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
+    )
+    vendor_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("vendors.id", ondelete="CASCADE"), nullable=False
+    )
+    reviewer_user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id"), nullable=False
+    )
+    delivery_rating: Mapped[int] = mapped_column(
+        SmallInteger, nullable=False
+    )  # 1-5
+    quality_rating: Mapped[int] = mapped_column(
+        SmallInteger, nullable=False
+    )  # 1-5
+    responsiveness_rating: Mapped[int] = mapped_column(
+        SmallInteger, nullable=False
+    )  # 1-5
+    cost_rating: Mapped[int] = mapped_column(
+        SmallInteger, nullable=False
+    )  # 1-5
+    comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    review_date: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+    vendor: Mapped["Vendor"] = relationship("Vendor")
+
+
+# ═══════════════════════════════════════════════════════════════════
+# PHASE 2 — VENDOR CONTRACT MANAGEMENT
+# ═══════════════════════════════════════════════════════════════════
+
+class VendorContract(Base):
+    __tablename__ = "vendor_contracts"
+    __table_args__ = (
+        Index("idx_vc_vendor_id", "vendor_id"),
+        Index("idx_vc_ws", "workspace_id"),
+        Index("idx_vc_end_date", "end_date"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
+    )
+    vendor_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("vendors.id", ondelete="CASCADE"), nullable=False
+    )
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    contract_type: Mapped[str] = mapped_column(
+        SAEnum(ContractType, name="contract_type_enum", create_constraint=False),
+        nullable=False,
+    )
+    start_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    end_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    value: Mapped[float] = mapped_column(Float, nullable=True)
+    auto_renew: Mapped[bool] = mapped_column(Boolean, default=False)
+    renewal_notice_days: Mapped[int] = mapped_column(nullable=False, default=30)
+    status: Mapped[str] = mapped_column(
+        SAEnum(ContractStatus, name="contract_status_enum", create_constraint=False),
+        default=ContractStatus.active,
+    )
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc)
+    )
+
+    vendor: Mapped["Vendor"] = relationship("Vendor")
 

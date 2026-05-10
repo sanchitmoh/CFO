@@ -55,8 +55,8 @@ const ROLE_META: Record<
   },
   investor: {
     label: "Investor",
-    color: "#A855F7",
-    bg: "#A855F718",
+    color: "#9B7CB8",
+    bg: "#9B7CB818",
     icon: Eye,
     permissions: ["View dashboard only", "See revenue, burn, runway, KPIs", "No raw transactions"],
   },
@@ -158,7 +158,7 @@ export default function UsersPage() {
         </div>
       )}
       {/* Header */}
-      <div className="flex items-start justify-between animate-fade-up">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 animate-fade-up">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: "var(--text)" }}>
             Team & Roles
@@ -246,8 +246,8 @@ export default function UsersPage() {
           </span>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
+          <table className="w-full text-sm" style={{ minWidth: 600 }}>
             <thead>
               <tr
                 className="text-xs uppercase tracking-wider text-left"

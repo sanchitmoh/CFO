@@ -17,9 +17,10 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models import Transaction, TransactionType
+from models import Transaction, TransactionType, Workspace
 from schemas import AnomalyOut, ScanResult
 from cache import cache_get, cache_set, make_cache_key
+from services.alert_engine import get_currency_symbol
 
 logger = logging.getLogger(__name__)
 
@@ -261,6 +262,9 @@ async def scan_anomalies(
     4. Otherwise, rebuild from DB and cache
     5. Score only un-scanned transactions when possible
     """
+    ws = await db.get(Workspace, workspace_id)
+    sym = get_currency_symbol(ws.currency if ws else "USD")
+
     # M-004: Per-category threshold calibration
     cat_thresholds = await calibrate_category_thresholds(
         workspace_id, db, explicit_override=z_threshold
@@ -361,8 +365,8 @@ async def scan_anomalies(
         if z_score >= effective_threshold:
             direction = "above" if float(txn.amount) > mean else "below"
             reason = (
-                f"Amount ${float(txn.amount):,.2f} is {z_score:.1f} standard deviations "
-                f"{direction} the {cat} average of ${mean:,.2f} "
+                f"Amount {sym}{float(txn.amount):,.2f} is {z_score:.1f} standard deviations "
+                f"{direction} the {cat} average of {sym}{mean:,.2f} "
                 f"(threshold: {effective_threshold:.1f}σ)"
             )
             txn.is_anomaly = True
@@ -403,8 +407,8 @@ async def scan_anomalies(
             effective_threshold = cat_thresholds.get(cat, default_threshold)
             direction = "above" if float(txn.amount) > mean else "below"
             reason = (
-                f"Noteworthy: Amount ${float(txn.amount):,.2f} is {z_score:.1f}σ "
-                f"{direction} the {cat} average of ${mean:,.2f} "
+                f"Noteworthy: Amount {sym}{float(txn.amount):,.2f} is {z_score:.1f}σ "
+                f"{direction} the {cat} average of {sym}{mean:,.2f} "
                 f"(below threshold {effective_threshold:.1f}σ, surfaced as top outlier)"
             )
             txn.is_anomaly = True
@@ -449,6 +453,9 @@ async def scan_anomalies_stream(
     This allows the router to emit SSE events without waiting for the
     full scan to complete.
     """
+    ws = await db.get(Workspace, workspace_id)
+    sym = get_currency_symbol(ws.currency if ws else "USD")
+
     cat_thresholds = await calibrate_category_thresholds(
         workspace_id, db, explicit_override=z_threshold
     )
@@ -537,8 +544,8 @@ async def scan_anomalies_stream(
             if z_score >= effective_threshold:
                 direction = "above" if float(txn.amount) > mean else "below"
                 reason = (
-                    f"Amount ${float(txn.amount):,.2f} is {z_score:.1f} standard deviations "
-                    f"{direction} the {cat} average of ${mean:,.2f} "
+                    f"Amount {sym}{float(txn.amount):,.2f} is {z_score:.1f} standard deviations "
+                    f"{direction} the {cat} average of {sym}{mean:,.2f} "
                     f"(threshold: {effective_threshold:.1f}\u03c3)"
                 )
                 txn.is_anomaly = True

@@ -73,7 +73,7 @@ export function CashFlowTab({ data, annotations, onAnnotate, onDrillDown, drillD
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <MetricCard label="Total Income" value={`$${data.total_income.toLocaleString()}`} icon={<ArrowUpCircle size={16} />} trend="up" subtext="Inflows" />
         <MetricCard label="Total Expenses" value={`$${data.total_expenses.toLocaleString()}`} icon={<ArrowDownCircle size={16} />} trend="down" subtext="Outflows" />
         <MetricCard label="Net Cash Flow" value={`$${net.toLocaleString()}`} icon={<DollarSign size={16} />} trend={net >= 0 ? "up" : "down"} subtext={net >= 0 ? "Positive" : "Negative"} />
@@ -190,9 +190,9 @@ export function ForecastTab({ forecast, scenario, onScenarioChange, loading, ann
             <LineChart
               labels={forecast.data_points.map((p) => p.period)}
               datasets={[
-                { label: "Income", values: forecast.data_points.map((p) => p.projected_income), color: "#4ade80" },
-                { label: "Expenses", values: forecast.data_points.map((p) => p.projected_expenses), color: "#fb7185" },
-                { label: "Net", values: forecast.data_points.map((p) => p.projected_net), color: "#6366f1" },
+                { label: "Income", values: forecast.data_points.map((p) => p.projected_income), color: "#5E9E7E" },
+                { label: "Expenses", values: forecast.data_points.map((p) => p.projected_expenses), color: "#C75050" },
+                { label: "Net", values: forecast.data_points.map((p) => p.projected_net), color: "#C9A962" },
               ]}
               height={280}
             />
@@ -200,7 +200,7 @@ export function ForecastTab({ forecast, scenario, onScenarioChange, loading, ann
           </div>
 
           {/* Confidence band summary */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {forecast.data_points.length > 0 && (() => {
               const last = forecast.data_points[forecast.data_points.length - 1];
               const cumNet = last.cumulative_net;
@@ -354,8 +354,8 @@ export function TrendsTab({ dashboard, loading, annotations, onAnnotate }: {
         <LineChart
           labels={labels}
           datasets={[
-            { label: "Income", values: dashboard.monthly_income, color: "#4ade80" },
-            { label: "Expenses", values: dashboard.monthly_expenses, color: "#fb7185" },
+            { label: "Income", values: dashboard.monthly_income, color: "#5E9E7E" },
+            { label: "Expenses", values: dashboard.monthly_expenses, color: "#C75050" },
           ]}
           height={280}
         />
@@ -433,7 +433,7 @@ export function CategoriesTab({ data, annotations, onAnnotate }: {
           {sorted.map((c, i) => {
             const pct = totalExp > 0 ? (c.total / totalExp) * 100 : 0;
             const barW = (c.total / maxCat) * 100;
-            const color = ["#6366f1", "#8b5cf6", "#a78bfa", "#c084fc", "#e879f9", "#f472b6", "#fb7185", "#f97316"][i % 8];
+            const color = ["#C9A962", "#6B8EC2", "#9B7CB8", "#D4965A", "#5E9E7E", "#C75050", "#8B7355", "#7BA3A3"][i % 8];
             return (
               <div key={c.category}>
                 <div className="flex justify-between text-xs mb-1">
@@ -487,10 +487,10 @@ export function CompareTab({ periodA, periodB, labelA, labelB, loading, annotati
         <h3 className="text-sm font-semibold mb-4" style={{ color: "var(--text)" }}>Visual Comparison</h3>
         <BarChart
           data={[
-            { label: `Income (${labelA})`, value: periodA.total_income, color: "#4ade80" },
-            { label: `Income (${labelB})`, value: periodB.total_income, color: "#2dd4bf" },
-            { label: `Expense (${labelA})`, value: periodA.total_expenses, color: "#fb7185" },
-            { label: `Expense (${labelB})`, value: periodB.total_expenses, color: "#f97316" },
+            { label: `Income (${labelA})`, value: periodA.total_income, color: "#5E9E7E" },
+            { label: `Income (${labelB})`, value: periodB.total_income, color: "#7BA3A3" },
+            { label: `Expense (${labelA})`, value: periodA.total_expenses, color: "#C75050" },
+            { label: `Expense (${labelB})`, value: periodB.total_expenses, color: "#D4965A" },
           ]}
           height={220}
         />

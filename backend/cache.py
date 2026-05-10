@@ -21,6 +21,8 @@ from config import settings
 logger = logging.getLogger(__name__)
 
 _pool: Optional[redis.Redis] = None
+_redis_down_until: float = 0.0  # circuit breaker: skip Redis until this time
+REDIS_CIRCUIT_BREAKER_SECONDS = 60  # after failure, skip Redis for 60s
 
 
 async def get_redis() -> redis.Redis:
@@ -29,18 +31,28 @@ async def get_redis() -> redis.Redis:
     PERF-005: Module-level singleton — redis.from_url returns a client backed
     by an internal connection pool. Created once, reused for all callers.
 
+    PERF-006: Circuit breaker — if Redis is unreachable, skip it for 60s
+    instead of retrying every request (prevents 5s connect timeout stalls).
+
     Handles both plain ``redis://`` (local) and ``rediss://`` (Upstash TLS)
     URLs transparently.
     """
-    global _pool
+    global _pool, _redis_down_until
+    import time as _time
+
+    # Circuit breaker: if Redis recently failed, raise immediately
+    if _redis_down_until > 0 and _time.monotonic() < _redis_down_until:
+        raise ConnectionError("Redis circuit breaker open — skipping for fast fail")
+
     if _pool is None:
         url = settings.REDIS_URL
 
         # Build connection kwargs
         kwargs: dict = {
             "decode_responses": True,
-            "socket_connect_timeout": 5,
-            "retry_on_timeout": True,
+            "socket_connect_timeout": 2,  # reduced from 5s
+            "socket_timeout": 2,
+            "retry_on_timeout": False,  # fail fast instead of retrying
         }
 
         # For rediss:// (TLS) — Upstash and similar hosted Redis providers
@@ -55,7 +67,8 @@ async def get_redis() -> redis.Redis:
             await _pool.ping()
             logger.info("Redis connected successfully (%s)", url.split("@")[-1] if "@" in url else url)
         except Exception as exc:
-            logger.warning("Redis startup ping failed: %s — caching will degrade gracefully", exc)
+            logger.warning("Redis startup ping failed: %s — circuit breaker engaged for %ds", exc, REDIS_CIRCUIT_BREAKER_SECONDS)
+            _redis_down_until = _time.monotonic() + REDIS_CIRCUIT_BREAKER_SECONDS
 
     return _pool
 

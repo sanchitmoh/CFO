@@ -2,6 +2,24 @@
 
 An AI-powered CFO-as-a-service that gives small businesses 24/7 access to financial insights, forecasting, and strategic guidance — at a fraction of the cost of hiring a full-time CFO.
 
+## 🎉 What's New - Phase 2 Release (May 2026)
+
+**5 Major Industry-Ready Features Added!**
+
+✨ **Vendor Management** - Track vendor relationships, payment terms, and automate payment reminders  
+✨ **Tax Management** - Quarterly estimates, external API integration (India + 50 countries), regime comparison  
+✨ **Invoice Management** - Create, send, and track invoices with automated payment reminders  
+✨ **Expense Approvals** - Multi-level approval workflows with policy-based automation  
+✨ **Scenario Planning** - What-if analysis with Monte Carlo simulations and sensitivity testing  
+
+**External Tax APIs Integrated:**
+- **FinCalculator.in** - India income tax, HRA, gratuity calculations
+- **rel.tax** - 50+ country tax calculations including US self-employment tax
+
+See **[docs/PHASE_2_FEATURES_STATUS.md](docs/PHASE_2_FEATURES_STATUS.md)** for complete details.
+
+---
+
 ## 🚨 Security Update - April 26, 2026
 
 **All security vulnerabilities have been fixed!** The application is now production-ready with enterprise-grade security controls.
@@ -68,7 +86,7 @@ A cloud-based SaaS platform where SMB owners connect their bank and accounting d
 
 ## Features
 
-### Core Features
+### Phase 1: Core Features
 
 | # | Feature | Description |
 |---|---------|-------------|
@@ -82,7 +100,7 @@ A cloud-based SaaS platform where SMB owners connect their bank and accounting d
 | F8 | **Multi-User Roles** | Admin, CFO, Accountant, Investor, and Employee roles with granular permissions |
 | F9 | **Integrations** | CSV upload, Plaid bank connections, and demo workspace with pre-loaded data |
 
-### Bonus Features
+### Phase 1: Bonus Features
 
 | # | Feature | Description |
 |---|---------|-------------|
@@ -90,6 +108,25 @@ A cloud-based SaaS platform where SMB owners connect their bank and accounting d
 | B | **"What Can I Afford?" Calculator** | Instant impact analysis for hiring, purchases, and investments on runway and cash position |
 | C | **Competitor Benchmarking** | Compare key metrics against industry averages (SaaS, D2C, Services) from static benchmark data |
 | D | **Audit Trail** | Enterprise-grade change log for every forecast run, budget change, alert dismissal, and report export |
+
+### Phase 2: Industry-Ready Features ✨ NEW
+
+| # | Feature | Description | Status |
+|---|---------|-------------|--------|
+| P1 | **Vendor Management** | Track vendor relationships, payment terms, auto-sync with transactions, payment reminders | ✅ Complete |
+| P2 | **Tax Management** | Quarterly tax estimates (IN/US), tax category mapping, jurisdiction-based calculations, external API integration | ✅ Complete |
+| P3 | **Invoice Management** | Create/send invoices, track payment status, automated reminders, aging reports | ✅ Complete |
+| P4 | **Expense Approvals** | Multi-level approval workflows, policy-based auto-approval, approval history tracking | ✅ Complete |
+| P5 | **Scenario Planning** | What-if analysis, Monte Carlo simulations, sensitivity analysis, scenario comparison | ✅ Complete |
+
+### Phase 2: External Tax Calculation APIs
+
+| API | Coverage | Features |
+|-----|----------|----------|
+| **FinCalculator.in** | India | Income tax (old/new regime), HRA exemption, gratuity calculations, regime comparison |
+| **rel.tax** | 50+ Countries | US self-employment tax, multi-country calculations, effective hourly rate analysis |
+
+**Supported Countries**: India, United States, United Kingdom, Canada, Germany, Australia, Singapore, UAE, and 42+ more
 
 ---
 
@@ -117,6 +154,11 @@ All endpoints are prefixed with `/api` and require Clerk JWT authentication.
 | Onboarding | `/api/onboarding` | Business type and workspace setup |
 | Plaid | `/api/plaid` | Bank connection and webhook handling |
 | Search | `/api/search` | Semantic search over financial data |
+| **Vendors** ✨ | `/api/vendors` | Vendor management, payment tracking, auto-sync |
+| **Tax** ✨ | `/api/tax` | Tax estimates, categories, jurisdictions, external API calculations |
+| **Invoices** ✨ | `/api/invoices` | Invoice creation, tracking, payment reminders |
+| **Approvals** ✨ | `/api/approvals` | Expense approval workflows and policies |
+| **Scenarios** ✨ | `/api/scenarios` | Scenario planning, Monte Carlo simulations |
 | Health | `/api/health` | System health check |
 
 ---
@@ -210,7 +252,7 @@ See **[docs/SECURITY_QUICK_START.md](docs/SECURITY_QUICK_START.md)** for complet
 
 ---
 
-## 📚 Documentation
+### 📚 Documentation
 
 ### Security Documentation
 - **[docs/README.md](docs/README.md)** - Documentation index
@@ -220,6 +262,13 @@ See **[docs/SECURITY_QUICK_START.md](docs/SECURITY_QUICK_START.md)** for complet
 - **[docs/SECURITY_FIXES_SUMMARY.md](docs/SECURITY_FIXES_SUMMARY.md)** - What was fixed
 - **[docs/IMPLEMENTATION_COMPLETE.md](docs/IMPLEMENTATION_COMPLETE.md)** - Implementation status
 - **[docs/checklist.md](docs/checklist.md)** - Production deployment checklist
+
+### Phase 2 Documentation ✨ NEW
+- **[docs/PHASE_2_FEATURES_STATUS.md](docs/PHASE_2_FEATURES_STATUS.md)** - Phase 2 implementation status
+- **[docs/TAX_CALCULATION_ARCHITECTURE.md](docs/TAX_CALCULATION_ARCHITECTURE.md)** - Tax calculation system architecture
+- **[docs/TAX_API_INTEGRATION_GUIDE.md](docs/TAX_API_INTEGRATION_GUIDE.md)** - Frontend tax API integration guide
+- **[docs/ENHANCED_REPORTS_FEATURE.md](docs/ENHANCED_REPORTS_FEATURE.md)** - Enhanced reporting capabilities
+- **[docs/REPORTS_ENHANCEMENT_SUMMARY.md](docs/REPORTS_ENHANCEMENT_SUMMARY.md)** - Reports feature summary
 
 ### Integrations
 - **[docs/INTEGRATIONS_QUICKSTART.md](docs/INTEGRATIONS_QUICKSTART.md)** - 5-minute email & Slack setup
@@ -281,6 +330,12 @@ CFO/
 │   │   ├── health_score_service.py
 │   │   ├── plaid_service.py    # Plaid banking integration
 │   │   ├── embedding_service.py # pgvector semantic search
+│   │   ├── vendor_service.py   # ✨ Vendor management (Phase 2)
+│   │   ├── tax_service.py      # ✨ Tax calculations (Phase 2)
+│   │   ├── tax_calculation_service.py # ✨ External tax APIs (Phase 2)
+│   │   ├── invoice_service.py  # ✨ Invoice management (Phase 2)
+│   │   ├── approval_service.py # ✨ Approval workflows (Phase 2)
+│   │   ├── scenario_service.py # ✨ Scenario planning (Phase 2)
 │   │   └── ...
 │   └── tests/                  # Test suite
 ├── frontend/
@@ -300,7 +355,12 @@ CFO/
 │   │   │   ├── investor/       # Investor-only dashboard
 │   │   │   ├── audit/          # Audit trail viewer
 │   │   │   ├── settings/       # Workspace settings
-│   │   │   └── users/          # User & role management
+│   │   │   ├── users/          # User & role management
+│   │   │   ├── vendors/        # ✨ Vendor management (Phase 2)
+│   │   │   ├── tax/            # ✨ Tax management (Phase 2)
+│   │   │   ├── invoices/       # ✨ Invoice management (Phase 2)
+│   │   │   ├── approvals/      # ✨ Expense approvals (Phase 2)
+│   │   │   └── scenarios/      # ✨ Scenario planning (Phase 2)
 │   │   ├── sign-in/            # Clerk sign-in page
 │   │   └── sign-up/            # Clerk sign-up page
 │   ├── components/             # Reusable UI components

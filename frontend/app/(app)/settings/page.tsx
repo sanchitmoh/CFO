@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { api, settingsApi } from "@/lib/api";
+import { useCurrency } from "@/components/CurrencyContext";
 import {
   Upload,
   CheckCircle,
@@ -14,6 +15,7 @@ import {
   FileSpreadsheet,
   Zap,
   Clock,
+  Briefcase,
 } from "lucide-react";
 
 type UploadStatus = "idle" | "loading" | "success" | "error";
@@ -28,7 +30,18 @@ interface AlertSettings {
   revenueDrop: number;
 }
 
+const SUPPORTED_CURRENCIES = [
+  { code: "USD", name: "US Dollar ($)" },
+  { code: "EUR", name: "Euro (€)" },
+  { code: "GBP", name: "British Pound (£)" },
+  { code: "INR", name: "Indian Rupee (₹)" },
+  { code: "CAD", name: "Canadian Dollar (C$)" },
+  { code: "AUD", name: "Australian Dollar (A$)" },
+  { code: "JPY", name: "Japanese Yen (¥)" },
+];
+
 export default function SettingsPage() {
+  const { currencyCode, setCurrencyCode } = useCurrency();
   const fileRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>("idle");
@@ -46,6 +59,9 @@ export default function SettingsPage() {
   });
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const [workspaceSaved, setWorkspaceSaved] = useState(false);
+  const [workspaceSaving, setWorkspaceSaving] = useState(false);
 
   // Load existing alert settings from backend on mount
   useEffect(() => {
@@ -92,6 +108,19 @@ export default function SettingsPage() {
     if (file) handleFile(file);
   };
 
+  const saveWorkspaceSettings = async () => {
+    setWorkspaceSaving(true);
+    try {
+      await settingsApi.updateWorkspace({ currency: currencyCode });
+      setWorkspaceSaved(true);
+      setTimeout(() => setWorkspaceSaved(false), 2500);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setWorkspaceSaving(false);
+    }
+  };
+
   const saveAlerts = async () => {
     setSaving(true);
     try {
@@ -128,6 +157,53 @@ export default function SettingsPage() {
           Connect data sources and configure notification preferences
         </p>
       </div>
+
+      {/* ── Workspace Settings ── */}
+      <section className="glass p-6 animate-fade-up">
+        <div className="flex items-center gap-3 mb-5">
+          <div
+            className="flex items-center justify-center"
+            style={{ width: 36, height: 36, borderRadius: 10, background: "var(--accent-soft)" }}
+          >
+            <Briefcase size={18} style={{ color: "var(--accent)" }} />
+          </div>
+          <div>
+            <h2 className="font-semibold text-sm" style={{ color: "var(--text)" }}>
+              Workspace Preferences
+            </h2>
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+              Manage your base currency and workspace details
+            </p>
+          </div>
+        </div>
+
+        <div className="max-w-xs">
+          <label className="block text-xs font-medium mb-2 uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+            Base Currency
+          </label>
+          <select
+            value={currencyCode}
+            onChange={(e) => setCurrencyCode(e.target.value)}
+            className="w-full p-2 rounded"
+            style={{ background: "var(--bg)", border: "1px solid var(--border)", color: "var(--text)" }}
+          >
+            {SUPPORTED_CURRENCIES.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <button
+          onClick={saveWorkspaceSettings}
+          disabled={workspaceSaving}
+          className="btn-primary mt-5 flex items-center gap-2"
+        >
+          {workspaceSaved ? <CheckCircle size={15} /> : <Clock size={15} />}
+          {workspaceSaved ? "Saved!" : "Save Preferences"}
+        </button>
+      </section>
 
       {/* ── CSV Upload ── */}
       <section className="glass p-6 animate-fade-up delay-1">

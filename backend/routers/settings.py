@@ -92,6 +92,10 @@ async def update_workspace(
     await db.commit()
     await db.refresh(ws)
 
+    # Invalidate cache if workspace settings (like currency) change
+    from cache import invalidate_workspace_cache
+    await invalidate_workspace_cache(str(user.workspace_id))
+
     await log_action(db, user, "workspace.update", "workspace", ws.id,
                      old_value=old_values,
                      new_value={"name": ws.name, "industry": ws.industry, "currency": ws.currency})

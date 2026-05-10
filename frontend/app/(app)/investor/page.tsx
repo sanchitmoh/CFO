@@ -122,7 +122,7 @@ export default function InvestorPage() {
         </div>
       )}
       {/* Header */}
-      <div className="flex items-start justify-between animate-fade-up">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 animate-fade-up">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <h1 className="text-2xl font-bold" style={{ color: "var(--text)" }}>
@@ -149,7 +149,7 @@ export default function InvestorPage() {
 
       {/* Health Score Banner */}
       <div
-        className="glass p-5 flex items-center justify-between animate-fade-up delay-1"
+        className="glass p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-up delay-1"
         style={{ borderColor: "var(--warning)33" }}
       >
         <div className="flex items-center gap-5">
@@ -192,7 +192,7 @@ export default function InvestorPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-up delay-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-up delay-2">
         {metrics.map(({ label, value, delta, positive, icon: Icon, color, bg, note }, i) => (
           <div key={label} className={`glass p-5 animate-fade-up delay-${i + 1}`}>
             <div className="flex items-center justify-between mb-3">
@@ -235,32 +235,34 @@ export default function InvestorPage() {
         <h3 className="text-sm font-semibold mb-4" style={{ color: "var(--text)" }}>
           Revenue vs. Expenses — Last 6 Months
         </h3>
-        <ResponsiveContainer width="100%" height={220}>
+        <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
+        <ResponsiveContainer width="100%" height={200} minWidth={400}>
           <AreaChart data={revenueTrend}>
             <defs>
               <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#00E5CC" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="#00E5CC" stopOpacity={0} />
+                <stop offset="0%" stopColor="#5E9E7E" stopOpacity={0.3} />
+                <stop offset="100%" stopColor="#5E9E7E" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="expGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#FF4D6A" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="#FF4D6A" stopOpacity={0} />
+                <stop offset="0%" stopColor="#C75050" stopOpacity={0.3} />
+                <stop offset="100%" stopColor="#C75050" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1E2A42" />
-            <XAxis dataKey="month" tick={{ fill: "#7A8BA7", fontSize: 11 }} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#232323" />
+            <XAxis dataKey="month" tick={{ fill: "#5C5750", fontSize: 11 }} />
             <YAxis
-              tick={{ fill: "#7A8BA7", fontSize: 11 }}
+              tick={{ fill: "#5C5750", fontSize: 11 }}
               tickFormatter={(v) => `$${(v / 1000).toFixed(0)}K`}
             />
             <Tooltip
-              contentStyle={{ background: "#141A2B", border: "1px solid #1E2A42", borderRadius: 8, fontSize: 12 }}
+              contentStyle={{ background: "#111111", border: "1px solid #232323", borderRadius: 8, fontSize: 12 }}
               formatter={(v) => fmt(Number(v ?? 0))}
             />
-            <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#00E5CC" fill="url(#revGrad)" strokeWidth={2} />
-            <Area type="monotone" dataKey="expenses" name="Expenses" stroke="#FF4D6A" fill="url(#expGrad)" strokeWidth={2} />
+            <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#5E9E7E" fill="url(#revGrad)" strokeWidth={2} />
+            <Area type="monotone" dataKey="expenses" name="Expenses" stroke="#C75050" fill="url(#expGrad)" strokeWidth={2} />
           </AreaChart>
         </ResponsiveContainer>
+        </div>
       </div>
 
       {/* Key KPI Grid */}
@@ -268,7 +270,7 @@ export default function InvestorPage() {
         <h3 className="text-sm font-semibold mb-4" style={{ color: "var(--text)" }}>
           Key Performance Indicators
         </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {kpis.map(({ label, value, trend, change }) => (
             <div
               key={label}

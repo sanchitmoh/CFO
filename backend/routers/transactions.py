@@ -13,9 +13,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from dependencies import get_rls_db
 from auth import get_current_user
-from models import User, Transaction, TransactionType, FileUpload, FileUploadStatus
 from schemas import TransactionCreate, TransactionOut, PaginatedTransactions
 from services.audit_service import log_action
+from services.exchange_rate_service import ExchangeRateService
+from models import User, Transaction, TransactionType, FileUpload, FileUploadStatus, Workspace
 from services.alert_engine import run_alert_engine
 from services.embedding_service import embed_transaction
 from services.file_storage import save_upload, compute_content_hash
@@ -97,12 +98,32 @@ async def create_transaction(
     db: AsyncSession = Depends(get_rls_db),
 ):
     """Create a new transaction."""
+    ws = await db.scalar(select(Workspace).where(Workspace.id == user.workspace_id))
+    base_currency = ws.currency if ws else "USD"
+
+    amount_original = data.amount_original if data.amount_original is not None else data.amount
+    currency_code = data.currency_code
+
+    if data.exchange_rate is not None:
+        exchange_rate = data.exchange_rate
+        amount_base = amount_original * exchange_rate
+    elif currency_code != base_currency:
+        rate = await ExchangeRateService.get_exchange_rate(db, currency_code, base_currency, target_date=data.date)
+        exchange_rate = float(rate)
+        amount_base = amount_original * exchange_rate
+    else:
+        amount_base = amount_original
+        exchange_rate = 1.0
+
     txn = Transaction(
         workspace_id=user.workspace_id,
         user_id=user.id,
         date=data.date,
         description=data.description,
-        amount=data.amount,
+        amount=amount_base,
+        currency_code=currency_code,
+        amount_original=amount_original,
+        exchange_rate=exchange_rate,
         category=data.category,
         type=TransactionType(data.type),
         account=data.account,
@@ -471,6 +492,11 @@ async def upload_csv(
     errors: list[dict] = []
     batch: list[Transaction] = []
 
+    # Fetch workspace base currency
+    ws = await db.scalar(select(Workspace).where(Workspace.id == user.workspace_id))
+    base_currency = ws.currency if ws else "USD"
+    exchange_rates_cache = {}
+
     for i, row in enumerate(reader):
         row_num = i + 2  # 1-indexed, +1 for header
 
@@ -511,11 +537,30 @@ async def upload_csv(
 
         # Validate amount
         raw_amount = mapped_row.get("amount", "")
+        currency_code = base_currency
+        
+        # Infer currency from the header mapped to "amount"
+        amount_header = mapping.get("amount", "")
+        if amount_header:
+            upper_header = amount_header.upper()
+            for iso in ["USD", "EUR", "GBP", "INR", "CAD", "AUD", "JPY", "SGD", "CHF"]:
+                if iso in upper_header:
+                    currency_code = iso
+                    break
+
         try:
             # Remove currency symbols and commas
-            clean_amount = raw_amount.replace("$", "").replace(",", "").replace("£", "").replace("€", "").strip()
-            amount = float(clean_amount)
-            if amount <= 0:
+            clean_amount = raw_amount.replace(",", "").strip()
+            if "€" in clean_amount: currency_code = "EUR"
+            elif "£" in clean_amount: currency_code = "GBP"
+            elif "₹" in clean_amount: currency_code = "INR"
+            elif "¥" in clean_amount: currency_code = "JPY"
+            elif "$" in clean_amount and currency_code not in ["CAD", "AUD", "SGD", "USD"]: 
+                currency_code = "USD"
+                
+            clean_amount = clean_amount.replace("$", "").replace("£", "").replace("€", "").replace("₹", "").replace("¥", "").strip()
+            amount_val = float(clean_amount)
+            if amount_val <= 0:
                 raise ValueError("must be positive")
         except ValueError:
             errors.append({"row": row_num, "error": f"Invalid amount '{raw_amount}'. Must be a positive number."})
@@ -531,12 +576,28 @@ async def upload_csv(
             else:
                 raw_type = "income"  # Default to income if unclear
 
+        # Convert amount to base currency
+        amount_original = amount_val
+        if currency_code != base_currency:
+            cache_key = (currency_code, parsed_date.date())
+            if cache_key not in exchange_rates_cache:
+                rate = await ExchangeRateService.get_exchange_rate(db, currency_code, base_currency, target_date=parsed_date.date())
+                exchange_rates_cache[cache_key] = float(rate)
+            exchange_rate = exchange_rates_cache[cache_key]
+            amount_base = amount_original * exchange_rate
+        else:
+            amount_base = amount_original
+            exchange_rate = 1.0
+
         txn = Transaction(
             workspace_id=user.workspace_id,
             user_id=user.id,
             date=parsed_date,
             description=mapped_row.get("description") or "CSV Import",
-            amount=abs(amount),  # Always store as positive
+            amount=abs(amount_base),  # Always store as positive base currency
+            currency_code=currency_code,
+            amount_original=abs(amount_original),
+            exchange_rate=exchange_rate,
             category=mapped_row.get("category") or "Uncategorized",
             type=TransactionType(raw_type),
             account=mapped_row.get("account") or "Main Account",
@@ -576,6 +637,16 @@ async def upload_csv(
             await run_alert_engine(bg_db, user.workspace_id)
 
     background_tasks.add_task(_run_alerts)
+
+    # AUTO-SYNC: Create Vendor records from transaction vendor names
+    async def _sync_vendors():
+        from database import get_rls_db_context
+        from services.vendor_service import sync_vendors_from_transactions
+        async with get_rls_db_context(str(user.workspace_id)) as bg_db:
+            await sync_vendors_from_transactions(bg_db, user.workspace_id)
+            await bg_db.commit()
+
+    background_tasks.add_task(_sync_vendors)
 
     return {
         "imported": count,

@@ -261,6 +261,11 @@ async def export_pdf(
         db, user.workspace_id, start, end
     )
 
+    from models import Workspace
+    from services.alert_engine import get_currency_symbol
+    ws = await db.scalar(select(Workspace).where(Workspace.id == user.workspace_id))
+    sym = get_currency_symbol(ws.currency if ws else "USD")
+
     # ── Build PDF in memory ───────────────────────────────────────
 
     buf = io.BytesIO()
@@ -287,9 +292,9 @@ async def export_pdf(
     net = income - expenses
     summary_data = [
         ["Metric", "Amount"],
-        ["Total Income", f"${income:,.2f}"],
-        ["Total Expenses", f"${expenses:,.2f}"],
-        ["Net Cash Flow", f"${net:,.2f}"],
+        ["Total Income", f"{sym}{income:,.2f}"],
+        ["Total Expenses", f"{sym}{expenses:,.2f}"],
+        ["Net Cash Flow", f"{sym}{net:,.2f}"],
         ["Transactions", f"{txn_count:,}"],
     ]
     summary_table = Table(summary_data, colWidths=[3 * inch, 2.5 * inch])
@@ -312,7 +317,7 @@ async def export_pdf(
         elements.append(Paragraph("Expense Breakdown by Category", styles["Heading2"]))
         cat_data = [["Category", "Total", "Count"]]
         for cat in expense_by_cat:
-            cat_data.append([cat.category, f"${cat.total:,.2f}", str(cat.count)])
+            cat_data.append([cat.category, f"{sym}{cat.total:,.2f}", str(cat.count)])
 
         cat_table = Table(cat_data, colWidths=[2.5 * inch, 2 * inch, 1 * inch])
         cat_table.setStyle(TableStyle([
@@ -334,7 +339,7 @@ async def export_pdf(
         elements.append(Paragraph("Top Vendors", styles["Heading2"]))
         vendor_data = [["Vendor", "Total", "Count"]]
         for v in top_vendors:
-            vendor_data.append([v["vendor"], f"${v['total']:,.2f}", str(v["count"])])
+            vendor_data.append([v["vendor"], f"{sym}{v['total']:,.2f}", str(v["count"])])
 
         vendor_table = Table(vendor_data, colWidths=[2.5 * inch, 2 * inch, 1 * inch])
         vendor_table.setStyle(TableStyle([
