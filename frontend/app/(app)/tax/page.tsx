@@ -7,16 +7,13 @@ import type {
   EffectiveHourlyRateResponse,
 } from "@/lib/types";
 import { Receipt, Plus, X, Globe, Calculator, TrendingDown, Clock, IndianRupee, DollarSign, ChevronDown, Filter } from "lucide-react";
-
-const fmt = (n: number, cur = "INR") =>
-  new Intl.NumberFormat(cur === "USD" ? "en-US" : "en-IN", {
-    style: "currency", currency: cur, maximumFractionDigits: 0,
-  }).format(n);
+import { useCurrency } from "@/components/CurrencyContext";
 
 type Tab = "overview" | "categories" | "jurisdictions" | "calculator";
 type CalcMode = "india" | "india-hra" | "india-gratuity" | "us" | "global" | "compare" | "hourly";
 
 export default function TaxPage() {
+  const { formatAmount: fmt } = useCurrency();
   const [estimates, setEstimates] = useState<TaxEstimate[]>([]);
   const [categories, setCategories] = useState<TaxCategory[]>([]);
   const [jurisdictions, setJurisdictions] = useState<TaxJurisdiction[]>([]);

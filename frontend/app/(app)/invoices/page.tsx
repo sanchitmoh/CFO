@@ -4,8 +4,7 @@ import { invoicesApi } from "@/lib/api";
 import type { Invoice, AgingReport } from "@/lib/types";
 import { FileCheck, Plus, X, Send } from "lucide-react";
 import InvoiceForm from "@/components/InvoiceForm";
-
-const fmt = (n: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
+import { useCurrency } from "@/components/CurrencyContext";
 
 const STATUS_COLORS: Record<string, { bg: string; fg: string }> = {
   draft: { bg: "var(--surface-hover)", fg: "var(--text-dim)" },
@@ -17,6 +16,7 @@ const STATUS_COLORS: Record<string, { bg: string; fg: string }> = {
 };
 
 export default function InvoicesPage() {
+  const { formatAmount: fmt } = useCurrency();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [aging, setAging] = useState<AgingReport | null>(null);
   const [loading, setLoading] = useState(true);

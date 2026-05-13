@@ -14,6 +14,7 @@ import {
   Target, BarChart3, Activity, ArrowDownRight, ArrowUpRight,
   ChevronDown, Zap,
 } from "lucide-react";
+import { useCurrency } from "@/components/CurrencyContext";
 
 const SCENARIOS = [
   { value: "base", label: "Base Case", icon: Target, color: "#C9A962" },
@@ -28,17 +29,7 @@ const MONTH_OPTIONS = [
   { value: 24, label: "24 mo" },
 ];
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat("en-IN", {
-    style: "currency", currency: "INR",
-    maximumFractionDigits: 0, notation: Math.abs(n) >= 1e6 ? "compact" : "standard",
-  }).format(n);
 
-const fmtShort = (n: number) =>
-  new Intl.NumberFormat("en-IN", {
-    style: "currency", currency: "INR",
-    maximumFractionDigits: 1, notation: "compact",
-  }).format(n);
 
 const formatPeriod = (p: string) => {
   const [y, m] = p.split("-");
@@ -48,6 +39,7 @@ const formatPeriod = (p: string) => {
 
 /* ── Custom Tooltip ─────────────────────────────────────────────── */
 const ChartTooltip = ({ active, payload, label }: any) => {
+  const { formatAmount: fmt } = useCurrency();
   if (!active || !payload?.length) return null;
   return (
     <div style={{
@@ -105,6 +97,7 @@ export default function ForecastingPage() {
   const [data, setData] = useState<ForecastResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const { formatAmount: fmt, formatCompact: fmtShort } = useCurrency();
   const [revenueGrowth, setRevenueGrowth] = useState(12);
   const [activeTab, setActiveTab] = useState<"chart" | "table">("chart");
 

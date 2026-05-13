@@ -21,6 +21,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { useCurrency } from "@/components/CurrencyContext";
 
 // Investor view: read-only, clean, professional — no raw transactions
 
@@ -42,8 +43,6 @@ interface KPI {
   change: string;
 }
 
-
-
 const ICON_MAP: Record<string, React.ElementType> = {
   "Monthly Revenue": TrendingUp,
   "Burn Rate": Flame,
@@ -58,14 +57,8 @@ const COLOR_MAP: Record<string, [string, string]> = {
   "Cash Balance": ["var(--info)", "var(--info-soft)"],
 };
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(n);
-
 export default function InvestorPage() {
+  const { formatAmount: fmt } = useCurrency();
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [revenueTrend, setRevenueTrend] = useState<{ month: string; revenue: number; expenses: number }[]>([]);
   const [kpis, setKpis] = useState<KPI[]>([]);

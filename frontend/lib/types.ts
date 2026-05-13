@@ -785,6 +785,10 @@ export interface MonteCarloResult {
   simulations?: number;      // Keep for backward compatibility
   distribution: { percentile: number; runway: number; cash: number }[];
   histogram?: { bucket: string; count: number }[];  // Keep for backward compatibility
+  // Baseline transparency — inputs that drove the simulation
+  baseline_monthly_income?: number;
+  baseline_monthly_expense?: number;
+  starting_cash?: number;
 }
 
 // ── Scenario Templates ───────────────────────────────────────────

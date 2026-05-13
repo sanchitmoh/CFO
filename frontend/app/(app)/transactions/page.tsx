@@ -12,15 +12,10 @@ import {
   Search,
   X,
 } from "lucide-react";
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 2,
-  }).format(n);
+import { useCurrency } from "@/components/CurrencyContext";
 
 export default function TransactionsPage() {
+  const { formatAmount: fmt } = useCurrency();
   const { getToken } = useAuth();
   const [txs, setTxs] = useState<TransactionOut[]>([]);
   const [loading, setLoading] = useState(true);

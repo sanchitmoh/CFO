@@ -34,17 +34,10 @@ const STATUS_META: Record<
   behind: { label: "Behind", color: "var(--danger)", bg: "var(--danger-soft)", icon: Clock },
   completed: { label: "Completed", color: "var(--accent)", bg: "var(--accent-soft)", icon: CheckCircle },
 };
-
-
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(n);
+import { useCurrency } from "@/components/CurrencyContext";
 
 export default function GoalsPage() {
+  const { formatAmount: fmt } = useCurrency();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

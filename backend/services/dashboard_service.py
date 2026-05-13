@@ -215,13 +215,13 @@ async def get_dashboard_summary(
     # Each slot = one month, slot 0 = cutoff month, slot N-1 = latest month.
     cutoff_year = cutoff.year
     cutoff_month = cutoff.month
-    monthly_income = [0.0] * months
-    monthly_expenses = [0.0] * months
+    monthly_income = [0.0] * (months + 1)
+    monthly_expenses = [0.0] * (months + 1)
     for row in monthly_result:
         y, m = int(row[0]), int(row[1])
         # Relative offset: how many months after the cutoff month
         idx = (y - cutoff_year) * 12 + (m - cutoff_month)
-        if 0 <= idx < months:
+        if 0 <= idx <= months:
             if row[2] == TransactionType.income:
                 monthly_income[idx] = float(row[3] or 0)
             else:

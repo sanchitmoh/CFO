@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { calculatorApi } from "@/lib/api";
 import type { AffordabilityResponse } from "@/lib/types";
+import { useCurrency } from "@/components/CurrencyContext";
 
 type Frequency = "one-time" | "monthly" | "annual";
 
@@ -29,13 +30,6 @@ interface AffordResult {
   suggestion: string;
   verdict: Verdict;
 }
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(n);
 
 /** Map frontend frequency values to backend enum format. */
 const freqToBackend = (f: Frequency): "one_time" | "monthly" | "annual" =>
@@ -69,6 +63,7 @@ function toAffordResult(
 }
 
 export default function CalculatorPage() {
+  const { formatAmount: fmt } = useCurrency();
   const [form, setForm] = useState({
     name: "",
     amount: "",

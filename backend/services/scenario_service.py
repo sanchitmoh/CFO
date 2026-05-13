@@ -157,32 +157,72 @@ def get_template(template_id: str) -> ScenarioTemplate | None:
 # ── Baseline Financials ─────────────────────────────────────────────
 
 async def _get_baseline_financials(db: AsyncSession, ws_id: uuid.UUID, months: int = 6):
-    """Get average monthly income/expenses and estimated current cash from recent history."""
+    """Get median monthly income/expenses and estimated current cash.
+
+    Uses per-month medians instead of all-time means to avoid distortion
+    from outlier months (e.g. one-time funding events, large one-off payments).
+    """
+    from sqlalchemy import extract, cast, String, literal_column
+
+    # Group transactions by calendar month and type to get monthly totals
+    month_label = func.to_char(Transaction.date, literal_column("'YYYY-MM'"))
     result = await db.execute(
-        select(Transaction.type, func.sum(Transaction.amount)).where(
+        select(
+            month_label.label("month"),
+            Transaction.type,
+            func.sum(Transaction.amount).label("total"),
+        ).where(
             Transaction.workspace_id == ws_id
-        ).group_by(Transaction.type)
+        ).group_by(
+            month_label, Transaction.type
+        ).order_by(month_label)
     )
-    totals = {row[0]: float(row[1] or 0) for row in result}
-    # Get date range to compute actual months of data
-    dr = await db.execute(select(func.min(Transaction.date), func.max(Transaction.date)).where(
-        Transaction.workspace_id == ws_id))
-    dates = dr.one_or_none()
-    if dates and dates[0] and dates[1]:
-        delta = (dates[1] - dates[0]).days
-        actual_months = max(delta / 30, 1)
-    else:
-        actual_months = months
-    avg_income = totals.get(TransactionType.income, 0) / actual_months
-    avg_expense = totals.get(TransactionType.expense, 0) / actual_months
-    # Current cash: use recent 3-month net as a proxy for current cash position.
-    # All-time (income - expense) is misleading because it doesn't account for
-    # external funding, opening balances, or investor capital.
-    recent_months = min(actual_months, 3)
-    current_cash = (avg_income - avg_expense) * recent_months
-    # Floor at zero — if the company is operating, it has some cash.
-    # A negative starting point should only come from explicit user input.
-    current_cash = max(current_cash, 0)
+    rows = list(result)
+
+    # Build per-month income/expense lists
+    monthly_income: list[float] = []
+    monthly_expense: list[float] = []
+    month_data: dict[str, dict[str, float]] = {}
+    for row in rows:
+        m, t, total = row[0], row[1], float(row[2] or 0)
+        if m not in month_data:
+            month_data[m] = {"income": 0.0, "expense": 0.0}
+        key = t if isinstance(t, str) else t.value
+        month_data[m][key] = total
+
+    for m in sorted(month_data.keys()):
+        monthly_income.append(month_data[m].get("income", 0.0))
+        monthly_expense.append(month_data[m].get("expense", 0.0))
+
+    if not monthly_income:
+        logger.warning("No transaction data for workspace %s — MC will produce zero results", ws_id)
+        return 0.0, 0.0, 0.0
+
+    # Use median to resist outlier distortion (e.g. one-time ₹5cr funding month)
+    def median(vals: list[float]) -> float:
+        s = sorted(vals)
+        n = len(s)
+        if n == 0:
+            return 0.0
+        mid = n // 2
+        return (s[mid] + s[mid - 1]) / 2 if n % 2 == 0 else s[mid]
+
+    avg_income = median(monthly_income)
+    avg_expense = median(monthly_expense)
+
+    # Current cash: use recent 3-month average net as a proxy.
+    # Floor at zero — negative starting point should only come from explicit user input.
+    recent_inc = monthly_income[-3:] if len(monthly_income) >= 3 else monthly_income
+    recent_exp = monthly_expense[-3:] if len(monthly_expense) >= 3 else monthly_expense
+    recent_net = sum(recent_inc) - sum(recent_exp)
+    current_cash = max(recent_net, 0)
+
+    logger.info(
+        "MC baseline ws=%s: median_income=%.0f  median_expense=%.0f  net=%.0f  "
+        "recent_3mo_net=%.0f  starting_cash=%.0f  months_data=%d",
+        ws_id, avg_income, avg_expense, avg_income - avg_expense,
+        recent_net, current_cash, len(monthly_income),
+    )
     return avg_income, avg_expense, current_cash
 
 
@@ -376,6 +416,9 @@ async def run_monte_carlo(db: AsyncSession, ws_id: uuid.UUID, req: MonteCarloReq
         p90_cash=cashes[int(n * 0.9)],
         distribution=[{"percentile": p, "runway": runways[int(n * p / 100)], "cash": cashes[int(n * p / 100)]}
                        for p in range(10, 100, 10)],
+        baseline_monthly_income=round(avg_inc, 2),
+        baseline_monthly_expense=round(avg_exp, 2),
+        starting_cash=round(cash, 2),
     )
 
 

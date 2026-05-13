@@ -7,6 +7,7 @@ PERF-002: Adds versioned cache keys — cache invalidation increments a version
 counter instead of scanning/deleting keys. Old entries expire naturally via TTL.
 INFRA-002: Redis operations degrade gracefully with circuit breaker pattern.
 """
+import asyncio
 import json
 import hashlib
 import logging
@@ -22,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 _pool: Optional[redis.Redis] = None
 _redis_down_until: float = 0.0  # circuit breaker: skip Redis until this time
-REDIS_CIRCUIT_BREAKER_SECONDS = 60  # after failure, skip Redis for 60s
+REDIS_CIRCUIT_BREAKER_SECONDS = 30  # after failure, skip Redis for 30s (reduced from 60s)
 
 
 async def get_redis() -> redis.Redis:
@@ -50,9 +51,10 @@ async def get_redis() -> redis.Redis:
         # Build connection kwargs
         kwargs: dict = {
             "decode_responses": True,
-            "socket_connect_timeout": 2,  # reduced from 5s
-            "socket_timeout": 2,
-            "retry_on_timeout": False,  # fail fast instead of retrying
+            "socket_connect_timeout": 5,  # increased for Upstash cloud latency
+            "socket_timeout": 5,
+            "retry_on_timeout": True,  # retry once for transient network issues
+            "retry_on_error": [ConnectionError, TimeoutError],
         }
 
         # For rediss:// (TLS) — Upstash and similar hosted Redis providers
@@ -63,9 +65,14 @@ async def get_redis() -> redis.Redis:
         _pool = redis.from_url(url, **kwargs)
 
         # Startup connectivity check — log once so silent failures are visible
+        # Use a shorter timeout for the initial ping to avoid blocking startup
         try:
-            await _pool.ping()
+            await asyncio.wait_for(_pool.ping(), timeout=3.0)
             logger.info("Redis connected successfully (%s)", url.split("@")[-1] if "@" in url else url)
+            _redis_down_until = 0.0  # reset circuit breaker on success
+        except asyncio.TimeoutError:
+            logger.warning("Redis startup ping timeout (3s) — circuit breaker engaged for %ds. Redis may still work for subsequent requests.", REDIS_CIRCUIT_BREAKER_SECONDS)
+            _redis_down_until = _time.monotonic() + REDIS_CIRCUIT_BREAKER_SECONDS
         except Exception as exc:
             logger.warning("Redis startup ping failed: %s — circuit breaker engaged for %ds", exc, REDIS_CIRCUIT_BREAKER_SECONDS)
             _redis_down_until = _time.monotonic() + REDIS_CIRCUIT_BREAKER_SECONDS

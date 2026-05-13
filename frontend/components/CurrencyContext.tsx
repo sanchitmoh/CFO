@@ -7,6 +7,7 @@ interface CurrencyContextType {
   currencyCode: string;
   setCurrencyCode: (code: string) => void;
   formatAmount: (value: number) => string;
+  formatCompact: (value: number) => string;
   isLoading: boolean;
 }
 
@@ -39,6 +40,7 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
           style: "currency",
           currency: currencyCode,
           minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
         }).format(value);
       } catch (e) {
         // Fallback if currency code is somehow invalid
@@ -46,13 +48,34 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
           style: "currency",
           currency: "USD",
           minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        }).format(value);
+      }
+    };
+  }, [currencyCode]);
+
+  const formatCompact = useMemo(() => {
+    return (value: number) => {
+      try {
+        return new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: currencyCode,
+          maximumFractionDigits: 1,
+          notation: "compact" as const,
+        }).format(value);
+      } catch (e) {
+        return new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "USD",
+          maximumFractionDigits: 1,
+          notation: "compact" as const,
         }).format(value);
       }
     };
   }, [currencyCode]);
 
   return (
-    <CurrencyContext.Provider value={{ currencyCode, setCurrencyCode, formatAmount, isLoading }}>
+    <CurrencyContext.Provider value={{ currencyCode, setCurrencyCode, formatAmount, formatCompact, isLoading }}>
       {children}
     </CurrencyContext.Provider>
   );

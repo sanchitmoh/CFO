@@ -3,8 +3,10 @@ import { useEffect, useState, useCallback } from "react";
 import { approvalsApi } from "@/lib/api";
 import type { ExpenseApproval, ApprovalPolicy } from "@/lib/types";
 import { CheckSquare, Plus, X, Check, XCircle } from "lucide-react";
+import { useCurrency } from "@/components/CurrencyContext";
 
 export default function ApprovalsPage() {
+  const { formatAmount: fmt } = useCurrency();
   const [approvals, setApprovals] = useState<ExpenseApproval[]>([]);
   const [policies, setPolicies] = useState<ApprovalPolicy[]>([]);
   const [loading, setLoading] = useState(true);
@@ -121,8 +123,8 @@ export default function ApprovalsPage() {
                     <span className={`badge ${p.is_active ? "badge-income" : "badge-critical"}`}>{p.is_active ? "Active" : "Inactive"}</span>
                   </div>
                   <p className="text-xs" style={{ color:"var(--text-muted)" }}>
-                    Range: {new Intl.NumberFormat("en-IN", { style:"currency", currency:"INR", maximumFractionDigits:0 }).format(p.min_amount)}
-                    {p.max_amount ? ` — ${new Intl.NumberFormat("en-IN", { style:"currency", currency:"INR", maximumFractionDigits:0 }).format(p.max_amount)}` : "+"}
+                    Range: {fmt(p.min_amount)}
+                    {p.max_amount ? ` — ${fmt(p.max_amount)}` : "+"}
                   </p>
                   {p.categories.length > 0 && <div className="flex gap-1 mt-2 flex-wrap">{p.categories.map(c => <span key={c} className="badge" style={{ background:"var(--surface-hover)", color:"var(--text-dim)", fontSize:10 }}>{c}</span>)}</div>}
                 </div>

@@ -5,15 +5,10 @@ import { useAuth } from "@clerk/nextjs";
 import { api } from "@/lib/api";
 import type { Budget } from "@/lib/types";
 import { Plus, X, Wallet } from "lucide-react";
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(n);
+import { useCurrency } from "@/components/CurrencyContext";
 
 export default function BudgetsPage() {
+  const { formatAmount: fmt } = useCurrency();
   const { getToken } = useAuth();
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [loading, setLoading] = useState(true);

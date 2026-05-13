@@ -3,10 +3,10 @@ import { useEffect, useState, useCallback } from "react";
 import { scenariosApi } from "@/lib/api";
 import type { Scenario, MonteCarloResult } from "@/lib/types";
 import { GitBranch, Plus, X, Trash2, BarChart3 } from "lucide-react";
-
-const fmt = (n: number) => new Intl.NumberFormat("en-IN", { style:"currency", currency:"INR", maximumFractionDigits:0 }).format(n);
+import { useCurrency } from "@/components/CurrencyContext";
 
 export default function ScenariosPage() {
+  const { formatAmount: fmt } = useCurrency();
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [mcResult, setMcResult] = useState<MonteCarloResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -98,11 +98,15 @@ export default function ScenariosPage() {
                 </div>
                 {s.description && <p className="text-xs mb-3" style={{ color:"var(--text-muted)" }}>{s.description}</p>}
                 <div className="space-y-1 text-xs" style={{ color:"var(--text-muted)" }}>
+                  {s.assumptions ? (<>
                   <div className="flex justify-between"><span>Revenue Growth</span><span style={{ color: s.assumptions.revenue_growth_pct >= 0 ? "var(--success)" : "var(--danger)" }}>{(s.assumptions.revenue_growth_pct * 100).toFixed(1)}%</span></div>
                   <div className="flex justify-between"><span>Expense Growth</span><span style={{ color: s.assumptions.expense_change_pct <= 0 ? "var(--success)" : "var(--warning)" }}>{(s.assumptions.expense_change_pct * 100).toFixed(1)}%</span></div>
                   <div className="flex justify-between"><span>Projection Period</span><span>{s.months_ahead} months</span></div>
-                  {s.assumptions.one_time_income && <div className="flex justify-between"><span>One-time Income</span><span style={{ color:"var(--success)" }}>{fmt(s.assumptions.one_time_income)}</span></div>}
-                  {s.assumptions.one_time_expense && <div className="flex justify-between"><span>One-time Expense</span><span style={{ color:"var(--danger)" }}>{fmt(s.assumptions.one_time_expense)}</span></div>}
+                  {s.assumptions.one_time_income ? <div className="flex justify-between"><span>One-time Income</span><span style={{ color:"var(--success)" }}>{fmt(s.assumptions.one_time_income)}</span></div> : null}
+                  {s.assumptions.one_time_expense ? <div className="flex justify-between"><span>One-time Expense</span><span style={{ color:"var(--danger)" }}>{fmt(s.assumptions.one_time_expense)}</span></div> : null}
+                  </>) : (
+                  <div className="flex justify-between"><span>Projection Period</span><span>{s.months_ahead} months</span></div>
+                  )}
                 </div>
               </div>
             ))}
@@ -141,25 +145,72 @@ export default function ScenariosPage() {
                 </div>
               ))}
             </div>
-            {/* Distribution Chart */}
-            <div className="glass p-5">
-              <p className="text-xs uppercase tracking-wider mb-3" style={{ color:"var(--text-dim)" }}>
-                Runway Distribution ({(mcResult.num_simulations || mcResult.simulations || 0).toLocaleString()} simulations, {mcResult.months_ahead || 12} months)
-              </p>
-              <div className="flex items-end gap-1" style={{ height: 140 }}>
-                {(mcResult.distribution || []).map((d, i) => {
-                  const distribution = mcResult.distribution || [];
-                  const maxRunway = distribution.length > 0 ? Math.max(...distribution.map(x => x.runway)) : 0;
-                  const pct = maxRunway > 0 ? (d.runway / maxRunway) * 100 : 0;
-                  return (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-1" title={`P${d.percentile}: ${d.runway} months, ${fmt(d.cash)}`}>
-                      <div className="w-full rounded-t-sm transition-all" style={{ height: `${pct}%`, background: `hsl(${120 * pct / 100}, 60%, 45%)`, minHeight: 2, opacity: 0.8 + (pct / 500) }}/>
-                      <span className="text-[9px]" style={{ color:"var(--text-dim)" }}>P{d.percentile}</span>
+            {/* Baseline Inputs Transparency */}
+            {(mcResult.baseline_monthly_income != null || mcResult.baseline_monthly_expense != null) && (
+              <div className="glass p-4" style={{ borderLeft: "3px solid var(--accent)" }}>
+                <p className="text-xs uppercase tracking-wider mb-3" style={{ color:"var(--text-dim)" }}>Simulation Inputs (auto-detected from transactions)</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  {[
+                    { label: "Median Income / mo", value: fmt(mcResult.baseline_monthly_income ?? 0), color: "var(--success)" },
+                    { label: "Median Expense / mo", value: fmt(mcResult.baseline_monthly_expense ?? 0), color: "var(--danger)" },
+                    { label: "Starting Cash", value: fmt(mcResult.starting_cash ?? 0), color: "var(--accent)" },
+                    { label: "Monthly Burn", value: fmt((mcResult.baseline_monthly_income ?? 0) - (mcResult.baseline_monthly_expense ?? 0)), color: (mcResult.baseline_monthly_income ?? 0) >= (mcResult.baseline_monthly_expense ?? 0) ? "var(--success)" : "var(--danger)" },
+                  ].map(kpi => (
+                    <div key={kpi.label} className="text-center">
+                      <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color:"var(--text-dim)" }}>{kpi.label}</p>
+                      <p className="text-sm font-semibold" style={{ color: kpi.color }}>{kpi.value}</p>
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
+            {/* Distribution Chart — adaptive: shows cash when runway is uniformly zero */}
+            {(() => {
+              const dist = mcResult.distribution || [];
+              const allRunwayZero = dist.length > 0 && dist.every(d => d.runway === 0);
+              const chartLabel = allRunwayZero
+                ? `Cash Position Distribution (${(mcResult.num_simulations || mcResult.simulations || 0).toLocaleString()} sims, ${mcResult.months_ahead || 12}mo)`
+                : `Runway Distribution (${(mcResult.num_simulations || mcResult.simulations || 0).toLocaleString()} sims, ${mcResult.months_ahead || 12}mo)`;
+
+              return (
+                <div className="glass p-5">
+                  <p className="text-xs uppercase tracking-wider mb-3" style={{ color:"var(--text-dim)" }}>{chartLabel}</p>
+                  <div className="flex items-end gap-1" style={{ height: 160 }}>
+                    {dist.map((d, i) => {
+                      if (allRunwayZero) {
+                        // Cash distribution: normalize absolute values so bars are relative
+                        const absCash = dist.map(x => Math.abs(x.cash));
+                        const maxAbs = Math.max(...absCash, 1);
+                        const minAbs = Math.min(...absCash);
+                        const range = maxAbs - minAbs || 1;
+                        // Invert: smallest absolute value = tallest bar (least negative = best)
+                        const normalized = 1 - (Math.abs(d.cash) - minAbs) / range;
+                        const barH = 20 + normalized * 80; // 20% min height
+                        // Color: red for worst, amber for mid, green-ish for best
+                        const hue = normalized * 60; // 0=red, 60=yellow
+                        return (
+                          <div key={i} className="flex-1 flex flex-col items-center gap-1" title={`P${d.percentile}: ${fmt(d.cash)}`}>
+                            <span className="text-[8px] font-medium" style={{ color:`hsl(${hue}, 70%, 55%)` }}>{fmt(d.cash)}</span>
+                            <div className="w-full rounded-t-sm transition-all" style={{ height: `${barH}%`, background: `hsl(${hue}, 60%, 40%)`, minHeight: 4, opacity: 0.85 }}/>
+                            <span className="text-[9px]" style={{ color:"var(--text-dim)" }}>P{d.percentile}</span>
+                          </div>
+                        );
+                      } else {
+                        // Runway distribution: original behavior
+                        const maxRunway = Math.max(...dist.map(x => x.runway), 1);
+                        const pct = (d.runway / maxRunway) * 100;
+                        return (
+                          <div key={i} className="flex-1 flex flex-col items-center gap-1" title={`P${d.percentile}: ${d.runway} months, ${fmt(d.cash)}`}>
+                            <div className="w-full rounded-t-sm transition-all" style={{ height: `${Math.max(pct, 3)}%`, background: `hsl(${120 * pct / 100}, 60%, 45%)`, minHeight: 2, opacity: 0.8 + (pct / 500) }}/>
+                            <span className="text-[9px]" style={{ color:"var(--text-dim)" }}>P{d.percentile}</span>
+                          </div>
+                        );
+                      }
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
             <button onClick={runMonteCarlo} className="btn-primary flex items-center gap-2 mx-auto"><BarChart3 size={16}/> Re-run Simulation</button>
           </div>
         ) : (

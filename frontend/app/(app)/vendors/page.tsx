@@ -3,9 +3,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { vendorsApi } from "@/lib/api";
 import type { Vendor, VendorSpendAnalysis } from "@/lib/types";
 import { Plus, X, Store, Search, TrendingUp, ArrowLeft, Calendar, DollarSign, BarChart3, Users, ChevronRight } from "lucide-react";
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n || 0);
+import { useCurrency } from "@/components/CurrencyContext";
 
 const COLORS = ["#d4a853","#7ec8e3","#e07a5f","#81b29a","#f2cc8f","#a8dadc","#e5989b","#b5838d","#6d6875","#cdb4db"];
 
@@ -13,6 +11,7 @@ type VendorTxn = { id: string; date: string; description: string; amount: number
 type TrendPoint = { month: string; vendor: string; total: number };
 
 export default function VendorsPage() {
+  const { formatAmount: fmt } = useCurrency();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [spend, setSpend] = useState<VendorSpendAnalysis[]>([]);
   const [trend, setTrend] = useState<TrendPoint[]>([]);

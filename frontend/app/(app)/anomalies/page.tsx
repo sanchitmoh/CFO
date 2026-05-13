@@ -23,14 +23,7 @@ interface Anomaly {
   status: "flagged" | "reviewed" | "dismissed";
 }
 
-
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(n);
+import { useCurrency } from "@/components/CurrencyContext";
 
 const scoreColor = (score: number) => {
   if (score >= 3.0) return "var(--danger)";
@@ -53,6 +46,7 @@ const scoreLabel = (score: number) => {
 type StatusFilter = "all" | "flagged" | "reviewed" | "dismissed";
 
 export default function AnomaliesPage() {
+  const { formatAmount: fmt } = useCurrency();
   const [anomalies, setAnomalies] = useState<Anomaly[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

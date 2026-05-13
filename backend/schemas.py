@@ -1039,6 +1039,10 @@ class MonteCarloResponse(BaseModel):
     p50_cash: float
     p90_cash: float
     distribution: list[dict]
+    # Baseline transparency — lets the UI show what inputs drove the simulation
+    baseline_monthly_income: float = 0
+    baseline_monthly_expense: float = 0
+    starting_cash: float = 0
 
 
 # ── Scenario Templates ────────────────────────────────────────────

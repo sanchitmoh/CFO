@@ -23,11 +23,10 @@ import {
   ResponsiveContainer, Legend, ReferenceLine,
   PieChart, Pie, Cell,
 } from "recharts";
-
-const fmtShort = (n: number) =>
-  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 1, notation: "compact" }).format(n);
+import { useCurrency } from "@/components/CurrencyContext";
 
 const DashTooltip = ({ active, payload, label }: any) => {
+  const { formatAmount: fmt } = useCurrency();
   if (!active || !payload?.length) return null;
   return (
     <div style={{ background: "rgba(8,8,8,0.96)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.06)",
@@ -46,12 +45,7 @@ const DashTooltip = ({ active, payload, label }: any) => {
   );
 };
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(n);
+
 
 const COLORS = ["#C9A962", "#6B8EC2", "#9B7CB8", "#D4965A", "#C75050", "#5E9E7E"];
 
@@ -70,6 +64,7 @@ export default function DashboardPage() {
   const [data, setData] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const { formatAmount: fmt, formatCompact: fmtShort } = useCurrency();
 
   const load = useCallback(async () => {
     try {
@@ -95,10 +90,10 @@ export default function DashboardPage() {
   const burnRate = data.burn_rate ?? data.total_expenses;
 
   const kpis = [
-    { label: "Total Income", value: fmt(data.total_income), icon: TrendingUp, color: "var(--income)", bg: "var(--accent-soft)" },
-    { label: "Total Expenses", value: fmt(data.total_expenses), icon: TrendingDown, color: "var(--expense)", bg: "var(--danger-soft)" },
-    { label: "Net Cash Flow", value: fmt(data.net_cash_flow), icon: DollarSign, color: data.net_cash_flow >= 0 ? "var(--income)" : "var(--expense)", bg: data.net_cash_flow >= 0 ? "var(--accent-soft)" : "var(--danger-soft)" },
-    { label: "Burn Rate", value: `${fmt(burnRate)}/mo`, icon: Flame, color: burnRate > 25000 ? "var(--danger)" : "var(--warning)", bg: burnRate > 25000 ? "var(--danger-soft)" : "var(--warning-soft)" },
+    { label: "Total Income", value: fmtShort(data.total_income), icon: TrendingUp, color: "var(--income)", bg: "var(--accent-soft)" },
+    { label: "Total Expenses", value: fmtShort(data.total_expenses), icon: TrendingDown, color: "var(--expense)", bg: "var(--danger-soft)" },
+    { label: "Net Cash Flow", value: fmtShort(data.net_cash_flow), icon: DollarSign, color: data.net_cash_flow >= 0 ? "var(--income)" : "var(--expense)", bg: data.net_cash_flow >= 0 ? "var(--accent-soft)" : "var(--danger-soft)" },
+    { label: "Burn Rate", value: `${fmtShort(burnRate)}/mo`, icon: Flame, color: burnRate > 25000 ? "var(--danger)" : "var(--warning)", bg: burnRate > 25000 ? "var(--danger-soft)" : "var(--warning-soft)" },
     { label: "Cash Runway", value: `${runwayMonths.toFixed(1)} mo`, icon: Clock, color: runwayMonths >= 6 ? "var(--accent)" : runwayMonths >= 3 ? "var(--warning)" : "var(--danger)", bg: runwayMonths >= 6 ? "var(--accent-soft)" : runwayMonths >= 3 ? "var(--warning-soft)" : "var(--danger-soft)" },
     { label: "Budget Used", value: `${data.budget_utilization.toFixed(0)}%`, icon: Wallet, color: data.budget_utilization > 90 ? "var(--danger)" : data.budget_utilization > 75 ? "var(--warning)" : "var(--accent)", bg: data.budget_utilization > 90 ? "var(--danger-soft)" : data.budget_utilization > 75 ? "var(--warning-soft)" : "var(--accent-soft)" },
     { label: "Active Alerts", value: data.active_alerts, icon: AlertTriangle, color: data.active_alerts > 0 ? "var(--warning)" : "var(--accent)", bg: data.active_alerts > 0 ? "var(--warning-soft)" : "var(--accent-soft)" },
@@ -131,14 +126,14 @@ export default function DashboardPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3">
         {kpis.map((k, i) => (
-          <div key={k.label} className={`glass glass-hover p-4 animate-fade-up delay-${i + 1}`}>
+          <div key={k.label} className={`glass glass-hover p-4 min-w-0 overflow-hidden animate-fade-up delay-${i + 1}`}>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium uppercase tracking-wider leading-tight" style={{ color: "var(--text-muted)" }}>{k.label}</span>
               <div className="flex items-center justify-center shrink-0" style={{ width: 28, height: 28, borderRadius: 8, background: k.bg }}>
                 <k.icon size={14} style={{ color: k.color }} />
               </div>
             </div>
-            <div className="text-lg font-bold" style={{ color: k.color }}>{k.value}</div>
+            <div className="text-lg font-bold truncate" style={{ color: k.color }}>{k.value}</div>
           </div>
         ))}
       </div>
