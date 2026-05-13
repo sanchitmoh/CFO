@@ -24,7 +24,8 @@ interface AffordResult {
   canAfford: boolean;
   runwayBefore: number;
   runwayAfter: number;
-  balance3months: number;
+  currentBalance3Months: number;
+  projectedBalance3Months: number;
   monthlyImpact: number;
   breakEven: number | null;
   suggestion: string;
@@ -54,16 +55,17 @@ function toAffordResult(
     canAfford: res.can_afford,
     runwayBefore: res.current_runway_months,
     runwayAfter: res.projected_runway_months,
-    balance3months: res.projected_balance_3m,
+    currentBalance3Months: res.current_balance_3m,
+    projectedBalance3Months: res.projected_balance_3m,
     monthlyImpact,
-    breakEven: res.break_even_revenue ? Math.ceil(res.break_even_revenue) : null,
+    breakEven: res.break_even_revenue ?? null,
     suggestion: res.ai_suggestion,
     verdict: deriveVerdict(res),
   };
 }
 
 export default function CalculatorPage() {
-  const { formatAmount: fmt } = useCurrency();
+  const { currencyCode, formatAmount: fmt } = useCurrency();
   const [form, setForm] = useState({
     name: "",
     amount: "",
@@ -86,6 +88,7 @@ export default function CalculatorPage() {
         expense_name: form.name,
         amount: amt,
         frequency: freqToBackend(form.frequency),
+        is_hire: form.isHire,
       });
       setResult(toAffordResult(res, amt, form.frequency));
     } catch (err: unknown) {
@@ -170,7 +173,7 @@ export default function CalculatorPage() {
                 className="block text-xs font-medium mb-2 uppercase tracking-wider"
                 style={{ color: "var(--text-muted)" }}
               >
-                Amount ($)
+                Amount ({currencyCode})
               </label>
               <input
                 type="number"
@@ -230,12 +233,18 @@ export default function CalculatorPage() {
                   This is a hiring decision
                 </p>
                 <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                  Enable break-even analysis
+                  Uses hiring-specific wording and defaults the cost to a monthly view
                 </p>
               </div>
               <button
                 type="button"
-                onClick={() => setForm((f) => ({ ...f, isHire: !f.isHire }))}
+                onClick={() =>
+                  setForm((f) => ({
+                    ...f,
+                    isHire: !f.isHire,
+                    frequency: !f.isHire ? "monthly" : f.frequency,
+                  }))
+                }
                 className="relative rounded-full transition-all"
                 style={{
                   width: 40,
@@ -264,7 +273,7 @@ export default function CalculatorPage() {
                 📊 Powered by Your Financial Data
               </p>
               <p style={{ color: "var(--text-dim)" }}>
-                Analysis uses your actual 3-month income, expenses, and burn rate to model real impact.
+                Analysis uses your current cash position plus trailing 3-month income and expenses to model impact.
               </p>
             </div>
 
@@ -358,7 +367,7 @@ export default function CalculatorPage() {
               </div>
 
               {/* Metrics */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                 {[
                   {
                     label: "Runway Before",
@@ -379,10 +388,16 @@ export default function CalculatorPage() {
                     bg: verdictBg[result.verdict],
                   },
                   {
-                    label: "Balance in 3 Months",
-                    value: fmt(result.balance3months),
-                    color: result.balance3months > 0 ? "var(--accent)" : "var(--danger)",
-                    bg: result.balance3months > 0 ? "var(--accent-soft)" : "var(--danger-soft)",
+                    label: "Current 3-Month Cash",
+                    value: fmt(result.currentBalance3Months),
+                    color: result.currentBalance3Months >= 0 ? "var(--accent)" : "var(--danger)",
+                    bg: result.currentBalance3Months >= 0 ? "var(--accent-soft)" : "var(--danger-soft)",
+                  },
+                  {
+                    label: "Projected 3-Month Cash",
+                    value: fmt(result.projectedBalance3Months),
+                    color: result.projectedBalance3Months >= 0 ? "var(--accent)" : "var(--danger)",
+                    bg: result.projectedBalance3Months >= 0 ? "var(--accent-soft)" : "var(--danger-soft)",
                   },
                   {
                     label: "Monthly Cost Impact",
@@ -420,7 +435,7 @@ export default function CalculatorPage() {
                     <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                       You would need to generate an additional{" "}
                       <strong style={{ color: "var(--info)" }}>{fmt(result.breakEven)}</strong>{" "}
-                      in revenue over 3 months to break even on this expense.
+                      in revenue over 3 months to stay cash-neutral after this decision.
                     </p>
                   </div>
                 </div>
@@ -462,7 +477,7 @@ export default function CalculatorPage() {
       </div>
 
       <p className="text-xs text-center animate-fade-up delay-5" style={{ color: "var(--text-dim)" }}>
-        Analysis based on your actual income, expenses, and burn rate from the last 3 months.
+        Analysis based on your current cash proxy and trailing 3-month operating performance.
       </p>
     </div>
   );

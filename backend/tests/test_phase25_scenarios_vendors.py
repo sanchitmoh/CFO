@@ -5,13 +5,24 @@ and Vendor Management (reviews, scorecards, contracts).
 Covers the service-layer pure functions and async DB methods.
 """
 import uuid
+import asyncio
 import pytest
 from datetime import datetime, timezone, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 # ── 1. Scenario Projection Engine (unit tests — no DB) ────────────
 
-from services.scenario_service import _project_scenario, get_templates, get_template, INDUSTRY_TEMPLATES
+from services.scenario_service import (
+    _build_projection_components,
+    _derive_volatility,
+    _project_scenario,
+    _simulate_monte_carlo,
+    get_template,
+    get_templates,
+    run_monte_carlo,
+    INDUSTRY_TEMPLATES,
+)
+from schemas import MonteCarloRequest
 
 
 class TestProjectionEngine:
@@ -46,11 +57,40 @@ class TestProjectionEngine:
         # Income = 10000 * 1.10 = 11000
         assert result[0]["projected_income"] == 11000.0
 
+    def test_revenue_growth_compounds_across_months(self):
+        """Revenue growth should keep compounding after month 1."""
+        a = self._base_assumptions(revenue_growth_pct=10)
+        result = _project_scenario(10000, 8000, 0, a, months=3)
+        assert result[0]["projected_income"] == 11000.0
+        assert result[1]["projected_income"] == 12100.0
+        assert result[2]["projected_income"] == 13310.0
+
     def test_expense_change(self):
         """Expense change should increase expenses."""
         a = self._base_assumptions(expense_change_pct=5)
         result = _project_scenario(10000, 8000, 0, a, months=1)
         assert result[0]["projected_expenses"] == 8400.0  # 8000 * 1.05
+
+    def test_decimal_rate_mode_matches_percent_mode(self):
+        """Legacy decimal inputs should project identically when explicitly flagged."""
+        percent_mode = self._base_assumptions(revenue_growth_pct=15, expense_change_pct=10)
+        decimal_mode = self._base_assumptions(
+            revenue_growth_pct=0.15,
+            expense_change_pct=0.10,
+            rate_input_mode="decimal",
+        )
+        percent_result = _project_scenario(10000, 8000, 0, percent_mode, months=3)
+        decimal_result = _project_scenario(10000, 8000, 0, decimal_mode, months=3)
+        assert decimal_result == percent_result
+
+    def test_decimal_rates_are_inferred_for_legacy_scenarios(self):
+        """Small legacy decimals should be interpreted as rates, not fractions of a percent."""
+        a = self._base_assumptions(revenue_growth_pct=0.10, expense_change_pct=0.05)
+        result = _project_scenario(10000, 8000, 0, a, months=2)
+        assert result[0]["projected_income"] == 11000.0
+        assert result[1]["projected_income"] == 12100.0
+        assert result[0]["projected_expenses"] == 8400.0
+        assert result[1]["projected_expenses"] == 8820.0
 
     def test_headcount_cost(self):
         """Adding headcount should increase expenses."""
@@ -128,6 +168,64 @@ class TestProjectionEngine:
 
 
 # ── 2. Industry Templates ─────────────────────────────────────────
+
+class TestMonteCarloEngine:
+    def test_derive_volatility_zero_for_insufficient_history(self):
+        assert _derive_volatility([]) == 0.0
+        assert _derive_volatility([1000.0]) == 0.0
+        assert _derive_volatility([1000.0, 1000.0]) == 0.0
+
+    def test_derive_volatility_positive_for_variable_history(self):
+        assert _derive_volatility([1000.0, 1200.0, 900.0, 1100.0]) > 0
+
+    def test_simulate_monte_carlo_is_deterministic_when_std_zero(self):
+        components = _build_projection_components(10000, 8000, {}, months=2)
+        results = _simulate_monte_carlo(
+            components,
+            starting_cash=5000,
+            num_simulations=3,
+            revenue_std=0.0,
+            expense_std=0.0,
+        )
+
+        assert results == [
+            {"runway": 2, "final_cash": 9000.0},
+            {"runway": 2, "final_cash": 9000.0},
+            {"runway": 2, "final_cash": 9000.0},
+        ]
+
+    def test_run_monte_carlo_uses_scenario_assumptions_and_historical_cash(self):
+        request = MonteCarloRequest(
+            scenario_id=uuid.uuid4(),
+            num_simulations=5,
+            months_ahead=2,
+            revenue_std=0.0,
+            expense_std=0.0,
+        )
+
+        with patch("services.scenario_service._get_monthly_financial_series", new=AsyncMock(return_value={
+            "income": [10000.0, 10000.0],
+            "expense": [8000.0, 8000.0],
+            "starting_cash": 5000.0,
+        })), patch("services.scenario_service.get_scenario", new=AsyncMock(return_value=MagicMock(
+            assumptions_json={"revenue_growth_pct": 10.0}
+        ))):
+            result = asyncio.run(run_monte_carlo(AsyncMock(), uuid.uuid4(), request))
+
+        assert result.scenario_id == request.scenario_id
+        assert result.baseline_monthly_income == 10000.0
+        assert result.baseline_monthly_expense == 8000.0
+        assert result.starting_cash == 5000.0
+        assert result.revenue_std_used == 0.0
+        assert result.expense_std_used == 0.0
+        assert result.p10_runway == 2
+        assert result.p50_runway == 2
+        assert result.p90_runway == 2
+        assert result.p10_cash == 12100.0
+        assert result.p50_cash == 12100.0
+        assert result.p90_cash == 12100.0
+        assert all(point["runway"] == 2 and point["cash"] == 12100.0 for point in result.distribution)
+
 
 class TestIndustryTemplates:
     def test_templates_list_not_empty(self):

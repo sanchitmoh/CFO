@@ -1,23 +1,22 @@
 import { SignUp } from "@clerk/nextjs";
+import { AuthShell } from "@/components/auth/AuthShell";
 
 export default function SignUpPage() {
   return (
-    <div
-      className="flex items-center justify-center"
-      style={{
-        minHeight: "100vh",
-        background:
-          "radial-gradient(ellipse at 50% 0%, #C9A96208 0%, var(--bg-deep) 60%)",
-      }}
+    <AuthShell
+      mode="sign-up"
+      eyebrow="Create workspace"
+      title="Set up the room where finance gets clearer."
+      description="Start your workspace without changing the familiar Clerk flow, then bring your team into a calmer operating rhythm."
     >
       <SignUp
         appearance={{
           elements: {
-            rootBox: "mx-auto",
-            card: "bg-[#111111] border border-[#232323] shadow-2xl",
+            rootBox: "auth-clerk-root",
+            card: "auth-clerk-card",
           },
         }}
       />
-    </div>
+    </AuthShell>
   );
 }

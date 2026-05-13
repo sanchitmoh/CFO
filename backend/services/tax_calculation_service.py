@@ -23,6 +23,41 @@ class TaxCalculationService:
     FINCALC_BASE = "https://fincalculator.in/api/v1"
     RELTAX_BASE = "https://rel.tax/v1"
     TIMEOUT = 10.0  # seconds
+
+    @staticmethod
+    def _lookup(payload: dict, *paths: tuple[str, ...]) -> object | None:
+        """Return the first populated value found across multiple nested paths."""
+        for path in paths:
+            current: object = payload
+            found = True
+            for key in path:
+                if not isinstance(current, dict) or key not in current:
+                    found = False
+                    break
+                current = current[key]
+            if found and current is not None:
+                return current
+        return None
+
+    @classmethod
+    def _decimal_or_zero(cls, value: object) -> Decimal:
+        if value in (None, ""):
+            return Decimal("0")
+        try:
+            return Decimal(str(value))
+        except Exception:
+            return Decimal("0")
+
+    @classmethod
+    def _extract_total_tax(cls, payload: dict) -> Decimal:
+        value = cls._lookup(
+            payload,
+            ("result", "totalTax"),
+            ("result", "total_tax"),
+            ("totalTax",),
+            ("total_tax",),
+        )
+        return cls._decimal_or_zero(value)
     
     # ── India Tax Calculation (FinCalculator.in) ──────────────────────
     
@@ -345,16 +380,16 @@ class TaxCalculationService:
         """
         old_regime = await self.calculate_india_tax(gross_income, regime="old")
         new_regime = await self.calculate_india_tax(gross_income, regime="new-2026-27")
-        
-        old_tax = old_regime.get("totalTax", 0)
-        new_tax = new_regime.get("totalTax", 0)
+
+        old_tax = self._extract_total_tax(old_regime)
+        new_tax = self._extract_total_tax(new_regime)
         savings = old_tax - new_tax
         
         return {
             "grossIncome": float(gross_income),
             "oldRegime": old_regime,
             "newRegime": new_regime,
-            "savings": savings,
+            "savings": float(savings),
             "recommendation": "new_regime" if savings > 0 else "old_regime",
         }
     

@@ -1,515 +1,967 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, settingsApi } from "@/lib/api";
 import { useCurrency } from "@/components/CurrencyContext";
 import {
-  Upload,
-  CheckCircle,
+  Activity,
   AlertCircle,
-  Database,
-  Link2,
   Bell,
-  MessageSquare,
-  Mail,
-  FileSpreadsheet,
-  Zap,
-  Clock,
   Briefcase,
+  CheckCircle2,
+  Clock3,
+  Database,
+  FileSpreadsheet,
+  Link2,
+  Mail,
+  MessageSquare,
+  Save,
+  Send,
+  Upload,
+  Zap,
 } from "lucide-react";
 
 type UploadStatus = "idle" | "loading" | "success" | "error";
+type RequestState = "idle" | "loading" | "success" | "error";
+type TestChannel = "email" | "slack";
 
-interface AlertSettings {
+interface AlertSettingsResponse {
+  low_cash_threshold: number;
+  high_expense_threshold: number;
+  anomaly_sensitivity: number;
+  email_enabled: boolean;
+  email_addresses: string[];
+  slack_enabled: boolean;
+  slack_webhook_url: string | null;
+}
+
+interface AlertSettingsForm {
   emailEnabled: boolean;
-  emailAddress: string;
+  emailAddressInput: string;
   slackEnabled: boolean;
   slackWebhook: string;
   lowCashThreshold: number;
-  overspendPercent: number;
-  revenueDrop: number;
+  largeExpenseThreshold: number;
+  anomalySensitivity: number;
+}
+
+interface ChannelStatus {
+  state: RequestState;
+  message: string;
 }
 
 const SUPPORTED_CURRENCIES = [
-  { code: "USD", name: "US Dollar ($)" },
-  { code: "EUR", name: "Euro (€)" },
-  { code: "GBP", name: "British Pound (£)" },
-  { code: "INR", name: "Indian Rupee (₹)" },
-  { code: "CAD", name: "Canadian Dollar (C$)" },
-  { code: "AUD", name: "Australian Dollar (A$)" },
-  { code: "JPY", name: "Japanese Yen (¥)" },
+  { code: "USD", name: "US Dollar (USD)" },
+  { code: "EUR", name: "Euro (EUR)" },
+  { code: "GBP", name: "British Pound (GBP)" },
+  { code: "INR", name: "Indian Rupee (INR)" },
+  { code: "CAD", name: "Canadian Dollar (CAD)" },
+  { code: "AUD", name: "Australian Dollar (AUD)" },
+  { code: "JPY", name: "Japanese Yen (JPY)" },
 ];
 
+const DEFAULT_ALERT_SETTINGS: AlertSettingsForm = {
+  emailEnabled: false,
+  emailAddressInput: "",
+  slackEnabled: false,
+  slackWebhook: "",
+  lowCashThreshold: 5000,
+  largeExpenseThreshold: 10000,
+  anomalySensitivity: 2.5,
+};
+
+function mapAlertSettings(data: AlertSettingsResponse): AlertSettingsForm {
+  return {
+    emailEnabled: data.email_enabled,
+    emailAddressInput: (data.email_addresses ?? []).join(", "),
+    slackEnabled: data.slack_enabled,
+    slackWebhook: data.slack_webhook_url ?? "",
+    lowCashThreshold: data.low_cash_threshold,
+    largeExpenseThreshold: data.high_expense_threshold,
+    anomalySensitivity: data.anomaly_sensitivity,
+  };
+}
+
+function parseEmailRecipients(value: string): string[] {
+  return value
+    .split(",")
+    .map((email) => email.trim())
+    .filter(Boolean);
+}
+
+function looksLikeSlackWebhook(value: string): boolean {
+  const trimmed = value.trim();
+  return trimmed.startsWith("https://hooks.slack.com/services/");
+}
+
+function formatTriggerSummary(settings: AlertSettingsForm, currencyCode: string): string {
+  return `${currencyCode} ${Math.round(settings.lowCashThreshold).toLocaleString()} cash floor | ${currencyCode} ${Math.round(settings.largeExpenseThreshold).toLocaleString()} large expense | ${settings.anomalySensitivity.toFixed(1)}x anomaly`;
+}
+
+function Toggle({
+  checked,
+  onChange,
+  disabled = false,
+}: {
+  checked: boolean;
+  onChange: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={checked}
+      disabled={disabled}
+      onClick={onChange}
+      className="relative rounded-full transition-all"
+      style={{
+        width: 46,
+        height: 26,
+        background: checked ? "var(--accent)" : "rgba(255,255,255,0.12)",
+        border: `1px solid ${checked ? "rgba(201,169,98,0.55)" : "var(--border)"}`,
+        opacity: disabled ? 0.6 : 1,
+      }}
+    >
+      <span
+        className="absolute top-[3px] transition-all rounded-full"
+        style={{
+          width: 18,
+          height: 18,
+          left: checked ? 24 : 4,
+          background: checked ? "#0b0b0b" : "#ffffff",
+        }}
+      />
+    </button>
+  );
+}
+
 export default function SettingsPage() {
-  const { currencyCode, setCurrencyCode } = useCurrency();
+  const { currencyCode, setCurrencyCode, isLoading } = useCurrency();
   const fileRef = useRef<HTMLInputElement>(null);
+
   const [dragOver, setDragOver] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>("idle");
   const [imported, setImported] = useState<number | null>(null);
   const [uploadError, setUploadError] = useState("");
 
-  const [alertSettings, setAlertSettings] = useState<AlertSettings>({
-    emailEnabled: false,
-    emailAddress: "",
-    slackEnabled: false,
-    slackWebhook: "",
-    lowCashThreshold: 5000,
-    overspendPercent: 10000,
-    revenueDrop: 2.5,
+  const [loadingSettings, setLoadingSettings] = useState(true);
+  const [alertSettings, setAlertSettings] = useState<AlertSettingsForm>(DEFAULT_ALERT_SETTINGS);
+  const [saveState, setSaveState] = useState<RequestState>("idle");
+  const [saveMessage, setSaveMessage] = useState("");
+  const [workspaceState, setWorkspaceState] = useState<RequestState>("idle");
+  const [workspaceMessage, setWorkspaceMessage] = useState("");
+  const [channelStatus, setChannelStatus] = useState<Record<TestChannel, ChannelStatus>>({
+    email: { state: "idle", message: "" },
+    slack: { state: "idle", message: "" },
   });
-  const [saved, setSaved] = useState(false);
-  const [saving, setSaving] = useState(false);
 
-  const [workspaceSaved, setWorkspaceSaved] = useState(false);
-  const [workspaceSaving, setWorkspaceSaving] = useState(false);
+  const emailRecipients = parseEmailRecipients(alertSettings.emailAddressInput);
+  const slackReady = alertSettings.slackEnabled && looksLikeSlackWebhook(alertSettings.slackWebhook);
+  const emailReady = alertSettings.emailEnabled && emailRecipients.length > 0;
+  const readyChannelCount = Number(emailReady) + Number(slackReady);
 
-  // Load existing alert settings from backend on mount
+  const validationErrors: string[] = [];
+  if (alertSettings.lowCashThreshold < 0) {
+    validationErrors.push("Low cash threshold cannot be negative.");
+  }
+  if (alertSettings.largeExpenseThreshold < 0) {
+    validationErrors.push("Large expense threshold cannot be negative.");
+  }
+  if (alertSettings.anomalySensitivity < 1) {
+    validationErrors.push("Anomaly sensitivity should be at least 1.0x.");
+  }
+  if (alertSettings.emailEnabled && emailRecipients.length === 0) {
+    validationErrors.push("Add at least one email recipient when email alerts are enabled.");
+  }
+  if (alertSettings.slackEnabled && !looksLikeSlackWebhook(alertSettings.slackWebhook)) {
+    validationErrors.push("Slack alerts need a valid Incoming Webhook URL.");
+  }
+
   useEffect(() => {
-    settingsApi.getAlertSettings().then((data) => {
-      setAlertSettings({
-        emailEnabled: data.email_enabled,
-        emailAddress: (data.email_addresses ?? []).join(", "),
-        slackEnabled: data.slack_enabled,
-        slackWebhook: data.slack_webhook_url ?? "",
-        lowCashThreshold: data.low_cash_threshold,
-        overspendPercent: data.high_expense_threshold,
-        revenueDrop: data.anomaly_sensitivity,
+    let mounted = true;
+
+    settingsApi.getAlertSettings()
+      .then((data) => {
+        if (!mounted) return;
+        setAlertSettings(mapAlertSettings(data));
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setSaveMessage("Using default alert settings until the backend returns saved preferences.");
+      })
+      .finally(() => {
+        if (mounted) {
+          setLoadingSettings(false);
+        }
       });
-    }).catch(() => {/* keep defaults on first-time user */});
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const handleFile = async (file: File) => {
-    if (!file.name.endsWith(".csv")) {
+    if (!file.name.toLowerCase().endsWith(".csv")) {
       setUploadStatus("error");
       setUploadError("Only CSV files are supported.");
       return;
     }
+
     setUploadStatus("loading");
     setUploadError("");
+
     try {
       const result = await api.uploadCSV(file);
       setImported(result.imported);
       setUploadStatus("success");
-    } catch (err: unknown) {
+    } catch (error: unknown) {
       setUploadStatus("error");
-      setUploadError(err instanceof Error ? err.message : "Upload failed.");
+      setUploadError(error instanceof Error ? error.message : "Upload failed.");
     }
-  };
-
-  const onDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(false);
-    const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
-  };
-
-  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) handleFile(file);
   };
 
   const saveWorkspaceSettings = async () => {
-    setWorkspaceSaving(true);
+    setWorkspaceState("loading");
+    setWorkspaceMessage("");
+
     try {
       await settingsApi.updateWorkspace({ currency: currencyCode });
-      setWorkspaceSaved(true);
-      setTimeout(() => setWorkspaceSaved(false), 2500);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setWorkspaceSaving(false);
+      setWorkspaceState("success");
+      setWorkspaceMessage(`Workspace currency saved as ${currencyCode}.`);
+    } catch (error) {
+      setWorkspaceState("error");
+      setWorkspaceMessage(error instanceof Error ? error.message : "Unable to save workspace preferences.");
     }
   };
 
-  const saveAlerts = async () => {
-    setSaving(true);
+  const persistAlertSettings = async (options?: { silent?: boolean }) => {
+    if (validationErrors.length > 0) {
+      if (!options?.silent) {
+        setSaveState("error");
+        setSaveMessage(validationErrors[0]);
+      }
+      return false;
+    }
+
+    if (!options?.silent) {
+      setSaveState("loading");
+      setSaveMessage("");
+    }
+
     try {
-      const emails = alertSettings.emailAddress
-        .split(",")
-        .map((e) => e.trim())
-        .filter(Boolean);
-      await settingsApi.updateAlertSettings({
+      const response = await settingsApi.updateAlertSettings({
         low_cash_threshold: alertSettings.lowCashThreshold,
-        high_expense_threshold: alertSettings.overspendPercent,
-        anomaly_sensitivity: alertSettings.revenueDrop,
+        high_expense_threshold: alertSettings.largeExpenseThreshold,
+        anomaly_sensitivity: alertSettings.anomalySensitivity,
         email_enabled: alertSettings.emailEnabled,
-        email_addresses: emails,
+        email_addresses: emailRecipients,
         slack_enabled: alertSettings.slackEnabled,
-        slack_webhook_url: alertSettings.slackWebhook || undefined,
+        slack_webhook_url: alertSettings.slackWebhook.trim() || null,
       });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
-    } catch {
-      /* toast error in production */
-    } finally {
-      setSaving(false);
+
+      setAlertSettings(mapAlertSettings(response));
+
+      if (!options?.silent) {
+        setSaveState("success");
+        setSaveMessage("Alert settings saved to the backend. In-app alerts, email, and Slack now share the same config.");
+      }
+      return true;
+    } catch (error) {
+      if (!options?.silent) {
+        setSaveState("error");
+        setSaveMessage(error instanceof Error ? error.message : "Unable to save alert settings.");
+      }
+      return false;
+    }
+  };
+
+  const runChannelTest = async (channel: TestChannel) => {
+    setChannelStatus((current) => ({
+      ...current,
+      [channel]: { state: "loading", message: "Saving latest settings before sending a test alert..." },
+    }));
+
+    const savedOk = await persistAlertSettings({ silent: true });
+    if (!savedOk) {
+      setChannelStatus((current) => ({
+        ...current,
+        [channel]: { state: "error", message: validationErrors[0] || "Save failed before test could run." },
+      }));
+      return;
+    }
+
+    try {
+      const response = await settingsApi.testAlertChannel(channel);
+      setChannelStatus((current) => ({
+        ...current,
+        [channel]: { state: "success", message: response.message },
+      }));
+    } catch (error) {
+      setChannelStatus((current) => ({
+        ...current,
+        [channel]: {
+          state: "error",
+          message: error instanceof Error ? error.message : `Unable to send ${channel} test alert.`,
+        },
+      }));
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="animate-fade-up">
-        <h1 className="text-2xl font-bold" style={{ color: "var(--text)" }}>
-          Settings & Integrations
-        </h1>
-        <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
-          Connect data sources and configure notification preferences
-        </p>
-      </div>
-
-      {/* ── Workspace Settings ── */}
-      <section className="glass p-6 animate-fade-up">
-        <div className="flex items-center gap-3 mb-5">
-          <div
-            className="flex items-center justify-center"
-            style={{ width: 36, height: 36, borderRadius: 10, background: "var(--accent-soft)" }}
-          >
-            <Briefcase size={18} style={{ color: "var(--accent)" }} />
-          </div>
+    <div className="max-w-6xl mx-auto space-y-6">
+      <section
+        className="glass overflow-hidden"
+        style={{
+          background: `
+            radial-gradient(circle at top left, rgba(201, 169, 98, 0.16), transparent 34%),
+            radial-gradient(circle at top right, rgba(94, 158, 126, 0.14), transparent 26%),
+            linear-gradient(180deg, rgba(14,14,14,0.98), rgba(8,8,8,0.98))
+          `,
+        }}
+      >
+        <div className="grid grid-cols-1 xl:grid-cols-[1.25fr_0.75fr] gap-5 p-5 md:p-6">
           <div>
-            <h2 className="font-semibold text-sm" style={{ color: "var(--text)" }}>
-              Workspace Preferences
-            </h2>
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-              Manage your base currency and workspace details
+            <div
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-[0.18em]"
+              style={{
+                background: "rgba(201, 169, 98, 0.12)",
+                color: "var(--accent)",
+                border: "1px solid rgba(201, 169, 98, 0.24)",
+              }}
+            >
+              <Bell size={12} />
+              Alert Control Center
+            </div>
+            <h1 className="text-2xl md:text-3xl font-semibold mt-4" style={{ color: "var(--text)" }}>
+              Settings that actually drive delivery, not just toggles.
+            </h1>
+            <p className="text-sm mt-3 max-w-2xl" style={{ color: "var(--text-muted)", lineHeight: 1.7 }}>
+              The settings page now reflects the backend contract for alert thresholds and notification channels. In-app alerts remain the source of truth, while email and Slack mirror the same workspace rules once enabled.
             </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5">
+              <div className="rounded-2xl p-3" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)" }}>
+                <div className="text-[10px] uppercase tracking-[0.18em]" style={{ color: "var(--text-dim)" }}>Base Currency</div>
+                <div className="text-sm font-semibold mt-2" style={{ color: "var(--text)" }}>
+                  {isLoading ? "Loading..." : currencyCode}
+                </div>
+              </div>
+              <div className="rounded-2xl p-3" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)" }}>
+                <div className="text-[10px] uppercase tracking-[0.18em]" style={{ color: "var(--text-dim)" }}>Channels Ready</div>
+                <div className="text-sm font-semibold mt-2" style={{ color: "var(--text)" }}>
+                  {readyChannelCount} / 2
+                </div>
+              </div>
+              <div className="rounded-2xl p-3" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)" }}>
+                <div className="text-[10px] uppercase tracking-[0.18em]" style={{ color: "var(--text-dim)" }}>Trigger Profile</div>
+                <div className="text-xs font-medium mt-2" style={{ color: "var(--text)" }}>
+                  {formatTriggerSummary(alertSettings, currencyCode)}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-3xl p-4 md:p-5 h-full" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)" }}>
+            <div className="flex items-center gap-2 text-sm font-semibold" style={{ color: "var(--text)" }}>
+              <Activity size={16} style={{ color: "var(--info)" }} />
+              Wiring Status
+            </div>
+            <div className="space-y-3 mt-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-sm font-medium" style={{ color: "var(--text)" }}>Alert settings API</div>
+                  <div className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+                    Email recipients, Slack enablement, and webhook URL are now part of the shared backend contract.
+                  </div>
+                </div>
+                <CheckCircle2 size={16} style={{ color: "var(--success)" }} />
+              </div>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-sm font-medium" style={{ color: "var(--text)" }}>Threshold logic</div>
+                  <div className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+                    Low-cash, large-expense, and anomaly rules are aligned with backend calculations instead of mislabeled form fields.
+                  </div>
+                </div>
+                <CheckCircle2 size={16} style={{ color: "var(--success)" }} />
+              </div>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-sm font-medium" style={{ color: "var(--text)" }}>Delivery verification</div>
+                  <div className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+                    Save-and-test actions now hit backend endpoints so we can validate email and Slack from this page.
+                  </div>
+                </div>
+                <CheckCircle2 size={16} style={{ color: "var(--success)" }} />
+              </div>
+            </div>
           </div>
         </div>
-
-        <div className="max-w-xs">
-          <label className="block text-xs font-medium mb-2 uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-            Base Currency
-          </label>
-          <select
-            value={currencyCode}
-            onChange={(e) => setCurrencyCode(e.target.value)}
-            className="w-full p-2 rounded"
-            style={{ background: "var(--bg)", border: "1px solid var(--border)", color: "var(--text)" }}
-          >
-            {SUPPORTED_CURRENCIES.map((c) => (
-              <option key={c.code} value={c.code}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <button
-          onClick={saveWorkspaceSettings}
-          disabled={workspaceSaving}
-          className="btn-primary mt-5 flex items-center gap-2"
-        >
-          {workspaceSaved ? <CheckCircle size={15} /> : <Clock size={15} />}
-          {workspaceSaved ? "Saved!" : "Save Preferences"}
-        </button>
       </section>
 
-      {/* ── CSV Upload ── */}
-      <section className="glass p-6 animate-fade-up delay-1">
-        <div className="flex items-center gap-3 mb-5">
-          <div
-            className="flex items-center justify-center"
-            style={{ width: 36, height: 36, borderRadius: 10, background: "var(--accent-soft)" }}
-          >
-            <FileSpreadsheet size={18} style={{ color: "var(--accent)" }} />
+      <div className="grid grid-cols-1 xl:grid-cols-[0.9fr_1.1fr] gap-5">
+        <section className="glass p-5 md:p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div
+                className="flex items-center justify-center rounded-2xl"
+                style={{ width: 42, height: 42, background: "var(--accent-soft)" }}
+              >
+                <Briefcase size={18} style={{ color: "var(--accent)" }} />
+              </div>
+              <div>
+                <h2 className="text-sm font-semibold" style={{ color: "var(--text)" }}>Workspace Preferences</h2>
+                <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+                  Keep the workspace currency aligned with reporting, exports, and alert copy.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={saveWorkspaceSettings}
+              disabled={workspaceState === "loading"}
+              className="px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-2"
+              style={{
+                border: "1px solid var(--border)",
+                color: "var(--text)",
+                background: workspaceState === "success" ? "var(--accent-soft)" : "var(--surface-hover)",
+              }}
+            >
+              {workspaceState === "loading" ? <Clock3 size={14} className="animate-spin" /> : <Save size={14} />}
+              {workspaceState === "loading" ? "Saving..." : "Save Workspace"}
+            </button>
           </div>
-          <div>
-            <h2 className="font-semibold text-sm" style={{ color: "var(--text)" }}>
-              CSV Upload
-            </h2>
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-              Import transactions from your bank or QuickBooks export
+
+          <div className="mt-5">
+            <label className="block text-[11px] font-semibold uppercase tracking-[0.16em] mb-2" style={{ color: "var(--text-muted)" }}>
+              Base Currency
+            </label>
+            <select
+              value={currencyCode}
+              onChange={(event) => setCurrencyCode(event.target.value)}
+              className="w-full rounded-2xl px-4 py-3 text-sm"
+              style={{ background: "var(--bg)", border: "1px solid var(--border)", color: "var(--text)" }}
+            >
+              {SUPPORTED_CURRENCIES.map((currency) => (
+                <option key={currency.code} value={currency.code}>
+                  {currency.name}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs mt-2" style={{ color: "var(--text-dim)" }}>
+              This is the display and reporting currency used across dashboards, reports, and alert messaging.
             </p>
           </div>
-        </div>
 
-        {/* Drop zone */}
-        <div
-          onClick={() => fileRef.current?.click()}
-          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={onDrop}
-          className="cursor-pointer rounded-xl flex flex-col items-center justify-center gap-3 transition-all"
-          style={{
-            border: `2px dashed ${dragOver ? "var(--accent)" : "var(--border)"}`,
-            background: dragOver ? "var(--accent-soft)" : "var(--bg)",
-            padding: "40px 24px",
-          }}
-        >
+          {workspaceMessage && (
+            <div
+              className="mt-4 rounded-2xl px-4 py-3 text-xs"
+              style={{
+                background: workspaceState === "error" ? "var(--danger-soft)" : "var(--accent-soft)",
+                color: workspaceState === "error" ? "var(--danger)" : "var(--accent)",
+                border: `1px solid ${workspaceState === "error" ? "rgba(199,80,80,0.25)" : "rgba(201,169,98,0.25)"}`,
+              }}
+            >
+              {workspaceMessage}
+            </div>
+          )}
+        </section>
+
+        <section className="glass p-5 md:p-6">
+          <div className="flex items-start gap-3">
+            <div
+              className="flex items-center justify-center rounded-2xl"
+              style={{ width: 42, height: 42, background: "var(--info-soft)" }}
+            >
+              <FileSpreadsheet size={18} style={{ color: "var(--info)" }} />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold" style={{ color: "var(--text)" }}>CSV Import</h2>
+              <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+                Upload bank exports or bookkeeping data. Alerts update after new transactions are ingested.
+              </p>
+            </div>
+          </div>
+
           <div
+            onClick={() => fileRef.current?.click()}
+            onDragOver={(event) => {
+              event.preventDefault();
+              setDragOver(true);
+            }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(event) => {
+              event.preventDefault();
+              setDragOver(false);
+              const file = event.dataTransfer.files[0];
+              if (file) {
+                handleFile(file);
+              }
+            }}
+            className="cursor-pointer rounded-3xl flex flex-col items-center justify-center gap-3 mt-5 transition-all"
             style={{
-              width: 48,
-              height: 48,
-              borderRadius: 12,
-              background: dragOver ? "var(--accent)" : "var(--surface)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              border: `2px dashed ${dragOver ? "var(--accent)" : "var(--border)"}`,
+              background: dragOver ? "rgba(201,169,98,0.08)" : "var(--bg)",
+              padding: "36px 24px",
             }}
           >
-            <Upload size={22} style={{ color: dragOver ? "var(--bg)" : "var(--accent)" }} />
+            <div
+              className="rounded-2xl flex items-center justify-center"
+              style={{
+                width: 52,
+                height: 52,
+                background: dragOver ? "var(--accent)" : "var(--surface)",
+              }}
+            >
+              <Upload size={22} style={{ color: dragOver ? "#0a0a0a" : "var(--accent)" }} />
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
+                Drop a CSV here or click to browse
+              </p>
+              <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+                Expected columns: date, description, amount, type, category
+              </p>
+            </div>
           </div>
-          <div className="text-center">
-            <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
-              Drop your CSV here or click to browse
-            </p>
-            <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-              Supports bank statements, QuickBooks exports, and custom CSVs
-            </p>
+
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".csv"
+            className="hidden"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) {
+                handleFile(file);
+              }
+            }}
+          />
+
+          {uploadStatus !== "idle" && (
+            <div
+              className="mt-4 rounded-2xl px-4 py-3 text-sm flex items-center gap-2"
+              style={{
+                background:
+                  uploadStatus === "success"
+                    ? "var(--accent-soft)"
+                    : uploadStatus === "error"
+                      ? "var(--danger-soft)"
+                      : "rgba(107,142,194,0.12)",
+                color:
+                  uploadStatus === "success"
+                    ? "var(--accent)"
+                    : uploadStatus === "error"
+                      ? "var(--danger)"
+                      : "var(--info)",
+              }}
+            >
+              {uploadStatus === "loading" ? (
+                <Clock3 size={15} className="animate-spin" />
+              ) : uploadStatus === "success" ? (
+                <CheckCircle2 size={15} />
+              ) : (
+                <AlertCircle size={15} />
+              )}
+              <span>
+                {uploadStatus === "loading"
+                  ? "Parsing and importing transactions..."
+                  : uploadStatus === "success"
+                    ? `Imported ${imported ?? 0} transaction${imported === 1 ? "" : "s"} successfully.`
+                    : uploadError}
+              </span>
+            </div>
+          )}
+        </section>
+      </div>
+
+      <section className="glass p-5 md:p-6">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div
+              className="flex items-center justify-center rounded-2xl"
+              style={{ width: 42, height: 42, background: "var(--warning-soft)" }}
+            >
+              <Bell size={18} style={{ color: "var(--warning)" }} />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold" style={{ color: "var(--text)" }}>Alert Automation</h2>
+              <p className="text-xs mt-1 max-w-2xl" style={{ color: "var(--text-muted)", lineHeight: 1.7 }}>
+                These settings feed the backend alert engine. In-app alerts are always created first; email and Slack act as delivery mirrors when their channel is enabled and passes the test action below.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => void persistAlertSettings()}
+            disabled={loadingSettings || saveState === "loading"}
+            className="px-4 py-2.5 rounded-2xl text-sm font-medium flex items-center justify-center gap-2"
+            style={{
+              background: "linear-gradient(135deg, rgba(201,169,98,1), rgba(214,148,90,0.92))",
+              color: "#0b0b0b",
+              opacity: loadingSettings ? 0.7 : 1,
+            }}
+          >
+            {saveState === "loading" ? <Clock3 size={15} className="animate-spin" /> : <Save size={15} />}
+            {saveState === "loading" ? "Saving..." : "Save Alert Settings"}
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-5">
+          <div className="rounded-2xl p-4" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+            <div className="text-[10px] uppercase tracking-[0.16em]" style={{ color: "var(--text-dim)" }}>Low Cash Threshold</div>
+            <div className="text-lg font-semibold mt-2" style={{ color: "var(--text)" }}>
+              {currencyCode} {Math.round(alertSettings.lowCashThreshold).toLocaleString()}
+            </div>
+            <div className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+              Triggers when estimated cash balance falls beneath this floor.
+            </div>
+          </div>
+          <div className="rounded-2xl p-4" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+            <div className="text-[10px] uppercase tracking-[0.16em]" style={{ color: "var(--text-dim)" }}>Large Expense Floor</div>
+            <div className="text-lg font-semibold mt-2" style={{ color: "var(--text)" }}>
+              {currencyCode} {Math.round(alertSettings.largeExpenseThreshold).toLocaleString()}
+            </div>
+            <div className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+              Candidate amount for large-spend anomaly review.
+            </div>
+          </div>
+          <div className="rounded-2xl p-4" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+            <div className="text-[10px] uppercase tracking-[0.16em]" style={{ color: "var(--text-dim)" }}>Anomaly Sensitivity</div>
+            <div className="text-lg font-semibold mt-2" style={{ color: "var(--text)" }}>
+              {alertSettings.anomalySensitivity.toFixed(1)}x
+            </div>
+            <div className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+              Transaction must exceed this multiple of its category baseline.
+            </div>
           </div>
         </div>
 
-        <input
-          ref={fileRef}
-          type="file"
-          accept=".csv"
-          className="hidden"
-          onChange={onFileChange}
-        />
-
-        {/* Status */}
-        {uploadStatus === "loading" && (
-          <div className="mt-4 flex items-center gap-2" style={{ color: "var(--accent)" }}>
-            <div className="animate-spin" style={{ width: 16, height: 16, border: "2px solid var(--accent)", borderTopColor: "transparent", borderRadius: "50%" }} />
-            <span className="text-sm">Parsing and importing transactions…</span>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+          <div>
+            <label className="block text-[11px] font-semibold uppercase tracking-[0.16em] mb-2" style={{ color: "var(--text-muted)" }}>
+              Low Cash Threshold ({currencyCode})
+            </label>
+            <input
+              type="number"
+              min={0}
+              value={alertSettings.lowCashThreshold}
+              onChange={(event) =>
+                setAlertSettings((current) => ({
+                  ...current,
+                  lowCashThreshold: Number(event.target.value || 0),
+                }))
+              }
+              className="w-full rounded-2xl px-4 py-3 text-sm"
+              style={{ background: "var(--bg)", border: "1px solid var(--border)", color: "var(--text)" }}
+            />
           </div>
-        )}
-        {uploadStatus === "success" && imported !== null && (
-          <div className="mt-4 flex items-center gap-2 p-3 rounded-lg" style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
-            <CheckCircle size={16} />
-            <span className="text-sm font-medium">
-              Successfully imported {imported} transaction{imported !== 1 ? "s" : ""}!
-            </span>
+          <div>
+            <label className="block text-[11px] font-semibold uppercase tracking-[0.16em] mb-2" style={{ color: "var(--text-muted)" }}>
+              Large Expense Floor ({currencyCode})
+            </label>
+            <input
+              type="number"
+              min={0}
+              value={alertSettings.largeExpenseThreshold}
+              onChange={(event) =>
+                setAlertSettings((current) => ({
+                  ...current,
+                  largeExpenseThreshold: Number(event.target.value || 0),
+                }))
+              }
+              className="w-full rounded-2xl px-4 py-3 text-sm"
+              style={{ background: "var(--bg)", border: "1px solid var(--border)", color: "var(--text)" }}
+            />
           </div>
-        )}
-        {uploadStatus === "error" && (
-          <div className="mt-4 flex items-center gap-2 p-3 rounded-lg" style={{ background: "var(--danger-soft)", color: "var(--danger)" }}>
-            <AlertCircle size={16} />
-            <span className="text-sm">{uploadError}</span>
+          <div>
+            <label className="block text-[11px] font-semibold uppercase tracking-[0.16em] mb-2" style={{ color: "var(--text-muted)" }}>
+              Anomaly Sensitivity (x)
+            </label>
+            <input
+              type="number"
+              min={1}
+              step="0.1"
+              value={alertSettings.anomalySensitivity}
+              onChange={(event) =>
+                setAlertSettings((current) => ({
+                  ...current,
+                  anomalySensitivity: Number(event.target.value || 0),
+                }))
+              }
+              className="w-full rounded-2xl px-4 py-3 text-sm"
+              style={{ background: "var(--bg)", border: "1px solid var(--border)", color: "var(--text)" }}
+            />
           </div>
-        )}
-
-        {/* CSV format hint */}
-        <div className="mt-4 p-3 rounded-lg text-xs" style={{ background: "var(--bg)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
-          <strong style={{ color: "var(--text)" }}>Expected columns:</strong>{" "}
-          <code style={{ color: "var(--accent)" }}>date, description, amount, type (income/expense), category</code>
-          <br />
-          QuickBooks exports are auto-detected and column-mapped automatically.
         </div>
+
+        <div className="rounded-2xl px-4 py-3 text-xs mt-4" style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
+          Revenue decline alerts stay enabled in the backend and compare the current month against the trailing prior months. The settings above control low cash, large-expense screening, and anomaly sensitivity.
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-6">
+          <div className="rounded-3xl p-5" style={{ background: "var(--bg)", border: "1px solid var(--border)" }}>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div
+                  className="flex items-center justify-center rounded-2xl"
+                  style={{ width: 38, height: 38, background: "rgba(107,142,194,0.15)" }}
+                >
+                  <Mail size={17} style={{ color: "var(--info)" }} />
+                </div>
+                <div>
+                  <div className="text-sm font-semibold" style={{ color: "var(--text)" }}>Email Alerts</div>
+                  <div className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+                    Sends formatted alert summaries to the saved recipient list.
+                  </div>
+                </div>
+              </div>
+              <Toggle
+                checked={alertSettings.emailEnabled}
+                onChange={() =>
+                  setAlertSettings((current) => ({
+                    ...current,
+                    emailEnabled: !current.emailEnabled,
+                  }))
+                }
+              />
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-[11px] font-semibold uppercase tracking-[0.16em] mb-2" style={{ color: "var(--text-muted)" }}>
+                Recipient List
+              </label>
+              <textarea
+                rows={3}
+                value={alertSettings.emailAddressInput}
+                onChange={(event) =>
+                  setAlertSettings((current) => ({
+                    ...current,
+                    emailAddressInput: event.target.value,
+                  }))
+                }
+                placeholder="finance@example.com, founder@example.com"
+                className="w-full rounded-2xl px-4 py-3 text-sm resize-none"
+                style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)" }}
+              />
+              <p className="text-xs mt-2" style={{ color: "var(--text-dim)" }}>
+                Separate multiple addresses with commas.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 mt-4">
+              <button
+                type="button"
+                onClick={() => void runChannelTest("email")}
+                disabled={!alertSettings.emailEnabled || saveState === "loading"}
+                className="px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-2"
+                style={{
+                  background: "var(--surface-hover)",
+                  border: "1px solid var(--border)",
+                  color: "var(--text)",
+                  opacity: alertSettings.emailEnabled ? 1 : 0.6,
+                }}
+              >
+                {channelStatus.email.state === "loading" ? <Clock3 size={14} className="animate-spin" /> : <Send size={14} />}
+                {channelStatus.email.state === "loading" ? "Testing..." : "Save and Test Email"}
+              </button>
+              <span
+                className="px-2.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-[0.14em]"
+                style={{
+                  background: emailReady ? "rgba(94,158,126,0.14)" : "rgba(255,255,255,0.06)",
+                  color: emailReady ? "var(--success)" : "var(--text-dim)",
+                }}
+              >
+                {emailReady ? "Ready" : "Needs setup"}
+              </span>
+            </div>
+
+            {channelStatus.email.message && (
+              <div
+                className="mt-4 rounded-2xl px-4 py-3 text-xs"
+                style={{
+                  background: channelStatus.email.state === "error" ? "var(--danger-soft)" : "rgba(94,158,126,0.12)",
+                  color: channelStatus.email.state === "error" ? "var(--danger)" : "var(--success)",
+                }}
+              >
+                {channelStatus.email.message}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-3xl p-5" style={{ background: "var(--bg)", border: "1px solid var(--border)" }}>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div
+                  className="flex items-center justify-center rounded-2xl"
+                  style={{ width: 38, height: 38, background: "rgba(201,169,98,0.15)" }}
+                >
+                  <MessageSquare size={17} style={{ color: "var(--accent)" }} />
+                </div>
+                <div>
+                  <div className="text-sm font-semibold" style={{ color: "var(--text)" }}>Slack Alerts</div>
+                  <div className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+                    Mirrors workspace alerts to a Slack Incoming Webhook endpoint.
+                  </div>
+                </div>
+              </div>
+              <Toggle
+                checked={alertSettings.slackEnabled}
+                onChange={() =>
+                  setAlertSettings((current) => ({
+                    ...current,
+                    slackEnabled: !current.slackEnabled,
+                  }))
+                }
+              />
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-[11px] font-semibold uppercase tracking-[0.16em] mb-2" style={{ color: "var(--text-muted)" }}>
+                Webhook URL
+              </label>
+              <input
+                type="url"
+                value={alertSettings.slackWebhook}
+                onChange={(event) =>
+                  setAlertSettings((current) => ({
+                    ...current,
+                    slackWebhook: event.target.value,
+                  }))
+                }
+                placeholder="https://hooks.slack.com/services/..."
+                className="w-full rounded-2xl px-4 py-3 text-sm"
+                style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)" }}
+              />
+              <p className="text-xs mt-2" style={{ color: "var(--text-dim)" }}>
+                Paste the Incoming Webhook URL for the channel that should receive finance alerts.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 mt-4">
+              <button
+                type="button"
+                onClick={() => void runChannelTest("slack")}
+                disabled={!alertSettings.slackEnabled || saveState === "loading"}
+                className="px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-2"
+                style={{
+                  background: "var(--surface-hover)",
+                  border: "1px solid var(--border)",
+                  color: "var(--text)",
+                  opacity: alertSettings.slackEnabled ? 1 : 0.6,
+                }}
+              >
+                {channelStatus.slack.state === "loading" ? <Clock3 size={14} className="animate-spin" /> : <Send size={14} />}
+                {channelStatus.slack.state === "loading" ? "Testing..." : "Save and Test Slack"}
+              </button>
+              <span
+                className="px-2.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-[0.14em]"
+                style={{
+                  background: slackReady ? "rgba(94,158,126,0.14)" : "rgba(255,255,255,0.06)",
+                  color: slackReady ? "var(--success)" : "var(--text-dim)",
+                }}
+              >
+                {slackReady ? "Ready" : "Needs setup"}
+              </span>
+            </div>
+
+            {channelStatus.slack.message && (
+              <div
+                className="mt-4 rounded-2xl px-4 py-3 text-xs"
+                style={{
+                  background: channelStatus.slack.state === "error" ? "var(--danger-soft)" : "rgba(94,158,126,0.12)",
+                  color: channelStatus.slack.state === "error" ? "var(--danger)" : "var(--success)",
+                }}
+              >
+                {channelStatus.slack.message}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {loadingSettings && (
+          <div className="mt-4 text-xs" style={{ color: "var(--text-dim)" }}>
+            Loading saved alert settings...
+          </div>
+        )}
+
+        {(saveMessage || validationErrors.length > 0) && (
+          <div
+            className="mt-5 rounded-3xl p-4"
+            style={{
+              background:
+                validationErrors.length > 0 || saveState === "error"
+                  ? "var(--danger-soft)"
+                  : saveState === "success"
+                    ? "rgba(94,158,126,0.12)"
+                    : "rgba(255,255,255,0.05)",
+              border: `1px solid ${
+                validationErrors.length > 0 || saveState === "error"
+                  ? "rgba(199,80,80,0.25)"
+                  : saveState === "success"
+                    ? "rgba(94,158,126,0.24)"
+                    : "var(--border)"
+              }`,
+            }}
+          >
+            {validationErrors.length > 0 ? (
+              <div className="space-y-1 text-xs" style={{ color: "var(--danger)" }}>
+                {validationErrors.map((error) => (
+                  <div key={error}>{error}</div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-xs" style={{ color: saveState === "success" ? "var(--success)" : "var(--text-muted)" }}>
+                {saveMessage}
+              </div>
+            )}
+          </div>
+        )}
       </section>
 
-      {/* ── Integration Tiers ── */}
-      <section className="glass p-6 animate-fade-up delay-2">
-        <div className="flex items-center gap-3 mb-5">
+      <section className="glass p-5 md:p-6">
+        <div className="flex items-start gap-3">
           <div
-            className="flex items-center justify-center"
-            style={{ width: 36, height: 36, borderRadius: 10, background: "var(--info-soft)" }}
+            className="flex items-center justify-center rounded-2xl"
+            style={{ width: 42, height: 42, background: "rgba(107,142,194,0.12)" }}
           >
             <Link2 size={18} style={{ color: "var(--info)" }} />
           </div>
           <div>
-            <h2 className="font-semibold text-sm" style={{ color: "var(--text)" }}>
-              Connected Integrations
-            </h2>
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-              Live bank and accounting integrations (Phase 2)
+            <h2 className="text-sm font-semibold" style={{ color: "var(--text)" }}>Integration Roadmap</h2>
+            <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+              CSV upload is production-ready for this workspace. Live sync options remain staged separately.
             </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mt-5">
           {[
-            { name: "Plaid (Bank Connections)", phase: "Phase 2", icon: Database, status: "coming" },
-            { name: "QuickBooks API", phase: "Phase 2", icon: Zap, status: "coming" },
-            { name: "Xero API", phase: "Phase 2", icon: Zap, status: "coming" },
-            { name: "Stripe Revenue", phase: "Phase 3", icon: Zap, status: "future" },
-          ].map(({ name, phase, icon: Icon, status }) => (
-            <div
-              key={name}
-              className="flex items-center justify-between p-4 rounded-lg"
-              style={{ background: "var(--bg)", border: "1px solid var(--border)" }}
-            >
-              <div className="flex items-center gap-3">
-                <Icon size={16} style={{ color: "var(--text-dim)" }} />
-                <div>
-                  <p className="text-sm font-medium" style={{ color: "var(--text)" }}>{name}</p>
-                  <p className="text-xs" style={{ color: "var(--text-dim)" }}>{phase}</p>
+            { name: "Plaid bank sync", icon: Database, phase: "Phase 2", state: "Planned" },
+            { name: "QuickBooks API", icon: Zap, phase: "Phase 2", state: "Planned" },
+            { name: "Xero API", icon: Zap, phase: "Phase 2", state: "Planned" },
+            { name: "Direct webhook automations", icon: Activity, phase: "Phase 3", state: "Later" },
+          ].map((item) => {
+            const Icon = item.icon;
+            return (
+              <div
+                key={item.name}
+                className="rounded-2xl p-4"
+                style={{ background: "var(--bg)", border: "1px solid var(--border)" }}
+              >
+                <div className="flex items-center gap-2">
+                  <Icon size={15} style={{ color: "var(--text-dim)" }} />
+                  <span className="text-sm font-medium" style={{ color: "var(--text)" }}>{item.name}</span>
                 </div>
+                <div className="text-xs mt-3" style={{ color: "var(--text-muted)" }}>{item.phase}</div>
+                <div className="text-[11px] mt-2 uppercase tracking-[0.14em]" style={{ color: "var(--text-dim)" }}>{item.state}</div>
               </div>
-              <span
-                className="badge"
-                style={{
-                  background: status === "coming" ? "var(--warning-soft)" : "var(--surface)",
-                  color: status === "coming" ? "var(--warning)" : "var(--text-dim)",
-                }}
-              >
-                {status === "coming" ? "Coming Soon" : "Future"}
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
-
-      {/* ── Alert Settings ── */}
-      <section className="glass p-6 animate-fade-up delay-3">
-        <div className="flex items-center gap-3 mb-5">
-          <div
-            className="flex items-center justify-center"
-            style={{ width: 36, height: 36, borderRadius: 10, background: "var(--warning-soft)" }}
-          >
-            <Bell size={18} style={{ color: "var(--warning)" }} />
-          </div>
-          <div>
-            <h2 className="font-semibold text-sm" style={{ color: "var(--text)" }}>
-              Alert Thresholds
-            </h2>
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-              Configure when the system notifies you
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <div>
-            <label className="block text-xs font-medium mb-2 uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-              Low Cash Threshold ($)
-            </label>
-            <input
-              type="number"
-              value={alertSettings.lowCashThreshold}
-              onChange={(e) => setAlertSettings((s) => ({ ...s, lowCashThreshold: Number(e.target.value) }))}
-              className="w-full"
-              min={0}
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium mb-2 uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-              Overspend Alert (%)
-            </label>
-            <input
-              type="number"
-              value={alertSettings.overspendPercent}
-              onChange={(e) => setAlertSettings((s) => ({ ...s, overspendPercent: Number(e.target.value) }))}
-              className="w-full"
-              min={0}
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium mb-2 uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-              Revenue Drop Alert (%)
-            </label>
-            <input
-              type="number"
-              value={alertSettings.revenueDrop}
-              onChange={(e) => setAlertSettings((s) => ({ ...s, revenueDrop: Number(e.target.value) }))}
-              className="w-full"
-              min={0}
-            />
-          </div>
-        </div>
-
-        {/* Notification Channels */}
-        <h3 className="text-xs font-semibold uppercase tracking-wider mb-4" style={{ color: "var(--text-muted)" }}>
-          Notification Channels
-        </h3>
-        <div className="space-y-4">
-          {/* Email */}
-          <div
-            className="p-4 rounded-lg"
-            style={{ background: "var(--bg)", border: "1px solid var(--border)" }}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Mail size={16} style={{ color: "var(--info)" }} />
-                <span className="text-sm font-medium" style={{ color: "var(--text)" }}>Email Alerts</span>
-              </div>
-              <button
-                onClick={() => setAlertSettings((s) => ({ ...s, emailEnabled: !s.emailEnabled }))}
-                className="relative rounded-full transition-all"
-                style={{
-                  width: 40,
-                  height: 22,
-                  background: alertSettings.emailEnabled ? "var(--accent)" : "var(--border)",
-                }}
-              >
-                <span
-                  className="absolute top-1 transition-all rounded-full"
-                  style={{
-                    width: 14,
-                    height: 14,
-                    background: "white",
-                    left: alertSettings.emailEnabled ? 22 : 4,
-                  }}
-                />
-              </button>
-            </div>
-            {alertSettings.emailEnabled && (
-              <input
-                type="email"
-                placeholder="your@email.com"
-                value={alertSettings.emailAddress}
-                onChange={(e) => setAlertSettings((s) => ({ ...s, emailAddress: e.target.value }))}
-                className="w-full"
-              />
-            )}
-          </div>
-
-          {/* Slack */}
-          <div
-            className="p-4 rounded-lg"
-            style={{ background: "var(--bg)", border: "1px solid var(--border)" }}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <MessageSquare size={16} style={{ color: "#4A154B" }} />
-                <span className="text-sm font-medium" style={{ color: "var(--text)" }}>Slack Alerts</span>
-                <span className="badge badge-info">Webhook</span>
-              </div>
-              <button
-                onClick={() => setAlertSettings((s) => ({ ...s, slackEnabled: !s.slackEnabled }))}
-                className="relative rounded-full transition-all"
-                style={{
-                  width: 40,
-                  height: 22,
-                  background: alertSettings.slackEnabled ? "var(--accent)" : "var(--border)",
-                }}
-              >
-                <span
-                  className="absolute top-1 transition-all rounded-full"
-                  style={{
-                    width: 14,
-                    height: 14,
-                    background: "white",
-                    left: alertSettings.slackEnabled ? 22 : 4,
-                  }}
-                />
-              </button>
-            </div>
-            {alertSettings.slackEnabled && (
-              <input
-                type="url"
-                placeholder="https://hooks.slack.com/services/..."
-                value={alertSettings.slackWebhook}
-                onChange={(e) => setAlertSettings((s) => ({ ...s, slackWebhook: e.target.value }))}
-                className="w-full"
-              />
-            )}
-          </div>
-        </div>
-
-        <button
-          onClick={saveAlerts}
-          className="btn-primary mt-5 flex items-center gap-2"
-        >
-          {saved ? <CheckCircle size={15} /> : <Clock size={15} />}
-          {saved ? "Saved!" : "Save Settings"}
-        </button>
-      </section>
-
-      <p className="text-xs text-center animate-fade-up delay-5" style={{ color: "var(--text-dim)" }}>
-        CSV import is the recommended approach for demos and early use. Live API integrations are coming in Phase 2.
-      </p>
     </div>
   );
 }

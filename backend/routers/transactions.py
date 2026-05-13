@@ -5,7 +5,7 @@ CRUD, CSV upload with file storage & audit trail, pagination, and filtering.
 import csv
 import io
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, UploadFile, File, status
 from sqlalchemy import select, func, and_
@@ -22,6 +22,7 @@ from services.embedding_service import embed_transaction
 from services.file_storage import save_upload, compute_content_hash
 from cache import invalidate_workspace_cache
 from utils.sql_utils import escape_like
+from services.budget_service import normalize_category_label
 
 router = APIRouter()
 
@@ -36,6 +37,8 @@ async def list_transactions(
     category: str | None = None,
     type: str | None = None,
     search: str | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
     sort_by: str = "date",
     sort_order: str = Query("desc", pattern="^(asc|desc)$"),
     user: User = Depends(get_current_user),
@@ -60,6 +63,10 @@ async def list_transactions(
     if search:
         # SEC-CRIT-002: Escape SQL wildcards to prevent pattern injection
         filters.append(Transaction.description.ilike(f"%{escape_like(search)}%"))
+    if start_date:
+        filters.append(Transaction.date >= datetime.combine(start_date, datetime.min.time()))
+    if end_date:
+        filters.append(Transaction.date <= datetime.combine(end_date, datetime.max.time()))
 
     combined = and_(*filters)
 
@@ -124,7 +131,7 @@ async def create_transaction(
         currency_code=currency_code,
         amount_original=amount_original,
         exchange_rate=exchange_rate,
-        category=data.category,
+        category=normalize_category_label(data.category),
         type=TransactionType(data.type),
         account=data.account,
         vendor=data.vendor,
@@ -598,7 +605,7 @@ async def upload_csv(
             currency_code=currency_code,
             amount_original=abs(amount_original),
             exchange_rate=exchange_rate,
-            category=mapped_row.get("category") or "Uncategorized",
+            category=normalize_category_label(mapped_row.get("category") or "Uncategorized"),
             type=TransactionType(raw_type),
             account=mapped_row.get("account") or "Main Account",
             vendor=mapped_row.get("vendor") or None,

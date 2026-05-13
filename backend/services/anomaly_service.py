@@ -1,9 +1,9 @@
 """
 AI CFO — Anomaly Detection Service (ML-003 / M-004)
-Incremental anomaly detection with cached statistical models.
+Cached anomaly detection with per-category statistical models.
 
 Instead of recomputing category stats from scratch on every scan,
-we cache per-category statistics and only score new/unseen transactions.
+we cache per-category statistics and re-score the active scan window.
 Model stats are refreshed when transaction count grows by >20%.
 
 M-004: Thresholds are calibrated **per-category** using Coefficient of
@@ -210,15 +210,40 @@ async def _get_category_stats(
     return category_stats
 
 
+async def _fetch_transactions_for_scan(
+    db: AsyncSession,
+    workspace_id,
+    cutoff: datetime,
+) -> list[Transaction]:
+    """Fetch all expense transactions in the active scan window."""
+    txn_q = await db.execute(
+        select(Transaction)
+        .where(and_(
+            Transaction.workspace_id == workspace_id,
+            Transaction.type == TransactionType.expense,
+            Transaction.date >= cutoff,
+        ))
+        .order_by(Transaction.date.desc())
+    )
+    return list(txn_q.scalars())
+
+
+def _model_cache_keys(workspace_id, days: int) -> tuple[str, str]:
+    """Return stats and count cache keys scoped to the scan window."""
+    return (
+        make_cache_key("anomaly_stats", str(workspace_id), str(days)),
+        make_cache_key("anomaly_model_count", str(workspace_id), str(days)),
+    )
+
+
 async def _should_rebuild_model(
-    db: AsyncSession, ws_id, cutoff: datetime
+    db: AsyncSession, ws_id, cutoff: datetime, count_cache_key: str
 ) -> tuple[bool, int]:
     """
     Check if we need to rebuild category stats.
     Returns (should_rebuild, current_count).
     """
-    cache_key = make_cache_key("anomaly_model_count", str(ws_id))
-    cached_count = await cache_get(cache_key)
+    cached_count = await cache_get(count_cache_key)
 
     current_count_q = await db.execute(
         select(func.count(Transaction.id))
@@ -237,9 +262,7 @@ async def _should_rebuild_model(
     if old_count == 0:
         return True, current_count
 
-    growth = (current_count - old_count) / old_count
-    # Rebuild if >20% growth
-    return growth > 0.20, current_count
+    return current_count != old_count, current_count
 
 
 async def scan_anomalies(
@@ -260,7 +283,7 @@ async def scan_anomalies(
     2. Check if model needs rebuilding (>20% transaction growth)
     3. If cached model is fresh, load stats from Redis
     4. Otherwise, rebuild from DB and cache
-    5. Score only un-scanned transactions when possible
+    5. Re-score the active scan window against the latest model
     """
     ws = await db.get(Workspace, workspace_id)
     sym = get_currency_symbol(ws.currency if ws else "USD")
@@ -272,17 +295,17 @@ async def scan_anomalies(
     default_threshold = cat_thresholds["__default__"]
 
     cutoff = await _anchored_cutoff(db, workspace_id, days)
-    cache_key = make_cache_key("anomaly_stats", str(workspace_id))
+    stats_cache_key, count_cache_key = _model_cache_keys(workspace_id, days)
 
     # Check if model rebuild is needed
     needs_rebuild, current_count = await _should_rebuild_model(
-        db, workspace_id, cutoff
+        db, workspace_id, cutoff, count_cache_key
     )
 
     # Try cached stats
     cached_stats = None
     if not needs_rebuild:
-        cached_stats = await cache_get(cache_key)
+        cached_stats = await cache_get(stats_cache_key)
 
     if cached_stats:
         category_stats = cached_stats
@@ -301,41 +324,13 @@ async def scan_anomalies(
             }
             for cat, s in category_stats.items()
         }
-        await cache_set(cache_key, serializable, ttl=3600)  # 1 hour
-        await cache_set(
-            make_cache_key("anomaly_model_count", str(workspace_id)),
-            {"count": current_count},
-            ttl=3600,
-        )
+        await cache_set(stats_cache_key, serializable, ttl=3600)  # 1 hour
+        await cache_set(count_cache_key, {"count": current_count}, ttl=3600)
         logger.info("Rebuilt anomaly model for workspace %s (%d txns)", workspace_id, current_count)
 
     # ── Score transactions ────────────────────────────────────────
-    # Fetch un-scanned transactions first, fall back to all if model was rebuilt
-    if cached_stats and not needs_rebuild:
-        # Incremental: only score transactions not yet scanned
-        txn_q = await db.execute(
-            select(Transaction)
-            .where(and_(
-                Transaction.workspace_id == workspace_id,
-                Transaction.type == TransactionType.expense,
-                Transaction.date >= cutoff,
-                Transaction.is_anomaly == None,  # noqa: E711
-            ))
-            .order_by(Transaction.date.desc())
-        )
-    else:
-        # Full scan
-        txn_q = await db.execute(
-            select(Transaction)
-            .where(and_(
-                Transaction.workspace_id == workspace_id,
-                Transaction.type == TransactionType.expense,
-                Transaction.date >= cutoff,
-            ))
-            .order_by(Transaction.date.desc())
-        )
-
-    transactions = list(txn_q.scalars())
+    # Always rescore the active window so repeated scans stay accurate.
+    transactions = await _fetch_transactions_for_scan(db, workspace_id, cutoff)
 
     if len(transactions) < 3:
         return ScanResult(scanned=len(transactions), anomalies_found=0, anomalies=[])
@@ -462,16 +457,16 @@ async def scan_anomalies_stream(
     default_threshold = cat_thresholds["__default__"]
 
     cutoff = await _anchored_cutoff(db, workspace_id, days)
-    cache_key = make_cache_key("anomaly_stats", str(workspace_id))
+    stats_cache_key, count_cache_key = _model_cache_keys(workspace_id, days)
 
     # Reuse the same model-caching logic as scan_anomalies
     needs_rebuild, current_count = await _should_rebuild_model(
-        db, workspace_id, cutoff
+        db, workspace_id, cutoff, count_cache_key
     )
 
     cached_stats = None
     if not needs_rebuild:
-        cached_stats = await cache_get(cache_key)
+        cached_stats = await cache_get(stats_cache_key)
 
     if cached_stats:
         category_stats = cached_stats
@@ -486,37 +481,10 @@ async def scan_anomalies_stream(
             }
             for cat, s in category_stats.items()
         }
-        await cache_set(cache_key, serializable, ttl=3600)
-        await cache_set(
-            make_cache_key("anomaly_model_count", str(workspace_id)),
-            {"count": current_count},
-            ttl=3600,
-        )
+        await cache_set(stats_cache_key, serializable, ttl=3600)
+        await cache_set(count_cache_key, {"count": current_count}, ttl=3600)
 
-    # Fetch transactions
-    if cached_stats and not needs_rebuild:
-        txn_q = await db.execute(
-            select(Transaction)
-            .where(and_(
-                Transaction.workspace_id == workspace_id,
-                Transaction.type == TransactionType.expense,
-                Transaction.date >= cutoff,
-                Transaction.is_anomaly == None,  # noqa: E711
-            ))
-            .order_by(Transaction.date.desc())
-        )
-    else:
-        txn_q = await db.execute(
-            select(Transaction)
-            .where(and_(
-                Transaction.workspace_id == workspace_id,
-                Transaction.type == TransactionType.expense,
-                Transaction.date >= cutoff,
-            ))
-            .order_by(Transaction.date.desc())
-        )
-
-    transactions = list(txn_q.scalars())
+    transactions = await _fetch_transactions_for_scan(db, workspace_id, cutoff)
     total = len(transactions)
 
     if total < 3:
@@ -574,4 +542,3 @@ async def scan_anomalies_stream(
     await db.commit()
 
     yield ("done", {"scanned": total, "anomalies_found": anomalies_found})
-

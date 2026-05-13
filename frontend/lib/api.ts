@@ -209,6 +209,8 @@ export const transactionsApi = {
     category?: string;
     type?: string;
     search?: string;
+    start_date?: string;
+    end_date?: string;
   }) => {
     const query = new URLSearchParams();
     if (params?.page) query.set("page", String(params.page));
@@ -216,6 +218,8 @@ export const transactionsApi = {
     if (params?.category) query.set("category", params.category);
     if (params?.type) query.set("type", params.type);
     if (params?.search) query.set("search", params.search);
+    if (params?.start_date) query.set("start_date", params.start_date);
+    if (params?.end_date) query.set("end_date", params.end_date);
     return fetchApi<PaginatedTransactions>(`/transactions?${query}`);
   },
 
@@ -528,7 +532,7 @@ export const settingsApi = {
     email_enabled?: boolean;
     email_addresses?: string[];
     slack_enabled?: boolean;
-    slack_webhook_url?: string;
+    slack_webhook_url?: string | null;
   }) =>
     fetchApi<{
       low_cash_threshold: number;
@@ -542,6 +546,11 @@ export const settingsApi = {
       method: "PUT",
       body: JSON.stringify(data),
     }),
+  testAlertChannel: (channel: "email" | "slack") =>
+    fetchApi<{ status: string; channel: string; message: string }>(
+      `/settings/alerts/test/${channel}`,
+      { method: "POST" },
+    ),
 };
 
 
@@ -675,10 +684,11 @@ export const taxApi = {
 
   availableQuarters: () => fetchApi<string[]>("/tax/available-quarters"),
 
-  getReport: (year?: number, jurisdiction?: string) => {
+  getReport: (periodStart: string, periodEnd: string, jurisdiction = "IN") => {
     const q = new URLSearchParams();
-    if (year) q.set("year", String(year));
-    if (jurisdiction) q.set("jurisdiction", jurisdiction);
+    q.set("period_start", periodStart);
+    q.set("period_end", periodEnd);
+    q.set("jurisdiction", jurisdiction);
     return fetchApi<TaxReport>(`/tax/report?${q}`);
   },
 
@@ -843,14 +853,21 @@ export const scenariosApi = {
       body: JSON.stringify({ variables, range_pct: rangePct, steps }),
     }),
 
-  monteCarlo: (revenueStd = 0.1, expenseStd = 0.08, months = 12, sims = 1000) =>
+  monteCarlo: (options?: {
+    scenarioId?: string | null;
+    revenueStd?: number;
+    expenseStd?: number;
+    months?: number;
+    sims?: number;
+  }) =>
     fetchApi<MonteCarloResult>("/scenarios/monte-carlo", {
       method: "POST",
       body: JSON.stringify({
-        revenue_std: revenueStd,
-        expense_std: expenseStd,
-        months_ahead: months,
-        num_simulations: sims,
+        ...(options?.scenarioId ? { scenario_id: options.scenarioId } : {}),
+        ...(options?.revenueStd != null ? { revenue_std: options.revenueStd } : {}),
+        ...(options?.expenseStd != null ? { expense_std: options.expenseStd } : {}),
+        months_ahead: options?.months ?? 12,
+        num_simulations: options?.sims ?? 1000,
       }),
     }),
 

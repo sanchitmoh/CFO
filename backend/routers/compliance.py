@@ -9,7 +9,7 @@ import json
 import uuid
 import hashlib
 from datetime import datetime, timezone, timedelta
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -31,6 +31,8 @@ from schemas import (
     ConsentWithdrawalRequest, RetentionPolicyResponse, 
     RetentionPolicyInfo, ComplianceStatusResponse
 )
+from services.budget_service import get_budget_snapshots
+from services.goal_service import build_goal_snapshot
 
 router = APIRouter()
 
@@ -574,36 +576,52 @@ async def _collect_user_data(user: User, db: AsyncSession, include_metadata: boo
         select(Budget).where(Budget.user_id == user.id)
     )
     budgets = budgets_result.scalars().all()
-    data["budgets"] = [
-        {
-            "id": str(b.id) if include_metadata else None,
-            "category": b.category,
-            "monthly_limit": str(b.monthly_limit),
-            "current_spend": str(b.current_spend),
-            "month": b.month,
-            "created_at": b.created_at.isoformat() if include_metadata else None
-        }
-        for b in budgets
-    ]
+    budget_snapshot_cache: dict[str, dict[uuid.UUID, Any]] = {}
+    budget_export = []
+    for budget in budgets:
+        if budget.month not in budget_snapshot_cache:
+            budget_snapshot_cache[budget.month] = {
+                snapshot.id: snapshot
+                for snapshot in await get_budget_snapshots(
+                    db, user.workspace_id, month=budget.month
+                )
+            }
+        snapshot = budget_snapshot_cache[budget.month].get(budget.id)
+        budget_export.append(
+            {
+                "id": str(budget.id) if include_metadata else None,
+                "category": budget.category,
+                "monthly_limit": str(budget.monthly_limit),
+                "current_spend": str(
+                    snapshot.current_spend if snapshot else budget.current_spend
+                ),
+                "month": budget.month,
+                "created_at": budget.created_at.isoformat() if include_metadata else None,
+            }
+        )
+    data["budgets"] = budget_export
     
     # Collect goals
     goals_result = await db.execute(
         select(Goal).where(Goal.user_id == user.id)
     )
     goals = goals_result.scalars().all()
-    data["goals"] = [
-        {
-            "id": str(g.id) if include_metadata else None,
-            "title": g.title,
-            "target_value": str(g.target_value),
-            "current_value": str(g.current_value),
-            "metric_type": g.metric_type,
-            "status": g.status.value,
-            "deadline": g.deadline.isoformat() if g.deadline else None,
-            "created_at": g.created_at.isoformat() if include_metadata else None
-        }
-        for g in goals
-    ]
+    goal_export = []
+    for goal in goals:
+        snapshot = await build_goal_snapshot(db, user.workspace_id, goal)
+        goal_export.append(
+            {
+                "id": str(goal.id) if include_metadata else None,
+                "title": goal.title,
+                "target_value": str(goal.target_value),
+                "current_value": str(snapshot.current_value),
+                "metric_type": goal.metric_type,
+                "status": goal.status.value,
+                "deadline": goal.deadline.isoformat() if goal.deadline else None,
+                "created_at": goal.created_at.isoformat() if include_metadata else None,
+            }
+        )
+    data["goals"] = goal_export
     
     # Collect chat sessions and messages
     chat_sessions_result = await db.execute(

@@ -8,12 +8,12 @@ import type {
 } from "@/lib/types";
 import { Receipt, Plus, X, Globe, Calculator, TrendingDown, Clock, IndianRupee, DollarSign, ChevronDown, Filter } from "lucide-react";
 import { useCurrency } from "@/components/CurrencyContext";
+import { TaxCalculatorResult, type TaxCalcMode } from "./TaxCalculatorResult";
 
 type Tab = "overview" | "categories" | "jurisdictions" | "calculator";
-type CalcMode = "india" | "india-hra" | "india-gratuity" | "us" | "global" | "compare" | "hourly";
 
 export default function TaxPage() {
-  const { formatAmount: fmt } = useCurrency();
+  const { formatAmount: formatWorkspaceAmount } = useCurrency();
   const [estimates, setEstimates] = useState<TaxEstimate[]>([]);
   const [categories, setCategories] = useState<TaxCategory[]>([]);
   const [jurisdictions, setJurisdictions] = useState<TaxJurisdiction[]>([]);
@@ -33,7 +33,7 @@ export default function TaxPage() {
   };
 
   // Calculator state
-  const [calcMode, setCalcMode] = useState<CalcMode>("india");
+  const [calcMode, setCalcMode] = useState<TaxCalcMode>("india");
   const [calcLoading, setCalcLoading] = useState(false);
   const [calcResult, setCalcResult] = useState<ExternalTaxCalculationResponse | IndiaRegimeComparisonResponse | EffectiveHourlyRateResponse | null>(null);
   const [calcError, setCalcError] = useState<string | null>(null);
@@ -74,7 +74,7 @@ export default function TaxPage() {
           result = await taxApi.calculateIndiaTax({
             gross_income: Number(fd.get("gross_income")),
             regime: fd.get("regime") as string || "new-2026-27",
-            apply_standard_deduction: fd.get("std_ded") !== "off",
+            apply_standard_deduction: fd.get("std_ded") === "on",
           }); break;
         case "india-hra":
           result = await taxApi.calculateIndiaHRA({
@@ -87,13 +87,13 @@ export default function TaxPage() {
           result = await taxApi.calculateIndiaGratuity({
             monthly_basic: Number(fd.get("monthly_basic")),
             years_of_service: Number(fd.get("years")),
-            covered_by_act: fd.get("covered") !== "off",
+            covered_by_act: fd.get("covered") === "on",
           }); break;
         case "us":
           result = await taxApi.calculateUSTax({
             income: Number(fd.get("income")),
             filing_status: fd.get("filing_status") as string || "single",
-            qbi_deduction: fd.get("qbi") !== "off",
+            qbi_deduction: fd.get("qbi") === "on",
           }); break;
         case "global":
           result = await taxApi.calculateGlobalTax({
@@ -118,7 +118,7 @@ export default function TaxPage() {
     } finally { setCalcLoading(false); }
   };
 
-  const calcModes: { key: CalcMode; label: string; icon: React.ReactNode }[] = [
+  const calcModes: { key: TaxCalcMode; label: string; icon: React.ReactNode }[] = [
     { key: "india", label: "India Tax", icon: <IndianRupee size={14}/> },
     { key: "india-hra", label: "HRA", icon: <IndianRupee size={14}/> },
     { key: "india-gratuity", label: "Gratuity", icon: <IndianRupee size={14}/> },
@@ -127,6 +127,58 @@ export default function TaxPage() {
     { key: "compare", label: "Regime Compare", icon: <TrendingDown size={14}/> },
     { key: "hourly", label: "Hourly Rate", icon: <Clock size={14}/> },
   ];
+
+  const calcModeDetails: Record<TaxCalcMode, {
+    title: string;
+    summary: string;
+    formula: string;
+    context: string;
+  }> = {
+    india: {
+      title: "India income-tax estimate",
+      summary: "Check annual tax under the old regime or a specific new-regime assessment year with standard deduction support.",
+      formula: "Gross income -> standard deduction -> slab tax -> surcharge -> 4% cess",
+      context: "Use this when you need a fast annual liability estimate for one selected regime.",
+    },
+    "india-hra": {
+      title: "HRA exemption analysis",
+      summary: "Break down exempt versus taxable HRA using the statutory least-of-three rule.",
+      formula: "Lowest of actual HRA, rent minus 10% of salary, or 50%/40% of salary",
+      context: "Inputs here are annual rent, annual HRA, and annual basic + DA.",
+    },
+    "india-gratuity": {
+      title: "Gratuity payout estimate",
+      summary: "Estimate gratuity eligibility, tax-free amount, and taxable spillover from last drawn monthly basic + DA.",
+      formula: "Covered by Act: 15/26 x monthly basic + DA x years counted",
+      context: "Use the last drawn monthly basic salary, not an annual figure, for accurate output.",
+    },
+    us: {
+      title: "US self-employment tax view",
+      summary: "Review the federal and self-employment stack with optional QBI deduction for 2025 tax-year logic from the source calculator.",
+      formula: "Net SE income -> 92.35% SE base -> SE tax + federal tax -> optional QBI deduction",
+      context: "This view does not include state or local income taxes unless the source adds them.",
+    },
+    global: {
+      title: "Multi-country tax response",
+      summary: "Inspect the country-specific model output returned by rel.tax with your country code and annual income.",
+      formula: "Country model response -> yearly net, monthly view, and rate breakdown",
+      context: "Best for a high-level cross-country comparison when you do not need a custom local rules engine.",
+    },
+    compare: {
+      title: "Old vs new regime comparison",
+      summary: "Run the old regime against the new regime for AY 2026-27 and see which one actually lowers total tax.",
+      formula: "Old-regime total tax versus new-regime total tax -> choose the lower liability",
+      context: "AY 2026-27 refers to the assessment year for income earned during FY 2025-26.",
+    },
+    hourly: {
+      title: "Post-tax hourly rate",
+      summary: "Translate annual net income into daily and hourly earning power after taxes.",
+      formula: "Net annual income / adjusted working days / working hours",
+      context: "Useful for consulting, freelancing, and cross-country comp comparisons.",
+    },
+  };
+
+  const activeCalcMode = calcModeDetails[calcMode];
 
   const inputStyle: React.CSSProperties = {
     background: "var(--surface)", color: "var(--text)", border: "1px solid var(--border)",
@@ -192,16 +244,16 @@ export default function TaxPage() {
                     <span className="badge" style={{ background:"var(--warning-soft)", color:"var(--warning)" }}>{e.status}</span>
                   </div>
                   <div className="space-y-1 text-xs" style={{ color:"var(--text-muted)" }}>
-                    <div className="flex justify-between"><span>Gross Income</span><span style={{ color:"var(--text)" }}>{fmt(e.gross_income || 0)}</span></div>
-                    <div className="flex justify-between"><span>Deductions</span><span style={{ color:"var(--success)" }}>-{fmt(e.total_deductions || 0)}</span></div>
-                    <div className="flex justify-between"><span>Taxable Income</span><span style={{ color:"var(--text)" }}>{fmt(e.taxable_income || 0)}</span></div>
+                    <div className="flex justify-between"><span>Gross Income</span><span style={{ color:"var(--text)" }}>{formatWorkspaceAmount(e.gross_income || 0)}</span></div>
+                    <div className="flex justify-between"><span>Deductions</span><span style={{ color:"var(--success)" }}>-{formatWorkspaceAmount(e.total_deductions || 0)}</span></div>
+                    <div className="flex justify-between"><span>Taxable Income</span><span style={{ color:"var(--text)" }}>{formatWorkspaceAmount(e.taxable_income || 0)}</span></div>
                     <div className="flex justify-between"><span>Effective Rate</span><span style={{ color:"var(--text)" }}>{((e.effective_rate || 0) * 100).toFixed(1)}%</span></div>
                     {e.due_date && (
                       <div className="flex justify-between"><span>Due Date</span><span style={{ color:"var(--warning)" }}>{new Date(e.due_date).toLocaleDateString()}</span></div>
                     )}
                     <div className="flex justify-between pt-2 font-bold" style={{ borderTop:"1px solid var(--border)" }}>
                       <span style={{ color:"var(--text)" }}>Est. Tax</span>
-                      <span style={{ color:"var(--accent)" }}>{fmt(e.estimated_tax || 0)}</span>
+                      <span style={{ color:"var(--accent)" }}>{formatWorkspaceAmount(e.estimated_tax || 0)}</span>
                     </div>
                   </div>
                 </div>
@@ -529,15 +581,42 @@ export default function TaxPage() {
               <div className="flex gap-2 flex-wrap">
                 {calcModes.map(m => (
                   <button key={m.key} onClick={() => { setCalcMode(m.key); setCalcResult(null); setCalcError(null); }}
-                    className="px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-all"
+                    className="px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-all"
                     style={{
-                      background: calcMode===m.key ? "var(--accent)" : "var(--surface)",
-                      color: calcMode===m.key ? "#000" : "var(--text-muted)",
+                      background: calcMode===m.key ? "var(--accent-soft)" : "var(--surface)",
+                      color: calcMode===m.key ? "var(--accent)" : "var(--text-muted)",
                       border: `1px solid ${calcMode===m.key ? "var(--accent)" : "var(--border)"}`,
+                      boxShadow: calcMode===m.key ? "inset 0 0 0 1px rgba(255,255,255,0.08)" : "none",
                     }}>
                     {m.icon} {m.label}
                   </button>
                 ))}
+              </div>
+
+              <div
+                className="overflow-hidden rounded-[30px] p-6"
+                style={{
+                  background: "linear-gradient(135deg, rgba(20,184,166,0.14), rgba(245,158,11,0.12), rgba(59,130,246,0.1))",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                }}
+              >
+                <div className="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-[0.3em]" style={{ color:"var(--text-dim)" }}>Selected Calculator</p>
+                    <h2 className="mt-2 text-3xl font-black tracking-tight" style={{ color:"var(--text)" }}>{activeCalcMode.title}</h2>
+                    <p className="mt-3 max-w-2xl text-sm leading-6" style={{ color:"var(--text-muted)" }}>{activeCalcMode.summary}</p>
+                  </div>
+                  <div className="grid gap-3">
+                    <div className="rounded-2xl p-4" style={{ background:"rgba(0,0,0,0.18)", border:"1px solid rgba(255,255,255,0.08)" }}>
+                      <p className="text-[10px] uppercase tracking-[0.24em]" style={{ color:"var(--text-dim)" }}>Formula</p>
+                      <p className="mt-2 text-sm font-medium leading-6" style={{ color:"var(--text)" }}>{activeCalcMode.formula}</p>
+                    </div>
+                    <div className="rounded-2xl p-4" style={{ background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)" }}>
+                      <p className="text-[10px] uppercase tracking-[0.24em]" style={{ color:"var(--text-dim)" }}>Context</p>
+                      <p className="mt-2 text-sm leading-6" style={{ color:"var(--text-muted)" }}>{activeCalcMode.context}</p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Calculator form */}
@@ -613,6 +692,27 @@ export default function TaxPage() {
                 </form>
               </div>
 
+              <div className="grid gap-3 md:grid-cols-3">
+                <div className="rounded-2xl p-4" style={{ background:"var(--surface)", border:"1px solid var(--border)" }}>
+                  <p className="text-sm font-semibold" style={{ color:"var(--text)" }}>Pure calculation path</p>
+                  <p className="mt-2 text-sm leading-6" style={{ color:"var(--text-muted)" }}>
+                    The result panel now follows the actual API contract for each calculator instead of forcing every response into the same total-tax template.
+                  </p>
+                </div>
+                <div className="rounded-2xl p-4" style={{ background:"var(--surface)", border:"1px solid var(--border)" }}>
+                  <p className="text-sm font-semibold" style={{ color:"var(--text)" }}>Date-sensitive logic</p>
+                  <p className="mt-2 text-sm leading-6" style={{ color:"var(--text-muted)" }}>
+                    Regime comparison is labeled for Assessment Year 2026-27, and the US output is treated as federal plus self-employment tax unless the source adds more.
+                  </p>
+                </div>
+                <div className="rounded-2xl p-4" style={{ background:"var(--surface)", border:"1px solid var(--border)" }}>
+                  <p className="text-sm font-semibold" style={{ color:"var(--text)" }}>Unit discipline</p>
+                  <p className="mt-2 text-sm leading-6" style={{ color:"var(--text-muted)" }}>
+                    HRA expects annual salary and rent, while gratuity expects last drawn monthly basic + DA. The results now call that distinction out explicitly.
+                  </p>
+                </div>
+              </div>
+
               {/* Error */}
               {calcError && (
                 <div className="glass p-4" style={{ borderLeft:"3px solid var(--danger)" }}>
@@ -620,8 +720,12 @@ export default function TaxPage() {
                 </div>
               )}
 
+              {calcResult && (
+                <TaxCalculatorResult mode={calcMode} result={calcResult} />
+              )}
+
               {/* Result */}
-              {calcResult && (() => {
+              {false && calcResult && (() => {
                 const cr = calcResult as any;
                 const d = cr.data || cr;
                 const inp = d.input || {};

@@ -80,9 +80,9 @@ export default function BudgetsPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {budgets.map((b, i) => {
-            const pct = b.monthly_limit > 0 ? Math.min((b.current_spend / b.monthly_limit) * 100, 100) : 0;
-            const over = pct >= 100;
-            const warn = pct >= 80 && !over;
+            const pct = b.percentage_used;
+            const over = b.status === "over_budget";
+            const warn = b.status === "warning";
             const barColor = over ? "var(--danger)" : warn ? "var(--warning)" : "var(--accent)";
             const remaining = b.monthly_limit - b.current_spend;
 
@@ -92,14 +92,14 @@ export default function BudgetsPage() {
                   <span className="text-sm font-semibold" style={{ color: "var(--text)" }}>{b.category}</span>
                   {over && <span className="badge badge-critical">Over budget</span>}
                   {warn && <span className="badge badge-warning">Warning</span>}
-                  {!over && !warn && pct < 50 && <span className="badge badge-income">On track</span>}
+                  {!over && !warn && <span className="badge badge-income">On track</span>}
                 </div>
                 <div className="flex items-baseline gap-1 mb-1">
                   <span className="text-lg font-bold" style={{ color: barColor }}>{fmt(b.current_spend)}</span>
                   <span className="text-xs" style={{ color: "var(--text-dim)" }}>/ {fmt(b.monthly_limit)}</span>
                 </div>
                 <div className="mt-3 rounded-full overflow-hidden" style={{ height: 6, background: "var(--bg)" }}>
-                  <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: barColor }} />
+                  <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(pct, 100)}%`, background: barColor }} />
                 </div>
                 <div className="flex items-center justify-between text-xs mt-2" style={{ color: "var(--text-dim)" }}>
                   <span>{pct.toFixed(0)}% used</span>

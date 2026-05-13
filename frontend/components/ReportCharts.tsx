@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useCurrency } from "@/components/CurrencyContext";
 
 // ═══════════════════════════════════════════════════════════════════
 // AI CFO — Report Chart Components
@@ -16,14 +17,31 @@ const PALETTE = [
 
 // ── Format helpers ───────────────────────────────────────────────
 
-function fmtValue(v: number): string {
-  const abs = Math.abs(v);
-  if (abs >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`;
-  if (abs >= 1_000) return `$${(v / 1_000).toFixed(0)}K`;
-  return `$${v.toLocaleString()}`;
+function formatCurrencyValue(
+  value: number,
+  currencyCode: string,
+  compact = false,
+): string {
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currencyCode,
+      notation: compact ? "compact" : "standard",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: compact ? 1 : 0,
+    }).format(value);
+  } catch {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      notation: compact ? "compact" : "standard",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: compact ? 1 : 0,
+    }).format(value);
+  }
 }
 
-function fmtAxis(v: number): string {
+function formatAxisValue(v: number): string {
   const abs = Math.abs(v);
   if (abs >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
   if (abs >= 1_000) return `${(v / 1_000).toFixed(0)}K`;
@@ -41,12 +59,16 @@ export function DonutChart({
   data,
   size = 230,
   thickness = 38,
+  currencyCode: currencyCodeProp,
 }: {
   data: DonutSlice[];
   size?: number;
   thickness?: number;
+  currencyCode?: string;
 }) {
   const [hovered, setHovered] = useState<number | null>(null);
+  const { currencyCode: contextCurrencyCode } = useCurrency();
+  const currencyCode = currencyCodeProp || contextCurrencyCode;
   const total = data.reduce((s, d) => s + d.value, 0);
   if (total === 0) return <EmptyChart label="No category data" />;
 
@@ -127,8 +149,8 @@ export function DonutChart({
             style={{ fontFamily: "var(--font-mono, monospace)" }}
           >
             {hovered !== null
-              ? fmtValue(slices[hovered].value)
-              : fmtValue(total)}
+              ? formatCurrencyValue(slices[hovered].value, currencyCode, true)
+              : formatCurrencyValue(total, currencyCode, true)}
           </text>
           <text
             x={cx}
@@ -211,12 +233,16 @@ export function BarChart({
   data,
   height = 200,
   showValues = true,
+  currencyCode: currencyCodeProp,
 }: {
   data: BarItem[];
   height?: number;
   showValues?: boolean;
+  currencyCode?: string;
 }) {
   const [hovered, setHovered] = useState<number | null>(null);
+  const { currencyCode: contextCurrencyCode } = useCurrency();
+  const currencyCode = currencyCodeProp || contextCurrencyCode;
   const max = Math.max(...data.map((d) => d.value), 1);
   if (data.length === 0) return <EmptyChart label="No data" />;
 
@@ -248,7 +274,7 @@ export function BarChart({
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {fmtValue(d.value)}
+                  {formatCurrencyValue(d.value, currencyCode, true)}
                 </div>
               )}
               <div
@@ -282,7 +308,7 @@ export function BarChart({
               }}
               title={d.label}
             >
-              {d.label.length > 10 ? d.label.slice(0, 9) + "…" : d.label}
+              {d.label.length > 10 ? `${d.label.slice(0, 9)}...` : d.label}
             </span>
           </div>
         ))}
@@ -303,12 +329,16 @@ export function LineChart({
   labels,
   datasets,
   height = 240,
+  currencyCode: currencyCodeProp,
 }: {
   labels: string[];
   datasets: LineDataset[];
   height?: number;
+  currencyCode?: string;
 }) {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  const { currencyCode: contextCurrencyCode } = useCurrency();
+  const currencyCode = currencyCodeProp || contextCurrencyCode;
   const allVals = datasets.flatMap((d) => d.values);
   const rawMax = Math.max(...allVals, 1);
   const rawMin = Math.min(...allVals, 0);
@@ -397,7 +427,7 @@ export function LineChart({
               fill="var(--text-dim)"
               style={{ fontFamily: "var(--font-mono, monospace)" }}
             >
-              {fmtAxis(g.val)}
+              {formatAxisValue(g.val)}
             </text>
           </g>
         ))}
@@ -538,7 +568,7 @@ export function LineChart({
           </span>
           {datasets.map((ds, i) => (
             <span key={i} className="text-xs font-mono font-semibold" style={{ color: ds.color }}>
-              {ds.label}: {fmtValue(ds.values[hoveredIdx] ?? 0)}
+              {ds.label}: {formatCurrencyValue(ds.values[hoveredIdx] ?? 0, currencyCode, true)}
             </span>
           ))}
         </div>
@@ -553,11 +583,15 @@ export function VarianceBar({
   budget,
   actual,
   label,
+  currencyCode: currencyCodeProp,
 }: {
   budget: number;
   actual: number;
   label: string;
+  currencyCode?: string;
 }) {
+  const { currencyCode: contextCurrencyCode } = useCurrency();
+  const currencyCode = currencyCodeProp || contextCurrencyCode;
   const pct = budget > 0 ? (actual / budget) * 100 : 0;
   const variance = actual - budget;
   const over = variance > 0;
@@ -576,7 +610,7 @@ export function VarianceBar({
           className="font-mono font-semibold"
           style={{ color: over ? "var(--danger)" : "var(--success)" }}
         >
-          {over ? "+" : ""}${Math.abs(variance).toLocaleString()} ({pct.toFixed(0)}%)
+          {over ? "+" : ""}{formatCurrencyValue(Math.abs(variance), currencyCode)} ({pct.toFixed(0)}%)
         </span>
       </div>
       <div
@@ -604,8 +638,8 @@ export function VarianceBar({
         />
       </div>
       <div className="flex justify-between text-xs" style={{ color: "var(--text-dim)" }}>
-        <span>Actual: ${actual.toLocaleString()}</span>
-        <span>Budget: ${budget.toLocaleString()}</span>
+        <span>Actual: {formatCurrencyValue(actual, currencyCode)}</span>
+        <span>Budget: {formatCurrencyValue(budget, currencyCode)}</span>
       </div>
     </div>
   );
@@ -618,21 +652,26 @@ interface CompareRow {
   periodA: number;
   periodB: number;
   format?: "currency" | "number" | "percent";
+  direction?: "higher" | "lower" | "neutral";
 }
 
 export function ComparisonTable({
   rows,
   periodALabel,
   periodBLabel,
+  currencyCode: currencyCodeProp,
 }: {
   rows: CompareRow[];
   periodALabel: string;
   periodBLabel: string;
+  currencyCode?: string;
 }) {
+  const { currencyCode: contextCurrencyCode } = useCurrency();
+  const currencyCode = currencyCodeProp || contextCurrencyCode;
   const fmt = (v: number, f?: string) => {
     if (f === "percent") return `${v.toFixed(1)}%`;
     if (f === "number") return v.toLocaleString();
-    return fmtValue(v);
+    return formatCurrencyValue(v, currencyCode);
   };
 
   return (
@@ -656,12 +695,25 @@ export function ComparisonTable({
         </thead>
         <tbody>
           {rows.map((r, i) => {
-            const delta = r.periodA !== 0
-              ? ((r.periodB - r.periodA) / Math.abs(r.periodA)) * 100
-              : r.periodB > 0 ? 100 : 0;
-            const positive = r.metric.toLowerCase().includes("income") || r.metric.toLowerCase().includes("revenue")
-              ? delta >= 0
-              : delta <= 0;
+            const delta = r.periodB !== 0
+              ? ((r.periodA - r.periodB) / Math.abs(r.periodB)) * 100
+              : r.periodA > 0 ? 100 : 0;
+            const direction = r.direction ?? "neutral";
+            const positive = direction === "neutral"
+              ? delta === 0
+              : direction === "higher"
+                ? delta >= 0
+                : delta <= 0;
+            const deltaColor = direction === "neutral"
+              ? "var(--info)"
+              : positive
+                ? "var(--success)"
+                : "var(--danger)";
+            const deltaDisplay = delta > 0
+              ? `+${delta.toFixed(1)}%`
+              : delta < 0
+                ? `${delta.toFixed(1)}%`
+                : "0.0%";
 
             return (
               <tr
@@ -679,9 +731,9 @@ export function ComparisonTable({
                   {fmt(r.periodB, r.format)}
                 </td>
                 <td className="text-right px-3 py-2.5 rounded-r-lg font-mono font-semibold" style={{
-                  color: positive ? "var(--success)" : "var(--danger)",
+                  color: deltaColor,
                 }}>
-                  {delta >= 0 ? "▲ +" : "▼ "}{delta.toFixed(1)}%
+                  {deltaDisplay}
                 </td>
               </tr>
             );

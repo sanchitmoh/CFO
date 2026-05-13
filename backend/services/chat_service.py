@@ -12,7 +12,8 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models import Transaction, TransactionType, Budget
+from models import Transaction, TransactionType
+from services.budget_service import get_budget_snapshots
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -215,17 +216,20 @@ async def _fetch_cash_flow(db: AsyncSession, ws_id, cutoff: datetime, sym: str) 
 
 async def _fetch_budgets(db: AsyncSession, ws_id, _cutoff: datetime, sym: str) -> tuple[str, dict]:
     """Budget adherence summary."""
-    budgets_q = await db.execute(
-        select(Budget).where(Budget.workspace_id == ws_id)
-    )
     lines = []
     over_budget = 0
-    for b in budgets_q.scalars():
-        pct = float(b.current_spend) / float(b.monthly_limit) * 100 if b.monthly_limit > 0 else 0
-        status = "OVER" if pct > 100 else "OK"
+    for budget in await get_budget_snapshots(db, ws_id):
+        pct = budget.percentage_used
+        status = "OVER" if budget.status == "over_budget" else "OK"
+        if budget.status == "warning":
+            status = "WARNING"
         if pct > 100:
             over_budget += 1
-        lines.append(f"  - {sanitize_data_field(b.category)}: {sym}{float(b.current_spend):,.0f} / {sym}{float(b.monthly_limit):,.0f} ({pct:.0f}%) [{status}]")
+        lines.append(
+            f"  - {sanitize_data_field(budget.category)}: "
+            f"{sym}{budget.current_spend:,.0f} / {sym}{budget.monthly_limit:,.0f} "
+            f"({pct:.0f}%) [{status}]"
+        )
 
     text = "Budget Status:\n" + ("\n".join(lines) if lines else "  No budgets configured")
     return text, {"budget_count": len(lines), "over_budget": over_budget}
@@ -483,4 +487,3 @@ SEMANTIC MATCHES: {rag_matches} relevant transactions found
 ─── END FINANCIAL DATA ───
 
 Respond concisely and use the actual numbers above. Format currency values consistently. Use bullet points for clarity when listing multiple items."""
-

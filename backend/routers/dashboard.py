@@ -5,6 +5,7 @@ Uses dashboard_service for aggregated data with caching.
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from dependencies import get_rls_db
@@ -172,5 +173,4 @@ def _build_revenue_trend(summary, now: datetime) -> list[dict]:
         })
     
     return trend
-
 

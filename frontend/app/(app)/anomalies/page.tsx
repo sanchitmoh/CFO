@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { anomalyApi } from "@/lib/api";
+import type { Anomaly as ApiAnomaly, ScanResult } from "@/lib/types";
 import {
   AlertTriangle,
   ShieldAlert,
@@ -10,18 +11,6 @@ import {
   TrendingUp,
   Eye,
 } from "lucide-react";
-
-interface Anomaly {
-  id: number;
-  transaction_id: number;
-  date: string;
-  description: string;
-  amount: number;
-  category: string;
-  anomaly_score: number;
-  reason: string;
-  status: "flagged" | "reviewed" | "dismissed";
-}
 
 import { useCurrency } from "@/components/CurrencyContext";
 
@@ -44,35 +33,31 @@ const scoreLabel = (score: number) => {
 };
 
 type StatusFilter = "all" | "flagged" | "reviewed" | "dismissed";
+type UiAnomaly = ApiAnomaly & { status: StatusFilter };
+
+const toUiAnomaly = (anomaly: ApiAnomaly): UiAnomaly => ({
+  ...anomaly,
+  status: "flagged",
+});
 
 export default function AnomaliesPage() {
   const { formatAmount: fmt } = useCurrency();
-  const [anomalies, setAnomalies] = useState<Anomaly[]>([]);
+  const [anomalies, setAnomalies] = useState<UiAnomaly[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<StatusFilter>("all");
-  const [expanded, setExpanded] = useState<number | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
+  const [scanSummary, setScanSummary] = useState<Pick<ScanResult, "scanned" | "anomalies_found"> | null>(null);
 
   const loadAnomalies = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const data = await anomalyApi.list();
-      if (data && Array.isArray(data)) {
-        setAnomalies(data.map((a: any, i: number) => ({
-          id: a.id || i + 1,
-          transaction_id: a.transaction_id || i + 100,
-          date: a.date || a.created_at || "",
-          description: a.description || "",
-          amount: a.amount || 0,
-          category: a.category || "Unknown",
-          anomaly_score: a.anomaly_score || a.z_score || 0.5,
-          reason: a.reason || a.explanation || "",
-          status: a.status || "flagged",
-        })));
-      }
+      setAnomalies(Array.isArray(data) ? data.map(toUiAnomaly) : []);
     } catch {
+      setAnomalies([]);
       setError("Unable to load anomalies. Please check your connection and try again.");
     } finally {
       setLoading(false);
@@ -81,22 +66,16 @@ export default function AnomaliesPage() {
 
   const runScan = useCallback(async () => {
     setScanning(true);
+    setError(null);
     try {
       const result = await anomalyApi.scan(undefined, 365);
-      if (result?.anomalies?.length) {
-        setAnomalies(result.anomalies.map((a: any, i: number) => ({
-          id: a.id || i + 1,
-          transaction_id: a.transaction_id || i + 100,
-          date: a.date || "",
-          description: a.description || "",
-          amount: a.amount || 0,
-          category: a.category || "Unknown",
-          anomaly_score: a.anomaly_score || a.z_score || 0.5,
-          reason: a.reason || a.explanation || "",
-          status: "flagged",
-        })));
-      }
+      setScanSummary({
+        scanned: result.scanned,
+        anomalies_found: result.anomalies_found,
+      });
+      setAnomalies(result.anomalies.map(toUiAnomaly));
     } catch {
+      setError("Unable to complete the scan right now. Existing flagged anomalies are still shown below.");
       // scan failed — keep existing data
     } finally {
       setScanning(false);
@@ -107,13 +86,13 @@ export default function AnomaliesPage() {
     loadAnomalies();
   }, [loadAnomalies]);
 
-  const dismiss = (id: number) => {
+  const dismiss = (id: string) => {
     setAnomalies((prev) =>
       prev.map((a) => (a.id === id ? { ...a, status: "dismissed" } : a))
     );
   };
 
-  const markReviewed = (id: number) => {
+  const markReviewed = (id: string) => {
     setAnomalies((prev) =>
       prev.map((a) => (a.id === id ? { ...a, status: "reviewed" } : a))
     );
@@ -156,6 +135,20 @@ export default function AnomaliesPage() {
           {scanning ? "Scanning…" : "Run Scan"}
         </button>
       </div>
+
+      {scanSummary && (
+        <div className="glass p-4 flex items-center justify-between gap-3 animate-fade-up delay-1">
+          <div>
+            <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
+              Latest scan summary
+            </p>
+            <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+              Scanned {scanSummary.scanned} expense transactions and flagged {scanSummary.anomalies_found} anomalies.
+            </p>
+          </div>
+          <span className="badge badge-info">365-day window</span>
+        </div>
+      )}
 
       {/* Stat Cards */}
       <div className="grid grid-cols-3 gap-4 animate-fade-up delay-1">
@@ -321,7 +314,7 @@ export default function AnomaliesPage() {
                     onClick={() => dismiss(anomaly.id)}
                     className="btn-ghost text-xs px-3 py-1.5"
                   >
-                    Dismiss
+                    Hide in View
                   </button>
                 </div>
               )}
@@ -356,7 +349,7 @@ export default function AnomaliesPage() {
 
       {/* Disclaimer */}
       <p className="text-xs text-center animate-fade-up delay-5" style={{ color: "var(--text-dim)" }}>
-        Anomaly detection is advisory only. All flagged items require human review before action.
+        Anomaly detection is advisory only. All flagged items require human review before action. Review and hide actions on this page are local to the current browser view.
         The ML model evaluates patterns — it does not make financial decisions.
       </p>
     </div>

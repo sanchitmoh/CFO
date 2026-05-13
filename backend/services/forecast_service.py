@@ -9,6 +9,7 @@ Storage hierarchy (ARCH-003):
 """
 import json
 import hashlib
+import math
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Literal
@@ -16,21 +17,35 @@ from typing import Literal
 from sqlalchemy import select, func, extract, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models import Transaction, TransactionType, ForecastResult
+from models import Transaction, TransactionType, ForecastResult, Workspace
 from schemas import ForecastResponse, ForecastPoint
 from cache import cache_get, cache_set, make_versioned_cache_key
 
+LINEAR_MODEL_VERSION = "v2_linear"
 
-def _slope(values: list[float]) -> float:
-    """Compute a simple linear slope for a list of values by index."""
+
+def _linear_fit(values: list[float]) -> tuple[float, float]:
+    """Return intercept and slope for a least-squares line over value indexes."""
     n = len(values)
-    if n < 2:
-        return 0.0
+    if n == 0:
+        return 0.0, 0.0
+    if n == 1:
+        return float(values[0]), 0.0
     x_mean = (n - 1) / 2
     y_mean = sum(values) / n
     num = sum((i - x_mean) * (v - y_mean) for i, v in enumerate(values))
     den = sum((i - x_mean) ** 2 for i in range(n))
-    return num / den if den != 0 else 0.0
+    slope = num / den if den != 0 else 0.0
+    intercept = y_mean - slope * x_mean
+    return intercept, slope
+
+
+def _residual_stddev(values: list[float], intercept: float, slope: float) -> float:
+    if len(values) < 2:
+        return 0.0
+    residuals = [value - (intercept + slope * index) for index, value in enumerate(values)]
+    variance = sum(residual * residual for residual in residuals) / len(residuals)
+    return math.sqrt(max(variance, 0.0))
 
 
 SCENARIO_MULTIPLIERS = {
@@ -38,6 +53,20 @@ SCENARIO_MULTIPLIERS = {
     "base":       {"income": 1.0,  "expenses": 1.0},
     "pessimistic":{"income": 0.85, "expenses": 1.1},
 }
+
+
+async def _resolve_base_currency(db: AsyncSession, workspace_id: uuid.UUID) -> str:
+    workspace = await db.get(Workspace, workspace_id)
+    currency = getattr(workspace, "currency", None)
+    if isinstance(currency, str) and currency.strip():
+        return currency.upper()
+    return "USD"
+
+
+def _with_base_currency(payload: dict, base_currency: str) -> dict:
+    result = dict(payload)
+    result["base_currency"] = base_currency
+    return result
 
 
 async def _fetch_monthly_data(
@@ -106,10 +135,10 @@ def _compute_forecast(
     expenses = [monthly_data[p]["expenses"] for p in periods]
     n = len(periods)
 
-    avg_income = sum(incomes) / n
-    avg_expense = sum(expenses) / n
-    income_slope = _slope(incomes)
-    expense_slope = _slope(expenses)
+    income_intercept, income_slope = _linear_fit(incomes)
+    expense_intercept, expense_slope = _linear_fit(expenses)
+    income_std = _residual_stddev(incomes, income_intercept, income_slope)
+    expense_std = _residual_stddev(expenses, expense_intercept, expense_slope)
 
     mult = SCENARIO_MULTIPLIERS[scenario]
     # Start forecasting from the month AFTER the latest historical period,
@@ -125,13 +154,20 @@ def _compute_forecast(
         future_month = ((future_month - 1) % 12) + 1
         period = f"{future_year}-{future_month:02d}"
 
-        proj_income = max(0, (avg_income + income_slope * (n + i)) * mult["income"])
-        proj_expense = max(0, (avg_expense + expense_slope * (n + i)) * mult["expenses"])
+        future_index = n + i
+        proj_income = max(0, (income_intercept + income_slope * future_index) * mult["income"])
+        proj_expense = max(0, (expense_intercept + expense_slope * future_index) * mult["expenses"])
         proj_net = proj_income - proj_expense
         cumulative += proj_net
 
-        confidence = max(0.5, 1.0 - i * 0.05)
-        margin = proj_income * (1 - confidence) * 0.5
+        horizon_scale = 1 + i * 0.15
+        income_margin = income_std * mult["income"] * horizon_scale
+        expense_margin = expense_std * mult["expenses"] * horizon_scale
+        net_lower = (proj_income - income_margin) - (proj_expense + expense_margin)
+        net_upper = (proj_income + income_margin) - (proj_expense - expense_margin)
+        interval_width = max(net_upper - net_lower, 0.0)
+        activity = max(abs(proj_income) + abs(proj_expense), 1.0)
+        confidence = max(0.5, min(0.95, 1.0 - (interval_width / activity)))
 
         data_points.append(ForecastPoint(
             period=period,
@@ -140,8 +176,8 @@ def _compute_forecast(
             projected_net=round(proj_net, 2),
             cumulative_net=round(cumulative, 2),
             confidence=round(confidence, 2),
-            confidence_lower=round(proj_net - margin, 2),
-            confidence_upper=round(proj_net + margin, 2),
+            confidence_lower=round(net_lower, 2),
+            confidence_upper=round(net_upper, 2),
         ))
 
     return data_points
@@ -167,12 +203,16 @@ class LinearForecastService:
           Redis miss → check DB (validate data_hash) → return if fresh
           DB miss / stale → recompute → persist to DB → cache in Redis
         """
-        cache_key = await make_versioned_cache_key("forecast", str(workspace_id), scenario, str(months_ahead))
+        base_currency = await _resolve_base_currency(db, workspace_id)
+        cache_key = await make_versioned_cache_key("forecast_v2", str(workspace_id), scenario, str(months_ahead))
 
         # ── Layer 1: Redis hot cache ─────────────────────────────────
         cached = await cache_get(cache_key)
         if cached:
-            return ForecastResponse(**cached)
+            cached_result = _with_base_currency(cached, base_currency)
+            if cached_result != cached:
+                await cache_set(cache_key, cached_result, ttl=1800)
+            return ForecastResponse(**cached_result)
 
         # ── Fetch current source data + hash ─────────────────────────
         monthly_data, current_hash = await _fetch_monthly_data(db, workspace_id)
@@ -184,6 +224,7 @@ class LinearForecastService:
                 ForecastResult.workspace_id == workspace_id,
                 ForecastResult.scenario == scenario,
                 ForecastResult.horizon_months == months_ahead,
+                ForecastResult.model_version == LINEAR_MODEL_VERSION,
             ))
             .order_by(ForecastResult.computed_at.desc())
             .limit(1)
@@ -196,46 +237,56 @@ class LinearForecastService:
             and db_forecast.expires_at > datetime.now(timezone.utc)
         ):
             # DB record is fresh and data hasn't changed — use it
-            response = ForecastResponse(**db_forecast.result_json)
+            response_dict = _with_base_currency(db_forecast.result_json, base_currency)
+            if db_forecast.base_currency != base_currency or response_dict != db_forecast.result_json:
+                db_forecast.base_currency = base_currency
+                db_forecast.result_json = response_dict
+                await db.commit()
+            response = ForecastResponse(**response_dict)
             # Backfill Redis
-            await cache_set(cache_key, db_forecast.result_json, ttl=1800)
+            await cache_set(cache_key, response_dict, ttl=1800)
             return response
 
         # ── Layer 3: Recompute ───────────────────────────────────────
         if not monthly_data:
             return ForecastResponse(
                 scenario=scenario,
+                base_currency=base_currency,
                 months_ahead=months_ahead,
                 historical_months=0,
                 data_points=[],
-                model_version="v1_linear",
+                model_version=LINEAR_MODEL_VERSION,
             )
 
         data_points = _compute_forecast(monthly_data, months_ahead, scenario)
 
         result = ForecastResponse(
             scenario=scenario,
+            base_currency=base_currency,
             months_ahead=months_ahead,
             historical_months=len(monthly_data),
             data_points=data_points,
-            model_version="v1_linear",
+            model_version=LINEAR_MODEL_VERSION,
         )
         result_dict = result.model_dump()
 
         # ── Persist to DB (upsert) ───────────────────────────────────
         now = datetime.now(timezone.utc)
         if db_forecast:
+            db_forecast.base_currency = base_currency
             db_forecast.result_json = result_dict
             db_forecast.data_hash = current_hash
+            db_forecast.model_version = LINEAR_MODEL_VERSION
             db_forecast.computed_at = now
             db_forecast.expires_at = now + timedelta(minutes=30)
         else:
             db.add(ForecastResult(
                 workspace_id=workspace_id,
                 scenario=scenario,
+                base_currency=base_currency,
                 horizon_months=months_ahead,
                 result_json=result_dict,
-                model_version="v1_linear",
+                model_version=LINEAR_MODEL_VERSION,
                 data_hash=current_hash,
                 computed_at=now,
                 expires_at=now + timedelta(minutes=30),

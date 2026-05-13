@@ -12,9 +12,10 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models import Transaction, TransactionType, Budget
+from models import Transaction, TransactionType
 from schemas import HealthScoreResponse, ScoreComponent
 from cache import cache_get, cache_set, make_versioned_cache_key
+from services.budget_service import get_budget_totals
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -159,13 +160,7 @@ async def compute_health_score(
     rw_score, rw_status, rw_desc = _score_runway(runway)
 
     # Budget adherence
-    budget_q = await db.execute(
-        select(func.sum(Budget.current_spend), func.sum(Budget.monthly_limit))
-        .where(Budget.workspace_id == workspace_id)
-    )
-    brow = budget_q.one_or_none()
-    spent = float(brow[0] or 0) if brow else 0.0
-    limit_total = float(brow[1] or 1) if brow else 1.0
+    spent, limit_total = await get_budget_totals(db, workspace_id)
     budget_pct = (spent / limit_total * 100) if limit_total > 0 else 0
     ba_score, ba_status, ba_desc = _score_budget(budget_pct)
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { api } from "@/lib/api";
 import type { ForecastResponse, ForecastPoint } from "@/lib/types";
@@ -10,9 +10,8 @@ import {
   ResponsiveContainer, Legend, ReferenceLine,
 } from "recharts";
 import {
-  TrendingUp, TrendingDown, SlidersHorizontal, Sparkles,
+  TrendingUp, TrendingDown,
   Target, BarChart3, Activity, ArrowDownRight, ArrowUpRight,
-  ChevronDown, Zap,
 } from "lucide-react";
 import { useCurrency } from "@/components/CurrencyContext";
 
@@ -98,7 +97,6 @@ export default function ForecastingPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const { formatAmount: fmt, formatCompact: fmtShort } = useCurrency();
-  const [revenueGrowth, setRevenueGrowth] = useState(12);
   const [activeTab, setActiveTab] = useState<"chart" | "table">("chart");
 
   const load = useCallback(async () => {
@@ -108,9 +106,6 @@ export default function ForecastingPage() {
       const token = await getToken();
       const result = await api.getForecast(scenario, months, token);
       setData(result);
-      if (result.assumptions?.income_growth_rate) {
-        setRevenueGrowth(Math.round(Number(result.assumptions.income_growth_rate) * 100));
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load forecast");
     } finally {
@@ -120,23 +115,7 @@ export default function ForecastingPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const points: ForecastPoint[] = useMemo(() => {
-    if (!data?.data_points) return [];
-    const baseGrowth = Number(data.assumptions?.income_growth_rate ?? 0.12);
-    const baseGrowthPct = Math.round(baseGrowth * 100);
-    if (revenueGrowth === baseGrowthPct) return data.data_points;
-    const ratio = revenueGrowth / (baseGrowthPct || 1);
-    let cumNet = 0;
-    return data.data_points.map((p) => {
-      const adjustedIncome = Math.round(p.projected_income * ratio);
-      const net = adjustedIncome - p.projected_expenses;
-      cumNet += net;
-      return { ...p, projected_income: adjustedIncome, projected_net: net, cumulative_net: cumNet,
-        confidence_lower: Math.round(p.confidence_lower * ratio),
-        confidence_upper: Math.round(p.confidence_upper * ratio),
-      };
-    });
-  }, [data, revenueGrowth]);
+  const points: ForecastPoint[] = data?.data_points ?? [];
 
   /* ── Derived metrics ──────────────────────────────────────────── */
   const totalNet = points.reduce((s, p) => s + p.projected_net, 0);
@@ -186,7 +165,7 @@ export default function ForecastingPage() {
               <h1 className="text-2xl font-bold" style={{ color: "var(--text)" }}>Forecasting</h1>
               <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>
                 AI-powered projections • {data?.historical_months ?? 0} months historical data •{" "}
-                <span style={{ color: scenarioConfig.color }}>{scenarioConfig.label}</span>
+                {data?.base_currency ?? "USD"} â€¢ <span style={{ color: scenarioConfig.color }}>{scenarioConfig.label}</span>
               </p>
             </div>
           </div>
@@ -251,43 +230,6 @@ export default function ForecastingPage() {
       )}
 
       {/* ── Scenario Slider ────────────────────────────────────── */}
-      {!loading && points.length > 0 && (
-        <div className="glass p-5 animate-fade-up delay-2">
-          <div className="flex items-center gap-2 mb-3">
-            <div style={{ width: 24, height: 24, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center",
-              background: "linear-gradient(135deg, rgba(139,92,246,0.2), rgba(59,130,246,0.2))" }}>
-              <SlidersHorizontal size={12} style={{ color: "#9B7CB8" }} />
-            </div>
-            <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-              Revenue Growth Sensitivity
-            </span>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-xs font-mono" style={{ color: "var(--text-dim)", width: 28 }}>0%</span>
-            <div style={{ flex: 1, position: "relative" }}>
-              <input type="range" min={0} max={30} step={1} value={revenueGrowth}
-                onChange={(e) => setRevenueGrowth(Number(e.target.value))}
-                style={{ width: "100%", accentColor: "#9B7CB8", height: 6 }} />
-              <div style={{
-                position: "absolute", top: -28, left: `${(revenueGrowth / 30) * 100}%`, transform: "translateX(-50%)",
-                background: "#9B7CB8", color: "#fff", fontSize: 10, fontWeight: 700,
-                padding: "2px 8px", borderRadius: 6, whiteSpace: "nowrap",
-              }}>
-                {revenueGrowth}% MoM
-              </div>
-            </div>
-            <span className="text-xs font-mono" style={{ color: "var(--text-dim)", width: 28 }}>30%</span>
-          </div>
-          <div className="flex items-center justify-end mt-2 gap-2">
-            <Zap size={11} style={{ color: "#9B7CB8" }} />
-            <span className="text-xs" style={{ color: "var(--text-dim)" }}>
-              Projected net:{" "}
-              <strong style={{ color: totalNet >= 0 ? "#5E9E7E" : "#C75050" }}>{fmt(totalNet)}</strong>
-              {" "}over {months}mo
-            </span>
-          </div>
-        </div>
-      )}
 
       {/* ── Main Chart ─────────────────────────────────────────── */}
       <div className="glass p-6 animate-fade-up delay-3">
@@ -423,7 +365,7 @@ export default function ForecastingPage() {
             <span>Model: <strong style={{ color: "var(--text-muted)" }}>{data.model_version}</strong></span>
             <span>Historical: <strong style={{ color: "var(--text-muted)" }}>{data.historical_months} months</strong></span>
           </div>
-          <span>Last computed: {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+          <span>Currency: <strong style={{ color: "var(--text-muted)" }}>{data.base_currency}</strong></span>
         </div>
       )}
     </div>

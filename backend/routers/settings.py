@@ -17,6 +17,8 @@ from schemas import (
     AlertSettingsUpdate, AlertSettingsOut,
 )
 from services.audit_service import log_action
+from services.email_service import email_service
+from services.slack_service import slack_service
 
 router = APIRouter()
 
@@ -199,19 +201,23 @@ async def update_member_role(
 _ALERT_DEFAULTS = AlertSettingsOut().model_dump()
 
 
+async def _get_workspace_or_404(db: AsyncSession, workspace_id):
+    result = await db.execute(
+        select(Workspace).where(Workspace.id == workspace_id)
+    )
+    ws = result.scalar_one_or_none()
+    if not ws:
+        raise HTTPException(status_code=404, detail="Workspace not found")
+    return ws
+
+
 @router.get("/alerts", response_model=AlertSettingsOut)
 async def get_alert_settings(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_rls_db),
 ):
     """Get the workspace alert configuration."""
-    result = await db.execute(
-        select(Workspace).where(Workspace.id == user.workspace_id)
-    )
-    ws = result.scalar_one_or_none()
-    if not ws:
-        raise HTTPException(status_code=404, detail="Workspace not found")
-
+    ws = await _get_workspace_or_404(db, user.workspace_id)
     config = {**_ALERT_DEFAULTS, **(ws.alert_config or {})}
     return AlertSettingsOut(**config)
 
@@ -226,13 +232,7 @@ async def update_alert_settings(
     if user.role not in (UserRole.owner, UserRole.admin):
         raise HTTPException(status_code=403, detail="Insufficient permissions")
 
-    result = await db.execute(
-        select(Workspace).where(Workspace.id == user.workspace_id)
-    )
-    ws = result.scalar_one_or_none()
-    if not ws:
-        raise HTTPException(status_code=404, detail="Workspace not found")
-
+    ws = await _get_workspace_or_404(db, user.workspace_id)
     existing = ws.alert_config or {}
     updates = data.model_dump(exclude_unset=True)
     merged = {**existing, **updates}
@@ -246,3 +246,54 @@ async def update_alert_settings(
 
     full_config = {**_ALERT_DEFAULTS, **merged}
     return AlertSettingsOut(**full_config)
+
+
+@router.post("/alerts/test/{channel}")
+async def test_alert_channel(
+    channel: str,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_rls_db),
+):
+    """Send a test alert through the configured workspace notification channel."""
+    if user.role not in (UserRole.owner, UserRole.admin):
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+
+    ws = await _get_workspace_or_404(db, user.workspace_id)
+    config = AlertSettingsOut(**{**_ALERT_DEFAULTS, **(ws.alert_config or {})})
+
+    if channel == "email":
+        recipients = [str(email) for email in config.email_addresses]
+        if not config.email_enabled:
+            raise HTTPException(status_code=400, detail="Email alerts are disabled")
+        if not recipients:
+            raise HTTPException(status_code=400, detail="Add at least one email recipient first")
+
+        success = await email_service.send_alert_email(
+            to_addresses=recipients,
+            alert_title="Test alert from AI CFO settings",
+            alert_message="Email alerts are connected and ready to send workspace notifications.",
+            alert_severity="info",
+            alert_category="settings",
+        )
+        if not success:
+            raise HTTPException(status_code=502, detail="Email delivery failed. Check provider credentials.")
+        return {"status": "sent", "channel": "email", "message": f"Test email sent to {len(recipients)} recipient(s)."}
+
+    if channel == "slack":
+        if not config.slack_enabled:
+            raise HTTPException(status_code=400, detail="Slack alerts are disabled")
+        if not config.slack_webhook_url:
+            raise HTTPException(status_code=400, detail="Add a Slack webhook URL first")
+
+        success = await slack_service.send_alert(
+            title="Test alert from AI CFO settings",
+            message="Slack alerts are connected and ready to send workspace notifications.",
+            severity="info",
+            category="settings",
+            webhook_url=config.slack_webhook_url,
+        )
+        if not success:
+            raise HTTPException(status_code=502, detail="Slack delivery failed. Check webhook or provider configuration.")
+        return {"status": "sent", "channel": "slack", "message": "Test Slack alert delivered successfully."}
+
+    raise HTTPException(status_code=404, detail="Unknown alert channel")

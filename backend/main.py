@@ -137,7 +137,7 @@ async def lifespan(app: FastAPI):
     logger.info("Skipping auto-migrations - run 'alembic upgrade head' manually")
 
     # CONFIG-001: Warn if localhost CORS origins in production
-    if not settings.DEBUG and any("localhost" in o for o in settings.CORS_ORIGINS):
+    if not settings.DEBUG and any("localhost" in o for o in settings.cors_origins_list):
         logger.critical(
             "CONFIG-001: CORS_ORIGINS contains localhost in production mode! "
             "Frontend will be blocked. Set CORS_ORIGINS in .env to your production domain."
@@ -236,7 +236,7 @@ app.add_middleware(BackwardCompatibilityMiddleware)
 # ── CORS ──────────────────────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

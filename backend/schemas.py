@@ -4,7 +4,7 @@ All request/response models aligned with frontend types.ts contracts.
 """
 import uuid
 from datetime import datetime, date
-from typing import Optional, List
+from typing import Optional, List, Literal
 from pydantic import BaseModel, EmailStr, Field, field_validator, constr, computed_field
 from decimal import Decimal
 
@@ -48,6 +48,25 @@ class AlertSettingsUpdate(BaseModel):
     low_cash_threshold: Optional[float] = None
     high_expense_threshold: Optional[float] = None
     anomaly_sensitivity: Optional[float] = None  # z-score multiplier
+    email_enabled: Optional[bool] = None
+    email_addresses: Optional[list[EmailStr]] = None
+    slack_enabled: Optional[bool] = None
+    slack_webhook_url: Optional[str] = None
+
+    @field_validator("email_addresses", mode="before")
+    @classmethod
+    def normalize_email_addresses(cls, value):
+        if value is None:
+            return value
+        return [str(email).strip() for email in value if str(email).strip()]
+
+    @field_validator("slack_webhook_url")
+    @classmethod
+    def normalize_slack_webhook(cls, value: Optional[str]):
+        if value is None:
+            return value
+        cleaned = value.strip()
+        return cleaned or None
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -86,10 +105,6 @@ class PasswordPolicyUpdateRequest(BaseModel):
     min_special_chars: Optional[int] = Field(None, ge=0, le=10)
     prevent_common_passwords: Optional[bool] = None
     prevent_user_info: Optional[bool] = None
-    email_enabled: Optional[bool] = None
-    email_addresses: Optional[list[str]] = None
-    slack_enabled: Optional[bool] = None
-    slack_webhook_url: Optional[str] = None
 
 
 class AlertSettingsOut(BaseModel):
@@ -98,6 +113,9 @@ class AlertSettingsOut(BaseModel):
     high_expense_threshold: float = 10000.0
     anomaly_sensitivity: float = 2.5
     email_enabled: bool = False
+    email_addresses: list[EmailStr] = Field(default_factory=list)
+    slack_enabled: bool = False
+    slack_webhook_url: Optional[str] = None
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -299,6 +317,7 @@ class DashboardSummary(BaseModel):
     cash_balance: float
     monthly_income: list[float]
     monthly_expenses: list[float]
+    monthly_periods: list[str]
     top_categories: list[CategoryAmount]
     recent_transactions: list[TransactionOut]
     period_months: int
@@ -347,6 +366,7 @@ class BudgetOut(BaseModel):
 class GoalCreate(BaseModel):
     title: constr(min_length=1, max_length=255) = Field(..., description="Goal title")  # type: ignore
     target_value: float = Field(..., gt=0, le=999999999.99, description="Target value")
+    current_value: Optional[float] = Field(None, ge=0, le=999999999.99, description="Current value")
     metric_type: str = Field(..., pattern="^(revenue|savings|expense_reduction)$", description="Metric type")
     deadline: Optional[date] = None
 
@@ -354,8 +374,8 @@ class GoalCreate(BaseModel):
 class GoalUpdate(BaseModel):
     title: Optional[str] = None
     target_value: Optional[float] = None
-    current_value: Optional[float] = None
-    status: Optional[str] = Field(None, pattern="^(active|completed|cancelled|on_hold)$")  # LOW-006: Add validation
+    current_value: Optional[float] = Field(None, ge=0, le=999999999.99)
+    status: Optional[str] = Field(None, pattern="^(active|completed|abandoned)$")
     deadline: Optional[date] = None
 
 
@@ -368,6 +388,7 @@ class GoalOut(BaseModel):
     deadline: Optional[datetime] = None
     status: str
     progress_pct: float  # computed
+    is_auto_tracked: bool = False
     created_at: datetime
     model_config = {"from_attributes": True}
 
@@ -510,13 +531,25 @@ class CategorySummary(BaseModel):
     count: int
 
 
+class BudgetVarianceItem(BaseModel):
+    category: str
+    budget: float
+    actual: float
+    variance: float
+    utilization_pct: float
+    transaction_count: int
+
+
 class ReportSummary(BaseModel):
     period_start: date
     period_end: date
+    base_currency: str = "USD"
     total_income: float
     total_expenses: float
     net_cash_flow: float
     transaction_count: int
+    budget_total: float = 0.0
+    budget_variance: list[BudgetVarianceItem] = []
     expense_by_category: list[CategorySummary]
     top_vendors: list[dict]
 
@@ -542,8 +575,9 @@ class FileUploadOut(BaseModel):
 
 class AffordabilityRequest(BaseModel):
     expense_name: str
-    amount: float
-    frequency: str = "one_time"  # one_time | monthly | annual
+    amount: float = Field(..., gt=0)
+    frequency: Literal["one_time", "monthly", "annual"] = "one_time"
+    is_hire: bool = False
 
 
 class AffordabilityResponse(BaseModel):
@@ -973,6 +1007,7 @@ class ScenarioAssumptions(BaseModel):
     capex_monthly: float = 0.0
     loan_repayment_monthly: float = 0.0
     seasonal_dip_months: list[int] = []
+    rate_input_mode: Optional[Literal["percent", "decimal"]] = None
 
 class ScenarioCreate(BaseModel):
     name: str
@@ -1018,10 +1053,11 @@ class SensitivityResponse(BaseModel):
     data_points: list[dict]  # [{value, runway_months, net_cash_flow}]
 
 class MonteCarloRequest(BaseModel):
-    num_simulations: int = 1000
-    months_ahead: int = 12
-    revenue_std: float = 0.10    # income volatility (std dev)
-    expense_std: float = 0.08    # expense volatility (std dev)
+    scenario_id: Optional[uuid.UUID] = None
+    num_simulations: int = Field(default=1000, ge=1, le=10000)
+    months_ahead: int = Field(default=12, ge=1, le=60)
+    revenue_std: Optional[float] = Field(default=None, ge=0)    # income volatility (std dev)
+    expense_std: Optional[float] = Field(default=None, ge=0)    # expense volatility (std dev)
 
     def model_post_init(self, __context: object) -> None:
         """Accept frontend field aliases: simulations → num_simulations, months → months_ahead."""
@@ -1043,6 +1079,9 @@ class MonteCarloResponse(BaseModel):
     baseline_monthly_income: float = 0
     baseline_monthly_expense: float = 0
     starting_cash: float = 0
+    revenue_std_used: float = 0
+    expense_std_used: float = 0
+    scenario_id: Optional[uuid.UUID] = None
 
 
 # ── Scenario Templates ────────────────────────────────────────────

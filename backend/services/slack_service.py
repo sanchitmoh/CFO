@@ -10,6 +10,12 @@ from config import settings
 logger = logging.getLogger(__name__)
 
 
+def _app_url(path: str) -> str:
+    base = settings.APP_BASE_URL.rstrip("/")
+    suffix = path if path.startswith("/") else f"/{path}"
+    return f"{base}{suffix}"
+
+
 class SlackService:
     """Slack notification service."""
     
@@ -18,6 +24,7 @@ class SlackService:
         text: str,
         channel: str | None = None,
         blocks: list[Dict[str, Any]] | None = None,
+        webhook_url: str | None = None,
     ) -> bool:
         """
         Send a message to Slack.
@@ -30,16 +37,27 @@ class SlackService:
         Returns:
             True if message sent successfully
         """
-        if not settings.SLACK_ENABLED:
-            logger.debug("Slack is disabled, skipping notification")
-            return False
-        
         try:
-            # Check for valid bot token (not placeholder)
-            if settings.SLACK_BOT_TOKEN and not settings.SLACK_BOT_TOKEN.startswith("xoxb-your"):
+            if webhook_url:
+                return await self._send_via_webhook(webhook_url, text, blocks)
+
+            has_bot_token = bool(
+                settings.SLACK_BOT_TOKEN
+                and not settings.SLACK_BOT_TOKEN.startswith("xoxb-your")
+            )
+            has_webhook = bool(
+                settings.SLACK_WEBHOOK_URL
+                and not settings.SLACK_WEBHOOK_URL.endswith("YOUR/WEBHOOK/URL")
+            )
+
+            if not has_bot_token and not has_webhook:
+                logger.debug("Slack is not configured, skipping notification")
+                return False
+
+            if has_bot_token:
                 return await self._send_via_bot(text, channel, blocks)
-            elif settings.SLACK_WEBHOOK_URL and not settings.SLACK_WEBHOOK_URL.endswith("YOUR/WEBHOOK/URL"):
-                return await self._send_via_webhook(text, blocks)
+            if has_webhook:
+                return await self._send_via_webhook(str(settings.SLACK_WEBHOOK_URL), text, blocks)
             else:
                 logger.error("No Slack credentials configured (need SLACK_BOT_TOKEN or SLACK_WEBHOOK_URL)")
                 return False
@@ -47,7 +65,7 @@ class SlackService:
             logger.error(f"Failed to send Slack message: {e}", exc_info=True)
             return False
     
-    async def _send_via_webhook(self, text: str, blocks: list | None) -> bool:
+    async def _send_via_webhook(self, webhook_url: str, text: str, blocks: list | None) -> bool:
         """Send message via Incoming Webhook (simple method)."""
         try:
             import httpx
@@ -55,8 +73,8 @@ class SlackService:
             logger.error("httpx not installed. Run: pip install httpx")
             return False
         
-        if not settings.SLACK_WEBHOOK_URL:
-            logger.error("SLACK_WEBHOOK_URL not configured")
+        if not webhook_url:
+            logger.error("Slack webhook URL not configured")
             return False
         
         payload = {"text": text}
@@ -65,7 +83,7 @@ class SlackService:
         
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                settings.SLACK_WEBHOOK_URL,
+                webhook_url,
                 json=payload,
                 timeout=10.0,
             )
@@ -104,6 +122,7 @@ class SlackService:
         severity: str = "info",
         channel: str | None = None,
         category: str | None = None,
+        webhook_url: str | None = None,
     ) -> bool:
         """
         Send a formatted alert to Slack with rich formatting.
@@ -178,7 +197,7 @@ class SlackService:
                 "elements": [
                     {
                         "type": "mrkdwn",
-                        "text": "🤖 *AI CFO Platform* | <http://localhost:3000/alerts|View All Alerts>",
+                        "text": f"AI CFO Platform | <{_app_url('/alerts')}|View All Alerts>",
                     }
                 ],
             },
@@ -191,6 +210,7 @@ class SlackService:
             text=fallback_text,
             channel=channel,
             blocks=blocks,
+            webhook_url=webhook_url,
         )
     
     async def send_report_notification(
@@ -236,7 +256,7 @@ class SlackService:
                             "type": "plain_text",
                             "text": "View Report",
                         },
-                        "url": "http://localhost:3000/reports",
+                        "url": _app_url("/reports"),
                         "style": "primary",
                     },
                     {
@@ -245,7 +265,7 @@ class SlackService:
                             "type": "plain_text",
                             "text": "Download PDF",
                         },
-                        "url": "http://localhost:3000/reports/export",
+                        "url": _app_url("/reports/export"),
                     },
                 ],
             },
@@ -319,7 +339,7 @@ class SlackService:
                             "type": "plain_text",
                             "text": "Review Transaction",
                         },
-                        "url": "http://localhost:3000/transactions",
+                        "url": _app_url("/transactions"),
                         "style": "primary",
                     },
                 ],

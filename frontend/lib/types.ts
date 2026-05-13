@@ -32,6 +32,9 @@ export interface Transaction {
   date: string;
   description: string;
   amount: number;
+  currency_code?: string;
+  amount_original?: number;
+  exchange_rate?: number;
   category: string;
   type: "income" | "expense";
   account: string;
@@ -83,6 +86,7 @@ export interface DashboardSummary {
   cash_balance: number;
   monthly_income: number[];
   monthly_expenses: number[];
+  monthly_periods: string[];
   top_categories: CategoryAmount[];
   recent_transactions: Transaction[];
   period_months: number;
@@ -119,12 +123,14 @@ export interface Goal {
   deadline?: string;
   status: "active" | "completed" | "abandoned";
   progress_pct: number;
+  is_auto_tracked: boolean;
   created_at: string;
 }
 
 export interface GoalCreate {
   title: string;
   target_value: number;
+  current_value?: number;
   metric_type: string;
   deadline?: string;
 }
@@ -166,11 +172,11 @@ export interface ForecastPoint {
 
 export interface ForecastResponse {
   scenario: string;
+  base_currency: string;
   months_ahead: number;
   historical_months: number;
   data_points: ForecastPoint[];
   model_version: string;
-  assumptions?: Record<string, number | string>;
 }
 
 // ── Chat ─────────────────────────────────────────────────────────
@@ -248,13 +254,25 @@ export interface CategorySummary {
   count: number;
 }
 
+export interface BudgetVarianceItem {
+  category: string;
+  budget: number;
+  actual: number;
+  variance: number;
+  utilization_pct: number;
+  transaction_count: number;
+}
+
 export interface ReportSummary {
   period_start: string;
   period_end: string;
+  base_currency: string;
   total_income: number;
   total_expenses: number;
   net_cash_flow: number;
   transaction_count: number;
+  budget_total: number;
+  budget_variance: BudgetVarianceItem[];
   expense_by_category: CategorySummary[];
   top_vendors: { vendor: string; total: number; count: number }[];
 }
@@ -265,6 +283,7 @@ export interface AffordabilityRequest {
   expense_name: string;
   amount: number;
   frequency: "one_time" | "monthly" | "annual";
+  is_hire?: boolean;
 }
 
 export interface AffordabilityResponse {
@@ -511,15 +530,22 @@ export interface TaxEstimate {
 }
 
 export interface TaxReport {
-  fiscal_year: number;
+  period_start: string;
+  period_end: string;
   jurisdiction: string;
-  gross_income: number;
-  total_deductions: number;
+  total_income: number;
+  total_expenses: number;
+  deductible_expenses: number;
   taxable_income: number;
-  estimated_annual_tax: number;
+  estimated_tax: number;
   effective_rate: number;
-  quarterly_estimates: TaxEstimate[];
-  deduction_breakdown: { category: string; amount: number; deductibility: string }[];
+  categories: {
+    category: string;
+    amount: number;
+    deduction_rate: number;
+    deductible_amount: number;
+    tax_code: string;
+  }[];
 }
 
 // ── External Tax Calculation APIs ────────────────────────────────
@@ -724,15 +750,19 @@ export interface ScenarioAssumptions {
   capex_monthly?: number;
   loan_repayment_monthly?: number;
   seasonal_dip_months?: number[];
+  rate_input_mode?: "percent" | "decimal";
 }
 
 export interface Scenario {
   id: string;
   name: string;
   description?: string;
-  assumptions: ScenarioAssumptions;
-  months_ahead: number;
-  created_by: string;
+  assumptions_json?: ScenarioAssumptions | null;
+  result_json?: {
+    monthly: ScenarioProjectionPoint[];
+  } | null;
+  is_baseline: boolean;
+  computed_at?: string | null;
   created_at: string;
 }
 
@@ -740,20 +770,19 @@ export interface ScenarioCreate {
   name: string;
   description?: string;
   assumptions: ScenarioAssumptions;
-  months_ahead?: number;
 }
 
 export interface ScenarioUpdate {
   name?: string;
   description?: string;
   assumptions?: Partial<ScenarioAssumptions>;
-  months_ahead?: number;
 }
 
-export interface ScenarioProjection {
-  month: string;
-  revenue: number;
-  expenses: number;
+export interface ScenarioProjectionPoint {
+  month: number;
+  projected_income: number;
+  projected_expenses: number;
+  tax: number;
   net_cash_flow: number;
   cumulative_cash: number;
 }
@@ -761,7 +790,7 @@ export interface ScenarioProjection {
 export interface ScenarioComparison {
   scenario_id: string;
   scenario_name: string;
-  projections: ScenarioProjection[];
+  projections: ScenarioProjectionPoint[];
   final_cash: number;
   runway_months: number;
 }
@@ -789,6 +818,9 @@ export interface MonteCarloResult {
   baseline_monthly_income?: number;
   baseline_monthly_expense?: number;
   starting_cash?: number;
+  revenue_std_used?: number;
+  expense_std_used?: number;
+  scenario_id?: string | null;
 }
 
 // ── Scenario Templates ───────────────────────────────────────────

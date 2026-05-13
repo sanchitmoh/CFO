@@ -322,3 +322,28 @@ async def test_connection_error_raises_value_error(svc):
 
         with pytest.raises(ValueError, match="US tax calculation failed"):
             await svc.calculate_us_tax(Decimal("100000"))
+
+
+@pytest.mark.anyio
+async def test_compare_india_regimes_reads_nested_total_tax_payloads(svc):
+    old_regime_data = {
+        "input": {"grossIncome": 5000000000, "regime": "old", "applyStandardDeduction": True},
+        "derived": {"standardDeduction": 50000, "taxableIncome": 4999950000},
+        "result": {"totalTax": 2136911478, "baseTax": 1499797500},
+    }
+    new_regime_data = {
+        "input": {"grossIncome": 5000000000, "regime": "new-2026-27", "applyStandardDeduction": True},
+        "derived": {"standardDeduction": 75000, "taxableIncome": 4999925000},
+        "result": {"totalTax": 1949424750, "baseTax": 1499557500},
+    }
+
+    async def mock_calc(gross_income, regime="new-2026-27", apply_standard_deduction=True):
+        if regime == "old":
+            return old_regime_data
+        return new_regime_data
+
+    svc.calculate_india_tax = mock_calc  # type: ignore
+    result = await svc.compare_india_regimes(Decimal("5000000000"))
+
+    assert result["recommendation"] == "new_regime"
+    assert result["savings"] == 2136911478 - 1949424750

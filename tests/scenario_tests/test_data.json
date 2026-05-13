@@ -1,0 +1,547 @@
+{
+  "test_scenarios": [
+    {
+      "id": "test_001",
+      "name": "Steady Growth - Balanced",
+      "description": "Moderate revenue and expense growth, no one-time items",
+      "category": "baseline",
+      "assumptions": {
+        "revenue_growth_pct": 0.10,
+        "expense_change_pct": 0.08,
+        "one_time_income": 0.0,
+        "one_time_expense": 0.0,
+        "headcount_change": 0,
+        "avg_salary_per_head": 0.0,
+        "customer_churn_pct": 0.0,
+        "pricing_change_pct": 0.0,
+        "tax_rate_pct": 0.25,
+        "capex_monthly": 0.0,
+        "loan_repayment_monthly": 0.0,
+        "new_monthly_revenue": 0.0,
+        "removed_monthly_expense": 0.0,
+        "seasonal_dip_months": []
+      },
+      "expected_behavior": "Revenue grows faster than expenses, improving cash flow over time"
+    },
+    {
+      "id": "test_002",
+      "name": "High Growth - Aggressive",
+      "description": "20% revenue growth, 15% expense growth",
+      "category": "growth",
+      "assumptions": {
+        "revenue_growth_pct": 0.20,
+        "expense_change_pct": 0.15,
+        "one_time_income": 0.0,
+        "one_time_expense": 0.0,
+        "headcount_change": 0,
+        "avg_salary_per_head": 0.0,
+        "customer_churn_pct": 0.0,
+        "pricing_change_pct": 0.0,
+        "tax_rate_pct": 0.25,
+        "capex_monthly": 0.0,
+        "loan_repayment_monthly": 0.0,
+        "new_monthly_revenue": 0.0,
+        "removed_monthly_expense": 0.0,
+        "seasonal_dip_months": []
+      },
+      "expected_behavior": "Rapid revenue growth outpaces expenses, strong cash flow improvement"
+    },
+    {
+      "id": "test_003",
+      "name": "Funding Round",
+      "description": "Large one-time income (Series A funding)",
+      "category": "funding",
+      "assumptions": {
+        "revenue_growth_pct": 0.15,
+        "expense_change_pct": 0.20,
+        "one_time_income": 5000000.0,
+        "one_time_expense": 0.0,
+        "headcount_change": 0,
+        "avg_salary_per_head": 0.0,
+        "customer_churn_pct": 0.0,
+        "pricing_change_pct": 0.0,
+        "tax_rate_pct": 0.25,
+        "capex_monthly": 0.0,
+        "loan_repayment_monthly": 0.0,
+        "new_monthly_revenue": 0.0,
+        "removed_monthly_expense": 0.0,
+        "seasonal_dip_months": []
+      },
+      "expected_behavior": "Month 1 shows large positive cash flow from funding, then returns to normal operations"
+    },
+    {
+      "id": "test_004",
+      "name": "Major Investment",
+      "description": "Large one-time expense (equipment purchase)",
+      "category": "investment",
+      "assumptions": {
+        "revenue_growth_pct": 0.10,
+        "expense_change_pct": 0.08,
+        "one_time_income": 0.0,
+        "one_time_expense": 2000000.0,
+        "headcount_change": 0,
+        "avg_salary_per_head": 0.0,
+        "customer_churn_pct": 0.0,
+        "pricing_change_pct": 0.0,
+        "tax_rate_pct": 0.25,
+        "capex_monthly": 0.0,
+        "loan_repayment_monthly": 0.0,
+        "new_monthly_revenue": 0.0,
+        "removed_monthly_expense": 0.0,
+        "seasonal_dip_months": []
+      },
+      "expected_behavior": "Month 1 shows large negative cash flow, then recovers with normal operations"
+    },
+    {
+      "id": "test_005",
+      "name": "Acquisition Scenario",
+      "description": "Funding received and acquisition cost",
+      "category": "acquisition",
+      "assumptions": {
+        "revenue_growth_pct": 0.15,
+        "expense_change_pct": 0.10,
+        "one_time_income": 10000000.0,
+        "one_time_expense": 8000000.0,
+        "headcount_change": 0,
+        "avg_salary_per_head": 0.0,
+        "customer_churn_pct": 0.0,
+        "pricing_change_pct": 0.0,
+        "tax_rate_pct": 0.25,
+        "capex_monthly": 0.0,
+        "loan_repayment_monthly": 0.0,
+        "new_monthly_revenue": 0.0,
+        "removed_monthly_expense": 0.0,
+        "seasonal_dip_months": []
+      },
+      "expected_behavior": "Month 1 shows net positive from funding minus acquisition, then normal growth"
+    },
+    {
+      "id": "test_006",
+      "name": "Zero Growth - Status Quo",
+      "description": "No growth, maintaining current state",
+      "category": "baseline",
+      "assumptions": {
+        "revenue_growth_pct": 0.0,
+        "expense_change_pct": 0.0,
+        "one_time_income": 0.0,
+        "one_time_expense": 0.0,
+        "headcount_change": 0,
+        "avg_salary_per_head": 0.0,
+        "customer_churn_pct": 0.0,
+        "pricing_change_pct": 0.0,
+        "tax_rate_pct": 0.25,
+        "capex_monthly": 0.0,
+        "loan_repayment_monthly": 0.0,
+        "new_monthly_revenue": 0.0,
+        "removed_monthly_expense": 0.0,
+        "seasonal_dip_months": []
+      },
+      "expected_behavior": "Flat projections, all months identical except Month 1"
+    },
+    {
+      "id": "test_007",
+      "name": "Recession Scenario",
+      "description": "Negative growth, cost cutting",
+      "category": "recession",
+      "assumptions": {
+        "revenue_growth_pct": -0.10,
+        "expense_change_pct": -0.15,
+        "one_time_income": 0.0,
+        "one_time_expense": 0.0,
+        "headcount_change": 0,
+        "avg_salary_per_head": 0.0,
+        "customer_churn_pct": 0.0,
+        "pricing_change_pct": 0.0,
+        "tax_rate_pct": 0.25,
+        "capex_monthly": 0.0,
+        "loan_repayment_monthly": 0.0,
+        "new_monthly_revenue": 0.0,
+        "removed_monthly_expense": 0.0,
+        "seasonal_dip_months": []
+      },
+      "expected_behavior": "Revenue declines but expenses cut faster, improving margins"
+    },
+    {
+      "id": "test_008",
+      "name": "Small Business Grant",
+      "description": "Small one-time income (government grant)",
+      "category": "funding",
+      "assumptions": {
+        "revenue_growth_pct": 0.05,
+        "expense_change_pct": 0.05,
+        "one_time_income": 50000.0,
+        "one_time_expense": 0.0,
+        "headcount_change": 0,
+        "avg_salary_per_head": 0.0,
+        "customer_churn_pct": 0.0,
+        "pricing_change_pct": 0.0,
+        "tax_rate_pct": 0.25,
+        "capex_monthly": 0.0,
+        "loan_repayment_monthly": 0.0,
+        "new_monthly_revenue": 0.0,
+        "removed_monthly_expense": 0.0,
+        "seasonal_dip_months": []
+      },
+      "expected_behavior": "Small boost in Month 1, then steady growth"
+    },
+    {
+      "id": "test_009",
+      "name": "Office Renovation",
+      "description": "Medium one-time expense (office upgrade)",
+      "category": "investment",
+      "assumptions": {
+        "revenue_growth_pct": 0.08,
+        "expense_change_pct": 0.08,
+        "one_time_income": 0.0,
+        "one_time_expense": 500000.0,
+        "headcount_change": 0,
+        "avg_salary_per_head": 0.0,
+        "customer_churn_pct": 0.0,
+        "pricing_change_pct": 0.0,
+        "tax_rate_pct": 0.25,
+        "capex_monthly": 0.0,
+        "loan_repayment_monthly": 0.0,
+        "new_monthly_revenue": 0.0,
+        "removed_monthly_expense": 0.0,
+        "seasonal_dip_months": []
+      },
+      "expected_behavior": "Month 1 dip from renovation cost, then steady recovery"
+    },
+    {
+      "id": "test_010",
+      "name": "Viral Growth",
+      "description": "Extreme growth (hockey stick)",
+      "category": "growth",
+      "assumptions": {
+        "revenue_growth_pct": 0.50,
+        "expense_change_pct": 0.30,
+        "one_time_income": 0.0,
+        "one_time_expense": 0.0,
+        "headcount_change": 0,
+        "avg_salary_per_head": 0.0,
+        "customer_churn_pct": 0.0,
+        "pricing_change_pct": 0.0,
+        "tax_rate_pct": 0.25,
+        "capex_monthly": 0.0,
+        "loan_repayment_monthly": 0.0,
+        "new_monthly_revenue": 0.0,
+        "removed_monthly_expense": 0.0,
+        "seasonal_dip_months": []
+      },
+      "expected_behavior": "Exponential revenue growth, expenses lag behind"
+    },
+    {
+      "id": "test_011",
+      "name": "Seed + Product Launch",
+      "description": "Seed funding with product launch costs",
+      "category": "startup",
+      "assumptions": {
+        "revenue_growth_pct": 0.25,
+        "expense_change_pct": 0.20,
+        "one_time_income": 1000000.0,
+        "one_time_expense": 300000.0,
+        "headcount_change": 0,
+        "avg_salary_per_head": 0.0,
+        "customer_churn_pct": 0.0,
+        "pricing_change_pct": 0.0,
+        "tax_rate_pct": 0.0,
+        "capex_monthly": 0.0,
+        "loan_repayment_monthly": 0.0,
+        "new_monthly_revenue": 0.0,
+        "removed_monthly_expense": 0.0,
+        "seasonal_dip_months": []
+      },
+      "expected_behavior": "Net positive Month 1 from funding, then rapid growth"
+    },
+    {
+      "id": "test_012",
+      "name": "Break-Even Push",
+      "description": "Equal revenue and expense growth",
+      "category": "baseline",
+      "assumptions": {
+        "revenue_growth_pct": 0.12,
+        "expense_change_pct": 0.12,
+        "one_time_income": 0.0,
+        "one_time_expense": 0.0,
+        "headcount_change": 0,
+        "avg_salary_per_head": 0.0,
+        "customer_churn_pct": 0.0,
+        "pricing_change_pct": 0.0,
+        "tax_rate_pct": 0.25,
+        "capex_monthly": 0.0,
+        "loan_repayment_monthly": 0.0,
+        "new_monthly_revenue": 0.0,
+        "removed_monthly_expense": 0.0,
+        "seasonal_dip_months": []
+      },
+      "expected_behavior": "Margins remain constant, absolute cash flow grows proportionally"
+    },
+    {
+      "id": "test_013",
+      "name": "Debt Payoff",
+      "description": "One-time income used to pay off debt",
+      "category": "financial",
+      "assumptions": {
+        "revenue_growth_pct": 0.08,
+        "expense_change_pct": 0.06,
+        "one_time_income": 3000000.0,
+        "one_time_expense": 2500000.0,
+        "headcount_change": 0,
+        "avg_salary_per_head": 0.0,
+        "customer_churn_pct": 0.0,
+        "pricing_change_pct": 0.0,
+        "tax_rate_pct": 0.25,
+        "capex_monthly": 0.0,
+        "loan_repayment_monthly": 0.0,
+        "new_monthly_revenue": 0.0,
+        "removed_monthly_expense": 0.0,
+        "seasonal_dip_months": []
+      },
+      "expected_behavior": "Month 1 shows net positive, then steady growth without debt burden"
+    },
+    {
+      "id": "test_014",
+      "name": "Minimal Growth",
+      "description": "Very small growth rates",
+      "category": "baseline",
+      "assumptions": {
+        "revenue_growth_pct": 0.02,
+        "expense_change_pct": 0.01,
+        "one_time_income": 0.0,
+        "one_time_expense": 0.0,
+        "headcount_change": 0,
+        "avg_salary_per_head": 0.0,
+        "customer_churn_pct": 0.0,
+        "pricing_change_pct": 0.0,
+        "tax_rate_pct": 0.25,
+        "capex_monthly": 0.0,
+        "loan_repayment_monthly": 0.0,
+        "new_monthly_revenue": 0.0,
+        "removed_monthly_expense": 0.0,
+        "seasonal_dip_months": []
+      },
+      "expected_behavior": "Very gradual improvement, almost flat"
+    },
+    {
+      "id": "test_015",
+      "name": "Asset Sale",
+      "description": "One-time income from selling assets",
+      "category": "financial",
+      "assumptions": {
+        "revenue_growth_pct": 0.05,
+        "expense_change_pct": 0.05,
+        "one_time_income": 750000.0,
+        "one_time_expense": 0.0,
+        "headcount_change": 0,
+        "avg_salary_per_head": 0.0,
+        "customer_churn_pct": 0.0,
+        "pricing_change_pct": 0.0,
+        "tax_rate_pct": 0.25,
+        "capex_monthly": 0.0,
+        "loan_repayment_monthly": 0.0,
+        "new_monthly_revenue": 0.0,
+        "removed_monthly_expense": 0.0,
+        "seasonal_dip_months": []
+      },
+      "expected_behavior": "Cash boost in Month 1, then normal operations"
+    },
+    {
+      "id": "test_016",
+      "name": "Legal Settlement",
+      "description": "One-time expense (lawsuit settlement)",
+      "category": "risk",
+      "assumptions": {
+        "revenue_growth_pct": 0.10,
+        "expense_change_pct": 0.08,
+        "one_time_income": 0.0,
+        "one_time_expense": 1500000.0,
+        "headcount_change": 0,
+        "avg_salary_per_head": 0.0,
+        "customer_churn_pct": 0.0,
+        "pricing_change_pct": 0.0,
+        "tax_rate_pct": 0.25,
+        "capex_monthly": 0.0,
+        "loan_repayment_monthly": 0.0,
+        "new_monthly_revenue": 0.0,
+        "removed_monthly_expense": 0.0,
+        "seasonal_dip_months": []
+      },
+      "expected_behavior": "Large hit in Month 1, then recovery through growth"
+    },
+    {
+      "id": "test_017",
+      "name": "Insurance Payout + Rebuild",
+      "description": "Insurance income and rebuild costs",
+      "category": "recovery",
+      "assumptions": {
+        "revenue_growth_pct": 0.08,
+        "expense_change_pct": 0.08,
+        "one_time_income": 2000000.0,
+        "one_time_expense": 1800000.0,
+        "headcount_change": 0,
+        "avg_salary_per_head": 0.0,
+        "customer_churn_pct": 0.0,
+        "pricing_change_pct": 0.0,
+        "tax_rate_pct": 0.25,
+        "capex_monthly": 0.0,
+        "loan_repayment_monthly": 0.0,
+        "new_monthly_revenue": 0.0,
+        "removed_monthly_expense": 0.0,
+        "seasonal_dip_months": []
+      },
+      "expected_behavior": "Small net positive in Month 1, then normal operations"
+    },
+    {
+      "id": "test_018",
+      "name": "Turnaround Strategy",
+      "description": "Declining revenue, aggressive cost cutting",
+      "category": "turnaround",
+      "assumptions": {
+        "revenue_growth_pct": -0.05,
+        "expense_change_pct": -0.20,
+        "one_time_income": 0.0,
+        "one_time_expense": 0.0,
+        "headcount_change": 0,
+        "avg_salary_per_head": 0.0,
+        "customer_churn_pct": 0.0,
+        "pricing_change_pct": 0.0,
+        "tax_rate_pct": 0.25,
+        "capex_monthly": 0.0,
+        "loan_repayment_monthly": 0.0,
+        "new_monthly_revenue": 0.0,
+        "removed_monthly_expense": 0.0,
+        "seasonal_dip_months": []
+      },
+      "expected_behavior": "Revenue declines slowly, expenses cut dramatically, improving margins"
+    },
+    {
+      "id": "test_019",
+      "name": "IPO Preparation",
+      "description": "Funding round with IPO preparation costs",
+      "category": "ipo",
+      "assumptions": {
+        "revenue_growth_pct": 0.18,
+        "expense_change_pct": 0.15,
+        "one_time_income": 50000000.0,
+        "one_time_expense": 5000000.0,
+        "headcount_change": 0,
+        "avg_salary_per_head": 0.0,
+        "customer_churn_pct": 0.0,
+        "pricing_change_pct": 0.0,
+        "tax_rate_pct": 0.25,
+        "capex_monthly": 0.0,
+        "loan_repayment_monthly": 0.0,
+        "new_monthly_revenue": 0.0,
+        "removed_monthly_expense": 0.0,
+        "seasonal_dip_months": []
+      },
+      "expected_behavior": "Massive cash influx in Month 1, then strong growth trajectory"
+    },
+    {
+      "id": "test_020",
+      "name": "Bootstrapped Growth",
+      "description": "No external funding, organic growth",
+      "category": "bootstrap",
+      "assumptions": {
+        "revenue_growth_pct": 0.15,
+        "expense_change_pct": 0.10,
+        "one_time_income": 0.0,
+        "one_time_expense": 0.0,
+        "headcount_change": 0,
+        "avg_salary_per_head": 0.0,
+        "customer_churn_pct": 0.0,
+        "pricing_change_pct": 0.0,
+        "tax_rate_pct": 0.25,
+        "capex_monthly": 0.0,
+        "loan_repayment_monthly": 0.0,
+        "new_monthly_revenue": 0.0,
+        "removed_monthly_expense": 0.0,
+        "seasonal_dip_months": []
+      },
+      "expected_behavior": "Steady, sustainable growth without external capital"
+    }
+  ],
+  "edge_cases": [
+    {
+      "id": "edge_001",
+      "name": "Extreme Positive Growth",
+      "description": "Testing maximum reasonable growth",
+      "assumptions": {
+        "revenue_growth_pct": 1.0,
+        "expense_change_pct": 0.5,
+        "one_time_income": 0.0,
+        "one_time_expense": 0.0
+      }
+    },
+    {
+      "id": "edge_002",
+      "name": "Extreme Negative Growth",
+      "description": "Testing maximum reasonable decline",
+      "assumptions": {
+        "revenue_growth_pct": -0.50,
+        "expense_change_pct": -0.50,
+        "one_time_income": 0.0,
+        "one_time_expense": 0.0
+      }
+    },
+    {
+      "id": "edge_003",
+      "name": "Massive One-Time Income",
+      "description": "Testing very large funding round",
+      "assumptions": {
+        "revenue_growth_pct": 0.10,
+        "expense_change_pct": 0.10,
+        "one_time_income": 100000000.0,
+        "one_time_expense": 0.0
+      }
+    },
+    {
+      "id": "edge_004",
+      "name": "Massive One-Time Expense",
+      "description": "Testing very large acquisition",
+      "assumptions": {
+        "revenue_growth_pct": 0.10,
+        "expense_change_pct": 0.10,
+        "one_time_income": 0.0,
+        "one_time_expense": 100000000.0
+      }
+    },
+    {
+      "id": "edge_005",
+      "name": "Both Massive One-Time Items",
+      "description": "Testing large funding and large acquisition",
+      "assumptions": {
+        "revenue_growth_pct": 0.15,
+        "expense_change_pct": 0.12,
+        "one_time_income": 100000000.0,
+        "one_time_expense": 90000000.0
+      }
+    }
+  ],
+  "validation_rules": {
+    "revenue_growth_pct": {
+      "min": -0.99,
+      "max": 10.0,
+      "typical_range": [-0.20, 0.50],
+      "description": "Monthly revenue growth rate as decimal"
+    },
+    "expense_change_pct": {
+      "min": -0.99,
+      "max": 10.0,
+      "typical_range": [-0.30, 0.40],
+      "description": "Monthly expense change rate as decimal"
+    },
+    "one_time_income": {
+      "min": 0.0,
+      "max": 1000000000.0,
+      "typical_range": [0, 10000000],
+      "description": "One-time income in currency units"
+    },
+    "one_time_expense": {
+      "min": 0.0,
+      "max": 1000000000.0,
+      "typical_range": [0, 10000000],
+      "description": "One-time expense in currency units"
+    }
+  }
+}

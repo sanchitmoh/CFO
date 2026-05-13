@@ -13,28 +13,28 @@ from auth import get_current_user
 from models import User, Goal, GoalStatus
 from schemas import GoalCreate, GoalUpdate, GoalOut
 from services.audit_service import log_action
+from services.goal_service import (
+    GoalSnapshot,
+    build_goal_snapshot,
+    is_goal_complete,
+    normalize_goal_deadline,
+)
 
 router = APIRouter()
 
 
-def _compute_progress(goal: Goal) -> float:
-    """Compute progress percentage."""
-    if goal.target_value <= 0:
-        return 100.0
-    return round(min(float(goal.current_value) / float(goal.target_value) * 100, 100), 1)
-
-
-def _goal_to_out(goal: Goal) -> GoalOut:
+def _goal_to_out(goal: GoalSnapshot) -> GoalOut:
     return GoalOut(
         id=goal.id,
         title=goal.title,
-        target_value=float(goal.target_value),
-        current_value=float(goal.current_value),
+        target_value=goal.target_value,
+        current_value=goal.current_value,
         metric_type=goal.metric_type,
         deadline=goal.deadline,
-        status=goal.status.value,
-        progress_pct=_compute_progress(goal),
+        status=goal.status,
+        progress_pct=goal.progress_pct,
         created_at=goal.created_at,
+        is_auto_tracked=goal.is_auto_tracked,
     )
 
 
@@ -55,7 +55,11 @@ async def list_goals(
     query = query.order_by(Goal.created_at.desc())
 
     result = await db.execute(query)
-    return [_goal_to_out(g) for g in result.scalars()]
+    snapshots = [
+        await build_goal_snapshot(db, user.workspace_id, goal)
+        for goal in result.scalars()
+    ]
+    return [_goal_to_out(snapshot) for snapshot in snapshots]
 
 
 @router.post("/", response_model=GoalOut, status_code=status.HTTP_201_CREATED)
@@ -70,9 +74,13 @@ async def create_goal(
         user_id=user.id,
         title=data.title,
         target_value=data.target_value,
+        current_value=data.current_value or 0,
         metric_type=data.metric_type,
-        deadline=data.deadline,
+        deadline=normalize_goal_deadline(data.deadline),
     )
+    if is_goal_complete(goal.metric_type, float(goal.current_value or 0), float(goal.target_value)):
+        goal.status = GoalStatus.completed
+
     db.add(goal)
     await db.commit()
     await db.refresh(goal)
@@ -80,7 +88,8 @@ async def create_goal(
     await log_action(db, user, "goal.create", "goal", goal.id,
                      new_value={"title": data.title, "target": data.target_value})
 
-    return _goal_to_out(goal)
+    snapshot = await build_goal_snapshot(db, user.workspace_id, goal)
+    return _goal_to_out(snapshot)
 
 
 @router.put("/{goal_id}", response_model=GoalOut)
@@ -111,10 +120,16 @@ async def update_goal(
     if data.status is not None:
         goal.status = GoalStatus(data.status)
     if data.deadline is not None:
-        goal.deadline = data.deadline
+        goal.deadline = normalize_goal_deadline(data.deadline)
 
-    # Auto-complete if current >= target
-    if float(goal.current_value) >= float(goal.target_value):
+    if (
+        goal.status != GoalStatus.abandoned
+        and is_goal_complete(
+            goal.metric_type,
+            float(goal.current_value or 0),
+            float(goal.target_value or 0),
+        )
+    ):
         goal.status = GoalStatus.completed
 
     await db.commit()
@@ -124,7 +139,8 @@ async def update_goal(
                      old_value=old_value,
                      new_value={"current_value": float(goal.current_value), "status": goal.status.value})
 
-    return _goal_to_out(goal)
+    snapshot = await build_goal_snapshot(db, user.workspace_id, goal)
+    return _goal_to_out(snapshot)
 
 
 @router.delete("/{goal_id}", status_code=status.HTTP_204_NO_CONTENT)

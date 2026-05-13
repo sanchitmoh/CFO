@@ -214,13 +214,13 @@ class TestHIGH004BudgetsNoWriteOnRead:
         )
 
     def test_list_budgets_uses_expunge(self):
-        """list_budgets must expunge budget objects before setting computed values."""
+        """list_budgets must delegate to the shared read-time calculator."""
         from routers.budgets import list_budgets
         source = inspect.getsource(list_budgets)
 
-        assert "db.expunge" in source, (
-            "HIGH-004: list_budgets must expunge budgets from session "
-            "so computed current_spend is not tracked"
+        assert "get_budget_snapshots" in source, (
+            "HIGH-004: list_budgets must compute current_spend via the shared "
+            "read-time budget service instead of persisting on read"
         )
 
     def test_other_budget_endpoints_still_commit(self):

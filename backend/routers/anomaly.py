@@ -193,7 +193,7 @@ async def list_flagged_anomalies(
             type=txn.type.value,
             account=txn.account or "Unknown",  # LOW-002: Handle None account
             anomaly_score=txn.anomaly_score or 0,
-            reason=f"Previously flagged anomaly (score: {txn.anomaly_score:.1f})",
+            reason=f"Previously flagged anomaly (score: {(txn.anomaly_score or 0):.1f})",
         )
         for txn in result.scalars()
     ]

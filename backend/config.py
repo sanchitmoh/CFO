@@ -78,6 +78,7 @@ class Settings(BaseSettings):
     SLACK_ENABLED: bool = False
     SLACK_DEFAULT_CHANNEL: str = "#general"
     SLACK_SIGNING_SECRET: str | None = None
+    APP_BASE_URL: str = "http://localhost:3000"
 
     # ── App ──
     # SEC-FIX: CRITICAL - Must override CORS_ORIGINS in production!
@@ -85,8 +86,20 @@ class Settings(BaseSettings):
     # Set via env: CORS_ORIGINS='["https://app.yourdomain.com"]'
     # WARNING: Leaving localhost origins in production will break the frontend
     # CONFIG-001: Startup check will warn if localhost origins in production
-    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:3001"]
+    CORS_ORIGINS: str = '["http://localhost:3000", "http://localhost:3001"]'
     DEBUG: bool = False
+    
+    @property
+    def cors_origins_list(self) -> list[str]:
+        """Parse CORS_ORIGINS from JSON string to list."""
+        import json
+        if isinstance(self.CORS_ORIGINS, str):
+            try:
+                return json.loads(self.CORS_ORIGINS)
+            except json.JSONDecodeError:
+                # Fallback to default if parsing fails
+                return ["http://localhost:3000", "http://localhost:3001"]
+        return self.CORS_ORIGINS
 
     # ── Forecast model (L-004) ──
     # "linear" = LinearForecastService (default, zero extra deps)

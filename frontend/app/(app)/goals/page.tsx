@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import type { Goal } from "@/lib/types";
 import { goalsApi } from "@/lib/api";
 import {
   Target,
@@ -8,33 +9,42 @@ import {
   TrendingUp,
   Calendar,
   CheckCircle,
-  Clock,
   AlertCircle,
   Trash2,
   ChevronDown,
+  type LucideIcon,
+  Ban,
+  Save,
 } from "lucide-react";
+import { useCurrency } from "@/components/CurrencyContext";
 
-interface Goal {
-  id: number | string;
-  title: string;
-  target_amount: number;
-  current_amount: number;
-  category: string;
-  deadline: string;
-  status: "on_track" | "at_risk" | "behind" | "completed";
-  notes?: string;
-}
+type GoalCardStatus = "active" | "completed" | "abandoned";
 
 const STATUS_META: Record<
-  string,
-  { label: string; color: string; bg: string; icon: React.ElementType }
+  GoalCardStatus,
+  { label: string; color: string; bg: string; icon: LucideIcon }
 > = {
-  on_track: { label: "On Track", color: "var(--accent)", bg: "var(--accent-soft)", icon: TrendingUp },
-  at_risk: { label: "At Risk", color: "var(--warning)", bg: "var(--warning-soft)", icon: AlertCircle },
-  behind: { label: "Behind", color: "var(--danger)", bg: "var(--danger-soft)", icon: Clock },
+  active: { label: "Active", color: "var(--accent)", bg: "var(--accent-soft)", icon: TrendingUp },
   completed: { label: "Completed", color: "var(--accent)", bg: "var(--accent-soft)", icon: CheckCircle },
+  abandoned: { label: "Abandoned", color: "var(--danger)", bg: "var(--danger-soft)", icon: Ban },
 };
-import { useCurrency } from "@/components/CurrencyContext";
+
+function getGoalCardStatus(goal: Goal): GoalCardStatus {
+  if (goal.status === "abandoned") {
+    return "abandoned";
+  }
+  if (goal.status === "completed" || goal.progress_pct >= 100) {
+    return "completed";
+  }
+  return "active";
+}
+
+function formatGoalValue(goal: Goal, value: number, fmt: (amount: number) => string) {
+  if (goal.metric_type === "expense_reduction") {
+    return `${value.toFixed(value % 1 === 0 ? 0 : 1)}%`;
+  }
+  return fmt(value);
+}
 
 export default function GoalsPage() {
   const { formatAmount: fmt } = useCurrency();
@@ -42,13 +52,16 @@ export default function GoalsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
-  const [expanded, setExpanded] = useState<number | string | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [savingGoalId, setSavingGoalId] = useState<string | null>(null);
+  const [deletingGoalId, setDeletingGoalId] = useState<string | null>(null);
+  const [progressDrafts, setProgressDrafts] = useState<Record<string, string>>({});
   const [form, setForm] = useState({
     title: "",
-    target_amount: "",
-    category: "savings",
+    target_value: "",
+    current_value: "",
+    metric_type: "savings",
     deadline: "",
-    notes: "",
   });
 
   const loadGoals = useCallback(async () => {
@@ -56,20 +69,12 @@ export default function GoalsPage() {
     setError(null);
     try {
       const data = await goalsApi.list();
-      if (data && Array.isArray(data)) {
-        setGoals(
-          data.map((g: any) => ({
-            id: g.id,
-            title: g.title || g.name || "",
-            target_amount: g.target_amount || g.target || 0,
-            current_amount: g.current_amount || g.current || 0,
-            category: g.category || "savings",
-            deadline: g.deadline || g.target_date || "",
-            status: g.status || "on_track",
-            notes: g.notes || g.description || "",
-          }))
-        );
-      }
+      setGoals(data);
+      setProgressDrafts(
+        Object.fromEntries(
+          data.map((goal) => [goal.id, String(goal.current_value)])
+        )
+      );
     } catch {
       setError("Unable to load goals. Please check your connection and try again.");
     } finally {
@@ -83,46 +88,68 @@ export default function GoalsPage() {
 
   const createGoal = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newGoal: Goal = {
-      id: goals.length + 1,
-      title: form.title,
-      target_amount: Number(form.target_amount),
-      current_amount: 0,
-      category: form.category,
-      deadline: form.deadline,
-      status: "on_track",
-      notes: form.notes,
-    };
-
     try {
-      const resp = await goalsApi.create({
+      await goalsApi.create({
         title: form.title,
-        target_value: Number(form.target_amount),
-        metric_type: form.category,
+        target_value: Number(form.target_value),
+        current_value: form.current_value ? Number(form.current_value) : undefined,
+        metric_type: form.metric_type,
         deadline: form.deadline || undefined,
       });
-      if (resp?.id) newGoal.id = resp.id;
+      await loadGoals();
+      setShowCreate(false);
+      setForm({
+        title: "",
+        target_value: "",
+        current_value: "",
+        metric_type: "savings",
+        deadline: "",
+      });
     } catch {
-      // API unavailable — add locally
+      setError("Unable to create goal. Please review the values and try again.");
     }
-
-    setGoals((g) => [...g, newGoal]);
-    setShowCreate(false);
-    setForm({ title: "", target_amount: "", category: "savings", deadline: "", notes: "" });
   };
 
-  const deleteGoal = async (id: number | string) => {
+  const updateGoalProgress = async (goal: Goal) => {
+    const draft = progressDrafts[goal.id];
+    const value = Number(draft);
+    if (Number.isNaN(value) || value < 0) {
+      setError("Current progress must be a non-negative number.");
+      return;
+    }
+
     try {
-      await goalsApi.delete(String(id));
+      setSavingGoalId(goal.id);
+      const updated = await goalsApi.update(goal.id, { current_value: value });
+      setGoals((current) => current.map((item) => (item.id === goal.id ? updated : item)));
+      setProgressDrafts((current) => ({ ...current, [goal.id]: String(updated.current_value) }));
     } catch {
-      // API unavailable — remove locally
+      setError("Unable to update goal progress right now.");
+    } finally {
+      setSavingGoalId(null);
     }
-    setGoals((g) => g.filter((goal) => goal.id !== id));
   };
 
-  const completedCount = goals.filter((g) => g.status === "completed").length;
-  const onTrackCount = goals.filter((g) => g.status === "on_track").length;
-  const atRiskCount = goals.filter((g) => g.status === "at_risk" || g.status === "behind").length;
+  const deleteGoal = async (id: string) => {
+    try {
+      setDeletingGoalId(id);
+      await goalsApi.delete(id);
+      setGoals((current) => current.filter((goal) => goal.id !== id));
+      setProgressDrafts((current) => {
+        const next = { ...current };
+        delete next[id];
+        return next;
+      });
+    } catch {
+      setError("Unable to delete the goal right now.");
+    } finally {
+      setDeletingGoalId(null);
+    }
+  };
+
+  const completedCount = goals.filter((goal) => getGoalCardStatus(goal) === "completed").length;
+  const activeCount = goals.filter((goal) => getGoalCardStatus(goal) === "active").length;
+  const abandonedCount = goals.filter((goal) => getGoalCardStatus(goal) === "abandoned").length;
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -155,9 +182,9 @@ export default function GoalsPage() {
       {/* Summary stats */}
       <div className="grid grid-cols-3 gap-4 animate-fade-up delay-1">
         {[
-          { label: "On Track", value: onTrackCount, color: "var(--accent)" },
-          { label: "At Risk", value: atRiskCount, color: "var(--danger)" },
+          { label: "Active", value: activeCount, color: "var(--accent)" },
           { label: "Completed", value: completedCount, color: "var(--info)" },
+          { label: "Abandoned", value: abandonedCount, color: "var(--danger)" },
         ].map(({ label, value, color }) => (
           <div key={label} className="glass p-4 text-center">
             <p className="text-xs uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>
@@ -170,14 +197,22 @@ export default function GoalsPage() {
 
       {/* Goals list */}
       <div className="space-y-3 animate-fade-up delay-2">
+        {loading && (
+          <div className="grid grid-cols-1 gap-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="skeleton" style={{ height: 128 }} />
+            ))}
+          </div>
+        )}
+
         {goals.map((goal) => {
-          const progress = goal.category === "cost_reduction"
-            ? Math.max(0, Math.min(100, ((goal.target_amount / goal.current_amount) * 100)))
-            : Math.max(0, Math.min(100, (goal.current_amount / goal.target_amount) * 100));
-          const isComplete = goal.status === "completed";
-          const meta = STATUS_META[goal.status] || STATUS_META.on_track;
+          const cardStatus = getGoalCardStatus(goal);
+          const progress = goal.progress_pct;
+          const meta = STATUS_META[cardStatus];
           const StatusIcon = meta.icon;
           const isExpanded = expanded === goal.id;
+          const progressDraft = progressDrafts[goal.id] ?? String(goal.current_value);
+          const canEditProgress = !goal.is_auto_tracked && goal.status !== "abandoned";
 
           return (
             <div
@@ -238,7 +273,7 @@ export default function GoalsPage() {
                         />
                       </div>
                       <span className="text-xs font-mono font-semibold" style={{ color: meta.color }}>
-                        {Math.round(progress)}%
+                        {progress.toFixed(1)}%
                       </span>
                     </div>
                   </div>
@@ -261,44 +296,78 @@ export default function GoalsPage() {
                     <div>
                       <p className="text-xs uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>Target</p>
                       <p className="font-bold mt-0.5" style={{ color: "var(--text)" }}>
-                        {goal.category === "profitability" ? `${goal.target_amount}%` : fmt(goal.target_amount)}
+                        {formatGoalValue(goal, goal.target_value, fmt)}
                       </p>
                     </div>
                     <div>
                       <p className="text-xs uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>Current</p>
                       <p className="font-bold mt-0.5" style={{ color: meta.color }}>
-                        {goal.category === "profitability" ? `${goal.current_amount}%` : fmt(goal.current_amount)}
+                        {formatGoalValue(goal, goal.current_value, fmt)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>Category</p>
+                      <p className="text-xs uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>Metric</p>
                       <p className="font-medium mt-0.5 capitalize text-sm" style={{ color: "var(--text-muted)" }}>
-                        {goal.category.replace("_", " ")}
+                        {goal.metric_type.replace("_", " ")}
                       </p>
                     </div>
                     <div>
                       <p className="text-xs uppercase tracking-wider" style={{ color: "var(--text-dim)" }}>Deadline</p>
-                      <p className="font-medium mt-0.5 text-sm flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
-                        <Calendar size={12} />
-                        {new Date(goal.deadline).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                      </p>
+                      {goal.deadline ? (
+                        <p className="font-medium mt-0.5 text-sm flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
+                          <Calendar size={12} />
+                          {new Date(goal.deadline).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        </p>
+                      ) : (
+                        <p className="font-medium mt-0.5 text-sm" style={{ color: "var(--text-muted)" }}>
+                          No deadline
+                        </p>
+                      )}
                     </div>
                   </div>
 
-                  {goal.notes && (
+                  {goal.is_auto_tracked && (
                     <div className="mt-3 p-3 rounded-lg text-sm" style={{ background: "var(--bg)", color: "var(--text-muted)" }}>
-                      {goal.notes}
+                      This goal auto-tracks from current-month revenue transactions.
+                    </div>
+                  )}
+
+                  {canEditProgress && (
+                    <div className="mt-4 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3">
+                      <input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        value={progressDraft}
+                        onChange={(e) =>
+                          setProgressDrafts((current) => ({
+                            ...current,
+                            [goal.id]: e.target.value,
+                          }))
+                        }
+                        placeholder={goal.metric_type === "expense_reduction" ? "Current percentage" : "Current value"}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => updateGoalProgress(goal)}
+                        disabled={savingGoalId === goal.id}
+                        className="btn-primary flex items-center justify-center gap-2"
+                      >
+                        <Save size={14} />
+                        {savingGoalId === goal.id ? "Saving..." : "Save Progress"}
+                      </button>
                     </div>
                   )}
 
                   <div className="mt-3 flex justify-end">
                     <button
                       onClick={() => deleteGoal(goal.id)}
+                      disabled={deletingGoalId === goal.id}
                       className="flex items-center gap-1.5 text-xs p-1.5 rounded transition-colors"
                       style={{ color: "var(--danger)" }}
                     >
                       <Trash2 size={12} />
-                      Remove
+                      {deletingGoalId === goal.id ? "Removing..." : "Remove"}
                     </button>
                   </div>
                 </div>
@@ -339,15 +408,28 @@ export default function GoalsPage() {
             </div>
             <div>
               <label className="block text-xs font-medium mb-2 uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-                Target Amount ($)
+                Target Value
               </label>
               <input
                 type="number"
                 required
                 min={1}
                 placeholder="50000"
-                value={form.target_amount}
-                onChange={(e) => setForm((f) => ({ ...f, target_amount: e.target.value }))}
+                value={form.target_value}
+                onChange={(e) => setForm((f) => ({ ...f, target_value: e.target.value }))}
+                className="w-full"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-2 uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+                Current Value (optional)
+              </label>
+              <input
+                type="number"
+                min={0}
+                placeholder="Leave blank to start at zero"
+                value={form.current_value}
+                onChange={(e) => setForm((f) => ({ ...f, current_value: e.target.value }))}
                 className="w-full"
               />
             </div>
@@ -357,7 +439,6 @@ export default function GoalsPage() {
               </label>
               <input
                 type="date"
-                required
                 value={form.deadline}
                 onChange={(e) => setForm((f) => ({ ...f, deadline: e.target.value }))}
                 className="w-full"
@@ -368,27 +449,17 @@ export default function GoalsPage() {
                 Category
               </label>
               <select
-                value={form.category}
-                onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+                value={form.metric_type}
+                onChange={(e) => setForm((f) => ({ ...f, metric_type: e.target.value }))}
                 className="w-full"
               >
                 <option value="savings">Savings</option>
                 <option value="revenue">Revenue</option>
-                <option value="cost_reduction">Cost Reduction</option>
-                <option value="profitability">Profitability</option>
+                <option value="expense_reduction">Expense Reduction</option>
               </select>
             </div>
-            <div>
-              <label className="block text-xs font-medium mb-2 uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
-                Notes (optional)
-              </label>
-              <input
-                type="text"
-                placeholder="Additional context..."
-                value={form.notes}
-                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-                className="w-full"
-              />
+            <div className="sm:col-span-2 text-xs" style={{ color: "var(--text-muted)" }}>
+              Leave the current value at zero for revenue goals if you want them to auto-track from current-month income.
             </div>
             <div className="sm:col-span-2 flex gap-3 mt-1">
               <button type="submit" className="btn-primary flex items-center gap-2">

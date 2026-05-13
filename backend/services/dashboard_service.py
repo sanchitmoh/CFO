@@ -17,12 +17,28 @@ from sqlalchemy import select, func, extract, and_, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import AsyncSessionLocal
-from models import Transaction, Budget, Alert, TransactionType
+from models import Transaction, Alert, TransactionType
 from schemas import DashboardSummary, CategoryAmount, TransactionOut
 from cache import cache_get, cache_set, make_versioned_cache_key
+from services.budget_service import get_budget_totals
 
 import logging
 logger = logging.getLogger(__name__)
+
+
+def _build_month_periods(cutoff: datetime, months: int) -> list[str]:
+    """Return YYYY-MM labels aligned to the dashboard aggregation window."""
+    periods: list[str] = []
+    year = cutoff.year
+    month = cutoff.month
+
+    for offset in range(months + 1):
+        total_month = month - 1 + offset
+        period_year = year + total_month // 12
+        period_month = total_month % 12 + 1
+        periods.append(f"{period_year}-{period_month:02d}")
+
+    return periods
 
 
 async def _run_query(query_fn, workspace_id: uuid.UUID):
@@ -143,13 +159,7 @@ async def get_dashboard_summary(
         )
 
     async def q_budget(s: AsyncSession):
-        return await s.execute(
-            select(
-                func.sum(Budget.current_spend),
-                func.sum(Budget.monthly_limit),
-            )
-            .where(Budget.workspace_id == ws_id)
-        )
+        return await get_budget_totals(s, ws_id)
 
     async def q_alerts(s: AsyncSession):
         return await s.execute(
@@ -217,6 +227,7 @@ async def get_dashboard_summary(
     cutoff_month = cutoff.month
     monthly_income = [0.0] * (months + 1)
     monthly_expenses = [0.0] * (months + 1)
+    monthly_periods = _build_month_periods(cutoff, months)
     for row in monthly_result:
         y, m = int(row[0]), int(row[1])
         # Relative offset: how many months after the cutoff month
@@ -232,9 +243,7 @@ async def get_dashboard_summary(
         for r in cats_result
     ]
 
-    budget_row = budget_result.one_or_none()
-    spent = float(budget_row[0] or 0) if budget_row else 0.0
-    limit_total = float(budget_row[1] or 1) if budget_row else 1.0
+    spent, limit_total = budget_result
     budget_util = (spent / limit_total * 100) if limit_total > 0 else 0.0
 
     active_alerts = alert_result.scalar() or 0
@@ -253,6 +262,7 @@ async def get_dashboard_summary(
         cash_balance=round(cash_balance, 2),
         monthly_income=monthly_income,
         monthly_expenses=monthly_expenses,
+        monthly_periods=monthly_periods,
         top_categories=top_categories,
         recent_transactions=recent,
         period_months=months,
