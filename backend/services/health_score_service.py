@@ -129,7 +129,16 @@ async def compute_health_score(
         return HealthScoreResponse(**cached)
 
     now = datetime.now(timezone.utc)
-    three_months = now - timedelta(days=90)
+
+    latest_date = await db.scalar(
+        select(func.max(Transaction.date)).where(Transaction.workspace_id == workspace_id)
+    )
+    if latest_date is None:
+        latest_date = now
+    elif latest_date.tzinfo is None:
+        latest_date = latest_date.replace(tzinfo=timezone.utc)
+
+    three_months = latest_date - timedelta(days=90)
 
     # ── Income / expense totals ──────────────────────────────────
     totals = await db.execute(
@@ -149,7 +158,9 @@ async def compute_health_score(
     monthly_burn = expenses / 3
     monthly_revenue = income / 3
     net = income - expenses
-    runway = net / monthly_burn if monthly_burn > 0 else 99
+    # We do not have a true cash-balance ledger here, so treat runway as a
+    # conservative operating proxy and never report negative months.
+    runway = max(0.0, net / monthly_burn) if monthly_burn > 0 else 99
 
     # ── ML-004: Detect or use overridden stage ────────────────────
     stage = stage_override or detect_business_stage(runway, monthly_revenue)
@@ -221,24 +232,28 @@ async def compute_health_score(
             ScoreComponent(
                 name="Cash Flow",
                 score=round(cf_score * weights["cash_flow"]),
+                max_score=round(100 * weights["cash_flow"]),
                 description=f"{cf_desc} (weight: {weights['cash_flow']:.0%})",
                 status=cf_status,
             ),
             ScoreComponent(
                 name="Runway",
                 score=round(rw_score * weights["runway"]),
+                max_score=round(100 * weights["runway"]),
                 description=f"{rw_desc} (weight: {weights['runway']:.0%})",
                 status=rw_status,
             ),
             ScoreComponent(
                 name="Budget Adherence",
                 score=round(ba_score * weights["budget"]),
+                max_score=round(100 * weights["budget"]),
                 description=f"{ba_desc} (weight: {weights['budget']:.0%})",
                 status=ba_status,
             ),
             ScoreComponent(
                 name="Income Diversity",
                 score=round(id_score * weights["diversity"]),
+                max_score=round(100 * weights["diversity"]),
                 description=f"{id_desc} (weight: {weights['diversity']:.0%})",
                 status=id_status,
             ),

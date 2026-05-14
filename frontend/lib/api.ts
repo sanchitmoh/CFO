@@ -21,6 +21,7 @@ import type {
   ChatSession,
   ScanResult,
   HealthScoreResponse,
+  InvestorSummary,
   ReportSummary,
   AffordabilityRequest,
   AffordabilityResponse,
@@ -902,13 +903,7 @@ export const scenariosApi = {
 
 export const investorApi = {
   getSummary: () =>
-    fetchApi<{
-      health_score: number;
-      health_label: string;
-      metrics: { label: string; value: string; delta: string; positive: boolean; note: string }[];
-      revenue_trend: { month: string; revenue: number; expenses: number }[];
-      kpis: { label: string; value: string; trend: string; change: string }[];
-    }>("/dashboard/investor-summary"),
+    fetchApi<InvestorSummary>("/dashboard/investor-summary"),
 };
 
 
@@ -965,11 +960,13 @@ export const api = {
     perPage?: number,
     search?: string,
     _token?: string | null,
+    type?: string,
   ) => {
     const query = new URLSearchParams();
     if (page) query.set("page", String(page));
     if (perPage) query.set("per_page", String(perPage));
     if (search) query.set("search", search);
+    if (type) query.set("type", type);
     return fetchApi<PaginatedTransactions>(`/transactions?${query}`, {}, _token);
   },
 

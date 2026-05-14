@@ -15,6 +15,21 @@ from models import Invoice, InvoicePayment, InvoiceSequence, InvoiceStatus
 logger = logging.getLogger(__name__)
 
 
+def _calculate_invoice_totals(items: list[dict], tax_rate: float) -> tuple[float, float, float]:
+    subtotal = round(sum(float(item["amount"]) for item in items), 2)
+    tax_amount = round(subtotal * float(tax_rate or 0), 2)
+    total = round(subtotal + tax_amount, 2)
+    return subtotal, tax_amount, total
+
+
+def _days_from_due_date(due_date: datetime | None, now: datetime | None = None) -> int:
+    if due_date is None:
+        return 0
+    reference = now or datetime.now(timezone.utc)
+    due = due_date if due_date.tzinfo else due_date.replace(tzinfo=timezone.utc)
+    return (reference.date() - due.date()).days
+
+
 async def _next_invoice_number(db: AsyncSession, ws_id: uuid.UUID) -> str:
     """Get next sequential invoice number using counter table with row lock."""
     result = await db.execute(
@@ -46,9 +61,7 @@ async def get_invoice(db: AsyncSession, ws_id: uuid.UUID, inv_id: uuid.UUID) -> 
 async def create_invoice(db: AsyncSession, ws_id: uuid.UUID, user_id: uuid.UUID, data) -> Invoice:
     inv_number = await _next_invoice_number(db, ws_id)
     items = [item.model_dump() for item in data.items]
-    subtotal = sum(item["amount"] for item in items)
-    tax_amount = round(subtotal * data.tax_rate / 100, 2) if data.tax_rate else 0
-    total = round(subtotal + tax_amount, 2)
+    subtotal, tax_amount, total = _calculate_invoice_totals(items, data.tax_rate)
     inv = Invoice(
         workspace_id=ws_id, user_id=user_id, invoice_number=inv_number,
         client_name=data.client_name, client_email=data.client_email,
@@ -72,13 +85,12 @@ async def update_invoice(db: AsyncSession, inv: Invoice, data) -> Invoice:
     if data.items is not None:
         items = [i.model_dump() for i in data.items]
         inv.items_json = items
-        subtotal = sum(i["amount"] for i in items)
         tax_rate = float(data.tax_rate) if data.tax_rate is not None else float(inv.tax_rate)
-        tax_amount = round(subtotal * tax_rate / 100, 2)
+        subtotal, tax_amount, total = _calculate_invoice_totals(items, tax_rate)
         inv.subtotal = Decimal(str(subtotal))
         inv.tax_rate = Decimal(str(tax_rate))
         inv.tax_amount = Decimal(str(tax_amount))
-        inv.total = Decimal(str(round(subtotal + tax_amount, 2)))
+        inv.total = Decimal(str(total))
     if data.issue_date: inv.issue_date = datetime.strptime(data.issue_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
     if data.due_date: inv.due_date = datetime.strptime(data.due_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
     await db.flush(); await db.refresh(inv); return inv
@@ -112,19 +124,19 @@ async def get_aging_report(db: AsyncSession, ws_id: uuid.UUID):
     invoices = await list_invoices(db, ws_id)
     unpaid = [i for i in invoices if i.status not in (InvoiceStatus.paid, InvoiceStatus.cancelled, InvoiceStatus.draft)]
     buckets_def = [
-        ("current", lambda d: d >= 0),
-        ("1-30", lambda d: -30 <= d < 0),
-        ("31-60", lambda d: -60 <= d < -30),
-        ("61-90", lambda d: -90 <= d < -60),
-        ("90+", lambda d: d < -90),
+        ("current", lambda d: d <= 0),
+        ("1-30", lambda d: 1 <= d <= 30),
+        ("31-60", lambda d: 31 <= d <= 60),
+        ("61-90", lambda d: 61 <= d <= 90),
+        ("90+", lambda d: d > 90),
     ]
     buckets = []
     total_outstanding = 0.0
     for label, check in buckets_def:
         matched = []
         for inv in unpaid:
-            days_until_due = (inv.due_date.replace(tzinfo=timezone.utc) - now).days if inv.due_date.tzinfo is None else (inv.due_date - now).days
-            if check(days_until_due):
+            days_past_due = _days_from_due_date(inv.due_date, now)
+            if check(days_past_due):
                 matched.append(inv)
         bucket_total = sum(float(i.total) - float(i.amount_paid) for i in matched)
         total_outstanding += bucket_total

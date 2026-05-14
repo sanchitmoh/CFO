@@ -246,6 +246,70 @@ export interface HealthScoreResponse {
   computed_at: string;
 }
 
+export interface InvestorMetric {
+  id: string;
+  label: string;
+  value: string;
+  delta: string;
+  positive: boolean;
+  note: string;
+}
+
+export interface InvestorTrendPoint {
+  month: string;
+  period: string;
+  revenue: number;
+  expenses: number;
+  net: number;
+}
+
+export interface InvestorKPI {
+  label: string;
+  value: string;
+  trend: "up" | "down" | "neutral";
+  change: string;
+}
+
+export interface InvestorExpenseMixItem {
+  category: string;
+  amount: number;
+  share_pct: number;
+}
+
+export interface InvestorCompanySnapshot {
+  name: string;
+  industry: string;
+  currency: string;
+}
+
+export interface InvestorDataQuality {
+  as_of: string;
+  window_start: string;
+  window_end: string;
+  stale_days: number;
+  observed_months: number;
+  historical: boolean;
+  note: string;
+}
+
+export interface InvestorSummary {
+  company: InvestorCompanySnapshot;
+  data_quality: InvestorDataQuality;
+  health_score: number;
+  health_label: string;
+  health_grade: string;
+  health_stage: string;
+  narrative: string;
+  metrics: InvestorMetric[];
+  revenue_trend: InvestorTrendPoint[];
+  kpis: InvestorKPI[];
+  expense_mix: InvestorExpenseMixItem[];
+  highlights: string[];
+  risks: string[];
+  recommendations: string[];
+  health_components: ScoreComponent[];
+}
+
 // ── Reports ──────────────────────────────────────────────────────
 
 export interface CategorySummary {
@@ -636,7 +700,10 @@ export interface Invoice {
   id: string;
   invoice_number: string;
   client_name: string;
-  client_email?: string;
+  client_email?: string | null;
+  client_address?: string | null;
+  items_json?: { description: string; quantity: number; unit_price: number; amount: number }[];
+  currency_code: string;
   issue_date: string;
   due_date: string;
   line_items: { description: string; quantity: number; unit_price: number; amount: number }[];
@@ -647,8 +714,10 @@ export interface Invoice {
   amount_paid: number;
   amount_due: number;
   status: "draft" | "sent" | "paid" | "partially_paid" | "overdue" | "cancelled";
+  days_overdue: number;
+  paid_date?: string | null;
   notes?: string;
-  payments: InvoicePayment[];
+  payments?: InvoicePayment[];
   created_at: string;
 }
 
@@ -657,8 +726,9 @@ export interface InvoiceCreate {
   client_email?: string;
   issue_date: string;
   due_date: string;
-  line_items: { description: string; quantity: number; unit_price: number }[];
+  items: { description: string; quantity: number; unit_price: number; amount?: number }[];
   tax_rate?: number;
+  currency_code?: string;
   notes?: string;
 }
 
@@ -666,8 +736,9 @@ export interface InvoiceUpdate {
   client_name?: string;
   client_email?: string;
   due_date?: string;
-  line_items?: { description: string; quantity: number; unit_price: number }[];
+  items?: { description: string; quantity: number; unit_price: number; amount?: number }[];
   tax_rate?: number;
+  currency_code?: string;
   notes?: string;
   status?: string;
 }
@@ -683,11 +754,12 @@ export interface AgingBucket {
   bucket: string;
   count: number;
   total: number;
-  invoices: { id: string; invoice_number: string; client_name: string; total: number; amount_due: number; due_date: string; days_overdue: number }[];
+  invoices: Invoice[];
+  period?: string;
 }
 
 export interface AgingReport {
-  as_of: string;
+  as_of?: string;
   total_outstanding: number;
   buckets: AgingBucket[];
 }
@@ -699,8 +771,9 @@ export interface ApprovalPolicy {
   name: string;
   min_amount: number;
   max_amount?: number;
+  required_approvers: number;
+  auto_approve_roles: string[];
   categories: string[];
-  approver_roles: string[];
   is_active: boolean;
   created_at: string;
 }
@@ -709,21 +782,28 @@ export interface ApprovalPolicyCreate {
   name: string;
   min_amount: number;
   max_amount?: number;
+  required_approvers?: number;
+  auto_approve_roles?: string[];
   categories?: string[];
-  approver_roles?: string[];
 }
 
 export interface ExpenseApproval {
   id: string;
   transaction_id: string;
   policy_id: string;
+  policy_name?: string;
   requested_by: string;
-  decided_by?: string;
-  status: "pending" | "approved" | "rejected";
+  requester_name?: string;
+  status: "pending" | "approved" | "rejected" | "auto_approved";
+  approved_by?: string;
+  approver_name?: string;
+  approved_at?: string;
   notes?: string;
   rejection_reason?: string;
-  requested_at: string;
-  decided_at?: string;
+  amount?: number;
+  description?: string;
+  category?: string;
+  created_at: string;
 }
 
 export interface ApprovalDecision {

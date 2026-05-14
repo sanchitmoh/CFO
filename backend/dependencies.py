@@ -56,8 +56,11 @@ async def get_rls_db(user: User = Depends(get_current_user)):
         )
         try:
             yield session
-        finally:
-            # Commit if the handler didn't already; rollback on error
+        except Exception:
+            if session.in_transaction():
+                await session.rollback()
+            raise
+        else:
             if session.in_transaction():
                 await session.commit()
 

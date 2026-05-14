@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, type ReactNode } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { api } from "@/lib/api";
 import type { ChatMessage } from "@/lib/types";
@@ -13,6 +13,69 @@ const SUGGESTED_QUERIES = [
   "Should I be worried about my burn rate?",
   "Which budget categories am I overspending?",
 ];
+
+const SECTION_LINE_RE = /^[A-Za-z][A-Za-z /&()'-]*:$/;
+
+function renderInlineFormatting(text: string): ReactNode {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g).filter(Boolean);
+
+  return parts.map((part, index) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return (
+        <strong key={index} className="font-semibold">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+
+    return <span key={index}>{part}</span>;
+  });
+}
+
+function renderAssistantContent(content: string) {
+  const lines = content.split("\n");
+
+  return (
+    <div className="space-y-2">
+      {lines.map((line, index) => {
+        const trimmed = line.trim();
+        if (!trimmed) {
+          return <div key={index} className="h-1.5" />;
+        }
+
+        const bulletMatch = trimmed.match(/^[-•]\s+(.*)$/);
+        if (bulletMatch) {
+          return (
+            <div key={index} className="flex gap-2 pl-1">
+              <span className="mt-[1px] shrink-0 font-semibold" style={{ color: "var(--accent)" }}>
+                •
+              </span>
+              <span className="flex-1">{renderInlineFormatting(bulletMatch[1])}</span>
+            </div>
+          );
+        }
+
+        if (SECTION_LINE_RE.test(trimmed)) {
+          return (
+            <div
+              key={index}
+              className="text-[11px] font-semibold uppercase tracking-[0.18em]"
+              style={{ color: "var(--accent)" }}
+            >
+              {trimmed.slice(0, -1)}
+            </div>
+          );
+        }
+
+        return (
+          <p key={index} className="whitespace-pre-wrap">
+            {renderInlineFormatting(line)}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function ChatPage() {
   const { getToken } = useAuth();
@@ -110,14 +173,16 @@ export default function ChatPage() {
 
             <div className="max-w-[80%]">
               <div
-                className="px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap"
+                className={`px-4 py-3 rounded-2xl text-sm leading-relaxed ${
+                  msg.role === "user" ? "whitespace-pre-wrap" : ""
+                }`}
                 style={
                   msg.role === "user"
                     ? { background: "var(--accent)", color: "#fff", borderBottomRightRadius: 4 }
                     : { background: "var(--glass-bg)", border: "1px solid var(--border)", color: "var(--text)", borderBottomLeftRadius: 4 }
                 }
               >
-                {msg.content}
+                {msg.role === "assistant" ? renderAssistantContent(msg.content) : msg.content}
               </div>
               {msg.role === "assistant" && i > 0 && (
                 <div className="flex items-center gap-1 mt-1 ml-1" style={{ color: "var(--text-muted)", fontSize: 10 }}>

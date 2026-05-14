@@ -101,7 +101,7 @@ export default function VendorsPage() {
         </div>
 
         {/* Vendor KPIs */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-up delay-1">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 animate-fade-up delay-1">
           {[
             { label: "Total Spent", value: fmt(selectedStats?.total || 0), icon: DollarSign },
             { label: "Transactions", value: String(selectedStats?.txns || 0), icon: BarChart3 },
@@ -120,7 +120,7 @@ export default function VendorsPage() {
 
         {/* Transaction History */}
         <div className="glass animate-fade-up delay-2">
-          <div className="p-5 flex items-center justify-between" style={{ borderBottom: "1px solid var(--border)" }}>
+          <div className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between" style={{ borderBottom: "1px solid var(--border)" }}>
             <div className="flex items-center gap-2">
               <Calendar size={16} style={{ color: "var(--accent)" }} />
               <h3 className="text-sm font-semibold" style={{ color: "var(--text)" }}>Transaction History</h3>
@@ -133,7 +133,7 @@ export default function VendorsPage() {
             <div className="p-12 text-center"><p className="text-sm" style={{ color: "var(--text-dim)" }}>No transactions found.</p></div>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
                 <table className="w-full text-sm">
                   <thead>
                     <tr style={{ borderBottom: "1px solid var(--border)" }}>
@@ -156,7 +156,7 @@ export default function VendorsPage() {
               </div>
               {/* Pagination */}
               {txnTotal > TXN_PER_PAGE && (
-                <div className="p-4 flex items-center justify-between" style={{ borderTop: "1px solid var(--border)" }}>
+                <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between" style={{ borderTop: "1px solid var(--border)" }}>
                   <span className="text-xs" style={{ color: "var(--text-dim)" }}>
                     Showing {txnPage * TXN_PER_PAGE + 1}–{Math.min((txnPage + 1) * TXN_PER_PAGE, txnTotal)} of {txnTotal}
                   </span>
@@ -186,12 +186,12 @@ export default function VendorsPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between animate-fade-up">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between animate-fade-up">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: "var(--text)" }}>Vendor Intelligence</h1>
           <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Spend analytics, vendor performance & transaction history</p>
         </div>
-        <button onClick={() => setShowForm(!showForm)} className="btn-primary flex items-center gap-2">
+        <button onClick={() => setShowForm(!showForm)} className="btn-primary flex w-full items-center justify-center gap-2 sm:w-auto">
           {showForm ? <X size={16} /> : <Plus size={16} />}
           {showForm ? "Cancel" : "Add Vendor"}
         </button>
@@ -200,7 +200,7 @@ export default function VendorsPage() {
       {showForm && <CreateVendorForm onSuccess={() => { setShowForm(false); load(); }} />}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-up delay-1">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 animate-fade-up delay-1">
         {[
           { label: "Total Vendors", value: String(totalVendors), icon: Users, accent: "#d4a853" },
           { label: "Total Spent", value: fmt(totalSpent), icon: DollarSign, accent: "#e07a5f" },
@@ -293,7 +293,7 @@ export default function VendorsPage() {
               <DollarSign size={16} style={{ color: "var(--accent)" }} />
               <h3 className="text-sm font-semibold" style={{ color: "var(--text)" }}>Spend Breakdown</h3>
             </div>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ borderBottom: "1px solid var(--border)" }}>
@@ -383,12 +383,12 @@ function CreateVendorForm({ onSuccess }: { onSuccess: () => void }) {
   return (
     <div className="glass p-6 animate-fade-up">
       <h3 className="text-sm font-semibold mb-4" style={{ color: "var(--text)" }}>New Vendor</h3>
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <input name="name" placeholder="Vendor Name" required />
         <input name="category" placeholder="Category (optional)" />
         <input name="payment_terms" placeholder="Payment Terms (e.g. Net 30)" />
         <button type="submit" disabled={submitting} className="btn-primary">{submitting ? "Creating…" : "Add Vendor"}</button>
-        {error && <div className="sm:col-span-4 text-xs px-3 py-2 rounded-lg" style={{ background: "var(--danger-soft)", color: "var(--danger)" }}>{error}</div>}
+        {error && <div className="text-xs px-3 py-2 rounded-lg md:col-span-2 xl:col-span-4" style={{ background: "var(--danger-soft)", color: "var(--danger)" }}>{error}</div>}
       </form>
     </div>
   );

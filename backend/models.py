@@ -1091,6 +1091,25 @@ class Invoice(Base):
         back_populates="invoice", cascade="all, delete-orphan"
     )
 
+    @property
+    def line_items(self) -> list:
+        return list(self.items_json or [])
+
+    @property
+    def amount_due(self) -> float:
+        return round(float(self.total or 0) - float(self.amount_paid or 0), 2)
+
+    @property
+    def days_overdue(self) -> int:
+        if self.status in (InvoiceStatus.paid, InvoiceStatus.cancelled, InvoiceStatus.draft):
+            return 0
+        due_date = self.due_date
+        if due_date is None:
+            return 0
+        now = datetime.now(timezone.utc)
+        due = due_date if due_date.tzinfo else due_date.replace(tzinfo=timezone.utc)
+        return max((now.date() - due.date()).days, 0)
+
 
 class InvoicePayment(Base):
     __tablename__ = "invoice_payments"
@@ -1195,6 +1214,32 @@ class ExpenseApproval(Base):
     policy: Mapped["ApprovalPolicy"] = relationship("ApprovalPolicy")
     requester: Mapped["User"] = relationship("User", foreign_keys=[requested_by])
     approver: Mapped["User | None"] = relationship("User", foreign_keys=[approved_by])
+
+    @property
+    def requester_name(self) -> str | None:
+        return self.requester.full_name if self.requester else None
+
+    @property
+    def approver_name(self) -> str | None:
+        return self.approver.full_name if self.approver else None
+
+    @property
+    def amount(self) -> float | None:
+        if not self.transaction:
+            return None
+        return float(self.transaction.amount or 0)
+
+    @property
+    def description(self) -> str | None:
+        return self.transaction.description if self.transaction else None
+
+    @property
+    def category(self) -> str | None:
+        return self.transaction.category if self.transaction else None
+
+    @property
+    def policy_name(self) -> str | None:
+        return self.policy.name if self.policy else None
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -1380,4 +1425,3 @@ class VendorContract(Base):
     )
 
     vendor: Mapped["Vendor"] = relationship("Vendor")
-

@@ -142,6 +142,24 @@ async def check_affordability(
     """Analyze whether the business can afford a proposed expense."""
     ws = await db.get(Workspace, workspace_id)
     sym = get_currency_symbol(ws.currency if ws else "USD")
+    
+    # Sanity check: Warn about unrealistic amounts (> 100 million in any currency)
+    if req.amount > 100_000_000:
+        subject = "this hire" if req.is_hire else f"'{req.expense_name}'"
+        return AffordabilityResponse(
+            can_afford=False,
+            current_runway_months=0.0,
+            projected_runway_months=0.0,
+            current_balance_3m=0.0,
+            projected_balance_3m=-req.amount,
+            break_even_revenue=req.amount,
+            ai_suggestion=(
+                f"⚠️ Unrealistic amount: {subject} with a cost of {sym}{req.amount:,.2f} "
+                f"appears to be an error. Please verify the amount. "
+                f"For reference, typical business expenses range from hundreds to millions, "
+                f"not hundreds of millions."
+            ),
+        )
 
     latest_row = await db.execute(
         select(func.max(Transaction.date)).where(Transaction.workspace_id == workspace_id)

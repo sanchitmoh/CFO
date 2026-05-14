@@ -193,7 +193,7 @@ export default function CalculatorPage() {
               >
                 Frequency
               </label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 {([
                   { value: "one-time", label: "One-time", icon: DollarSign },
                   { value: "monthly", label: "Monthly", icon: Repeat },
@@ -225,7 +225,7 @@ export default function CalculatorPage() {
 
             {/* Hiring toggle */}
             <div
-              className="flex items-center justify-between p-3 rounded-lg"
+              className="flex flex-col gap-3 rounded-lg p-3 sm:flex-row sm:items-center sm:justify-between"
               style={{ background: "var(--bg)", border: "1px solid var(--border)" }}
             >
               <div>

@@ -93,6 +93,7 @@ INTENT_MAP: dict[str, list[str]] = {
 }
 
 DEFAULT_CONTEXTS = ["balance", "burn_rate", "category_spend"]
+CONTEXT_WINDOW_DAYS = 90
 
 
 def detect_intent(question: str) -> list[str]:
@@ -109,61 +110,127 @@ def detect_intent(question: str) -> list[str]:
 # Context Fetchers — each returns a text block for the prompt
 # ═══════════════════════════════════════════════════════════════════
 
-async def _fetch_balance(db: AsyncSession, ws_id, cutoff: datetime, sym: str) -> tuple[str, dict]:
-    """Income/expense totals and net cash flow."""
+async def _fetch_transaction_totals(
+    db: AsyncSession,
+    ws_id,
+    cutoff: datetime,
+    query_cache: dict | None = None,
+) -> dict[str, float | int]:
+    """Fetch 90-day transaction totals once and reuse them across contexts."""
+    cache_key = ("transaction_totals", ws_id, cutoff)
+    if query_cache is not None and cache_key in query_cache:
+        return query_cache[cache_key]
+
     totals = await db.execute(
         select(Transaction.type, func.sum(Transaction.amount), func.count(Transaction.id))
         .where(and_(Transaction.workspace_id == ws_id, Transaction.date >= cutoff))
         .group_by(Transaction.type)
     )
-    income = 0.0
-    expenses = 0.0
-    txn_count = 0
+    summary = {"income": 0.0, "expenses": 0.0, "txn_count": 0}
     for row in totals:
         if row[0] == TransactionType.income:
-            income = float(row[1] or 0)
+            summary["income"] = float(row[1] or 0)
         else:
-            expenses = float(row[1] or 0)
-        txn_count += int(row[2] or 0)
+            summary["expenses"] = float(row[1] or 0)
+        summary["txn_count"] += int(row[2] or 0)
+
+    if query_cache is not None:
+        query_cache[cache_key] = summary
+    return summary
+
+
+def _format_window_label(query_cache: dict | None) -> str:
+    """Return a human-readable date range for the active context window."""
+    if not query_cache:
+        return f"last {CONTEXT_WINDOW_DAYS} days"
+    window_start = query_cache.get("window_start")
+    window_end = query_cache.get("window_end")
+    if window_start and window_end:
+        return f"{window_start} to {window_end}"
+    return f"last {CONTEXT_WINDOW_DAYS} days"
+
+
+def resolve_context_window(
+    latest_transaction_at: datetime | None,
+    *,
+    now: datetime | None = None,
+) -> tuple[datetime, datetime, int]:
+    """Choose the best analysis window for current or stale workspaces."""
+    current_time = now or datetime.now(timezone.utc)
+    current_cutoff = current_time - timedelta(days=CONTEXT_WINDOW_DAYS)
+
+    if latest_transaction_at and latest_transaction_at < current_cutoff:
+        window_end = latest_transaction_at
+        window_start = latest_transaction_at - timedelta(days=CONTEXT_WINDOW_DAYS)
+    else:
+        window_end = current_time
+        window_start = current_cutoff
+
+    stale_days = (
+        max((current_time.date() - latest_transaction_at.date()).days, 0)
+        if latest_transaction_at
+        else 0
+    )
+    return window_start, window_end, stale_days
+
+
+async def _fetch_balance(
+    db: AsyncSession,
+    ws_id,
+    cutoff: datetime,
+    sym: str,
+    query_cache: dict | None = None,
+) -> tuple[str, dict]:
+    """Income/expense totals and net cash flow."""
+    summary = await _fetch_transaction_totals(db, ws_id, cutoff, query_cache)
+    income = float(summary["income"])
+    expenses = float(summary["expenses"])
+    txn_count = int(summary["txn_count"])
+    window_label = _format_window_label(query_cache)
 
     net = income - expenses
     text = (
-        f"Total Income (90d): {sym}{income:,.2f}\n"
-        f"Total Expenses (90d): {sym}{expenses:,.2f}\n"
+        f"Total Income ({window_label}): {sym}{income:,.2f}\n"
+        f"Total Expenses ({window_label}): {sym}{expenses:,.2f}\n"
         f"Net Cash Flow: {sym}{net:,.2f}\n"
         f"Transaction Count: {txn_count}"
     )
     return text, {"income": income, "expenses": expenses, "txn_count": txn_count}
 
 
-async def _fetch_burn_rate(db: AsyncSession, ws_id, cutoff: datetime, sym: str) -> tuple[str, dict]:
+async def _fetch_burn_rate(
+    db: AsyncSession,
+    ws_id,
+    cutoff: datetime,
+    sym: str,
+    query_cache: dict | None = None,
+) -> tuple[str, dict]:
     """Monthly burn rate and runway calculation."""
-    result = await db.execute(
-        select(Transaction.type, func.sum(Transaction.amount))
-        .where(and_(Transaction.workspace_id == ws_id, Transaction.date >= cutoff))
-        .group_by(Transaction.type)
-    )
-    income = 0.0
-    expenses = 0.0
-    for row in result:
-        if row[0] == TransactionType.income:
-            income = float(row[1] or 0)
-        else:
-            expenses = float(row[1] or 0)
+    summary = await _fetch_transaction_totals(db, ws_id, cutoff, query_cache)
+    income = float(summary["income"])
+    expenses = float(summary["expenses"])
+    window_label = _format_window_label(query_cache)
 
     burn_rate = expenses / 3
     net = income - expenses
     runway = net / burn_rate if burn_rate > 0 else 99
 
     text = (
-        f"Monthly Burn Rate: {sym}{burn_rate:,.2f}\n"
+        f"Monthly Burn Rate ({window_label}): {sym}{burn_rate:,.2f}\n"
         f"Estimated Runway: {runway:.1f} months"
     )
     return text, {"burn_rate": burn_rate, "runway": runway}
 
 
-async def _fetch_category_spend(db: AsyncSession, ws_id, cutoff: datetime, sym: str) -> tuple[str, dict]:
+async def _fetch_category_spend(
+    db: AsyncSession,
+    ws_id,
+    cutoff: datetime,
+    sym: str,
+    _query_cache: dict | None = None,
+) -> tuple[str, dict]:
     """Top 5 expense categories."""
+    window_label = _format_window_label(_query_cache)
     cats_q = await db.execute(
         select(Transaction.category, func.sum(Transaction.amount))
         .where(and_(
@@ -176,13 +243,20 @@ async def _fetch_category_spend(db: AsyncSession, ws_id, cutoff: datetime, sym: 
         .limit(5)
     )
     lines = [f"  - {sanitize_data_field(r[0])}: {sym}{float(r[1]):,.2f}" for r in cats_q]
-    text = "Top Expense Categories:\n" + ("\n".join(lines) if lines else "  No expense data")
+    text = f"Top Expense Categories ({window_label}):\n" + ("\n".join(lines) if lines else "  No expense data")
     return text, {"category_count": len(lines)}
 
 
-async def _fetch_cash_flow(db: AsyncSession, ws_id, cutoff: datetime, sym: str) -> tuple[str, dict]:
+async def _fetch_cash_flow(
+    db: AsyncSession,
+    ws_id,
+    cutoff: datetime,
+    sym: str,
+    _query_cache: dict | None = None,
+) -> tuple[str, dict]:
     """Monthly cash flow trend."""
     from sqlalchemy import extract
+    window_label = _format_window_label(_query_cache)
     monthly = await db.execute(
         select(
             extract("year", Transaction.date).label("y"),
@@ -210,11 +284,17 @@ async def _fetch_cash_flow(db: AsyncSession, ws_id, cutoff: datetime, sym: str) 
         net = d["income"] - d["expenses"]
         lines.append(f"  {period}: Income {sym}{d['income']:,.0f} | Expenses {sym}{d['expenses']:,.0f} | Net {sym}{net:,.0f}")
 
-    text = "Monthly Cash Flow Trend:\n" + ("\n".join(lines) if lines else "  No data")
+    text = f"Monthly Cash Flow Trend ({window_label}):\n" + ("\n".join(lines) if lines else "  No data")
     return text, {"months_of_data": len(months_data)}
 
 
-async def _fetch_budgets(db: AsyncSession, ws_id, _cutoff: datetime, sym: str) -> tuple[str, dict]:
+async def _fetch_budgets(
+    db: AsyncSession,
+    ws_id,
+    _cutoff: datetime,
+    sym: str,
+    _query_cache: dict | None = None,
+) -> tuple[str, dict]:
     """Budget adherence summary."""
     lines = []
     over_budget = 0
@@ -235,7 +315,13 @@ async def _fetch_budgets(db: AsyncSession, ws_id, _cutoff: datetime, sym: str) -
     return text, {"budget_count": len(lines), "over_budget": over_budget}
 
 
-async def _fetch_revenue_detail(db: AsyncSession, ws_id, cutoff: datetime, sym: str) -> tuple[str, dict]:
+async def _fetch_revenue_detail(
+    db: AsyncSession,
+    ws_id,
+    cutoff: datetime,
+    sym: str,
+    _query_cache: dict | None = None,
+) -> tuple[str, dict]:
     """Revenue breakdown by category."""
     rev_q = await db.execute(
         select(Transaction.category, func.sum(Transaction.amount), func.count(Transaction.id))
@@ -252,7 +338,13 @@ async def _fetch_revenue_detail(db: AsyncSession, ws_id, cutoff: datetime, sym: 
     return text, {"revenue_sources": len(lines)}
 
 
-async def _fetch_flagged(db: AsyncSession, ws_id, _cutoff: datetime, sym: str) -> tuple[str, dict]:
+async def _fetch_flagged(
+    db: AsyncSession,
+    ws_id,
+    _cutoff: datetime,
+    sym: str,
+    _query_cache: dict | None = None,
+) -> tuple[str, dict]:
     """Recently flagged anomalies."""
     from models import Transaction as T
     flagged_q = await db.execute(
@@ -296,22 +388,37 @@ async def build_context(
     """
     needed = detect_intent(question)
     safe_question = sanitize_input(question)
-    cutoff = datetime.now(timezone.utc) - timedelta(days=90)
 
     sections: list[str] = []
     metadata: dict = {"intents": needed}
     seen_fetchers: set = set()
+    query_cache: dict = {}
 
     from models import Workspace
     from services.alert_engine import get_currency_symbol
     ws = await db.scalar(select(Workspace).where(Workspace.id == ws_id))
     sym = get_currency_symbol(ws.currency if ws else "USD")
+    latest_transaction_at = await db.scalar(
+        select(func.max(Transaction.date)).where(Transaction.workspace_id == ws_id)
+    )
+    cutoff, window_end, stale_days = resolve_context_window(latest_transaction_at)
+    metadata.update({
+        "window_start": cutoff.date().isoformat(),
+        "window_end": window_end.date().isoformat(),
+        "stale_days": stale_days,
+    })
+    if latest_transaction_at is not None:
+        metadata["latest_transaction_at"] = latest_transaction_at.isoformat()
+    query_cache.update({
+        "window_start": cutoff.date().isoformat(),
+        "window_end": window_end.date().isoformat(),
+    })
 
     for ctx_name in needed:
         fetcher = CONTEXT_FETCHERS.get(ctx_name)
         if fetcher and id(fetcher) not in seen_fetchers:
             seen_fetchers.add(id(fetcher))
-            text, meta = await fetcher(db, ws_id, cutoff, sym)
+            text, meta = await fetcher(db, ws_id, cutoff, sym, query_cache)
             sections.append(text)
             metadata.update(meta)
 
@@ -353,21 +460,42 @@ def compute_confidence(metadata: dict) -> tuple[str, str]:
     """
     txn_count = metadata.get("txn_count", 0)
     months = metadata.get("months_of_data", 0)
+    stale_days = metadata.get("stale_days", 0)
+    window_end = metadata.get("window_end")
 
     # Estimate days of data from months, or from transaction count heuristic
     if months >= 3 or txn_count >= 50:
-        return "high", ""
+        level = "high"
+        note = ""
     elif months >= 1 or txn_count >= 10:
-        return "medium", (
+        level = "medium"
+        note = (
             f"Data confidence: MEDIUM — only {txn_count} transactions "
             f"across ~{months} month(s) of data. Note this limitation."
         )
     else:
-        return "low", (
+        level = "low"
+        note = (
             f"Data confidence: LOW — only {txn_count} transactions available. "
             f"Acknowledge this limitation clearly in your response. "
             f"Preface uncertain projections with caveats."
         )
+
+    if stale_days >= 365:
+        level = "low"
+        note = (
+            f"Data confidence: LOW — the latest transaction data ends on {window_end} "
+            f"and is {stale_days} days old. Answer using historical context only, not as current status."
+        )
+    elif stale_days >= 90:
+        if level == "high":
+            level = "medium"
+        note = (
+            f"Data recency warning: latest transaction data ends on {window_end} "
+            f"and is {stale_days} days old. Be explicit that this is a historical summary."
+        )
+
+    return level, note
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -456,6 +584,9 @@ def build_system_prompt(
     months = metadata.get("months_of_data", 0)
     intents = metadata.get("intents", [])
     rag_matches = metadata.get("rag_matches", 0)
+    window_start = metadata.get("window_start", "unknown")
+    window_end = metadata.get("window_end", "unknown")
+    stale_days = metadata.get("stale_days", 0)
 
     data_days = months * 30 if months else max(txn_count // 2, 1)
 
@@ -464,6 +595,11 @@ def build_system_prompt(
         low_data_warning = (
             "\n⚠️ WARNING: Less than 30 days of data available. "
             "Answers may be unreliable. State this clearly.\n"
+        )
+    if stale_days >= 90:
+        low_data_warning += (
+            f"\n⚠️ RECENCY WARNING: The latest transaction data ends on {window_end} "
+            f"and is {stale_days} days old. Treat this as historical data, not current performance.\n"
         )
 
     return f"""You are an AI CFO assistant for a small business. You help owners understand their finances, make data-driven decisions, and optimize spending.
@@ -475,10 +611,23 @@ RULES — YOU MUST FOLLOW THESE WITHOUT EXCEPTION:
 4. You are NOT a licensed financial advisor. If giving strategic advice, add: "Consider consulting a qualified financial advisor for major decisions."
 5. When comparing periods, state the exact date ranges being compared.
 6. If asked about data you don't have (e.g., individual invoices, payroll details), say so explicitly rather than making assumptions.
+7. The chat UI renders plain text, so DO NOT use markdown tables, code fences, or decorative markup. Prefer clean headings and simple bullet lists.
+8. For ranked summaries like biggest expenses, use this structure when data exists:
+   Summary:
+   <one-sentence takeaway>
+   Period:
+   <exact date range>
+   Top items:
+   - <item>: <amount>
+   Recommendations:
+   - <action tied to the largest category>
+   - <second practical action>
+9. When the user asks for spending or expense summaries, include 2-3 concrete recommendations grounded in the largest categories shown in the data.
 
 DATA CONFIDENCE: {confidence_level.upper()} ({data_days} days of transaction history, {txn_count} transactions)
 {confidence_note}
 {low_data_warning}
+DATA WINDOW: {window_start} to {window_end}
 CONTEXT RETRIEVED FOR: {', '.join(intents) if intents else 'general overview'}
 SEMANTIC MATCHES: {rag_matches} relevant transactions found
 

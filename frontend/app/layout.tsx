@@ -17,6 +17,23 @@ export const metadata: Metadata = {
   title: "AI CFO — Intelligent Financial Command Center",
   description:
     "AI-powered financial management dashboard with forecasting, budgeting, and intelligent insights.",
+  icons: {
+    icon: [
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    apple: "/apple-touch-icon.png",
+    shortcut: "/icon-192.png",
+  },
+  manifest: "/site.webmanifest",
+  themeColor: "#C9A962",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=5",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "AI CFO",
+  },
 };
 
 export default function RootLayout({

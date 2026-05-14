@@ -128,7 +128,7 @@ export default function AuditPage() {
       </div>
 
       {/* Summary stats */}
-      <div className="grid grid-cols-4 gap-4 animate-fade-up delay-1">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 animate-fade-up delay-1">
         {[
           { label: "Total Events", value: entries.length, color: "var(--text)" },
           { label: "Budget Changes", value: entries.filter(e => e.category === "budget").length, color: "var(--warning)" },
@@ -166,7 +166,7 @@ export default function AuditPage() {
           ))}
         </div>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="flex w-full items-center gap-2 sm:ml-auto sm:w-auto">
           <User size={14} style={{ color: "var(--text-muted)" }} />
           <div className="relative">
             <select
@@ -211,7 +211,7 @@ export default function AuditPage() {
               style={{ borderColor: isExpanded ? `${catColor}33` : "var(--border)" }}
             >
               <button
-                className="w-full text-left p-4 flex items-start justify-between gap-4"
+                className="w-full text-left p-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
                 onClick={() => setExpanded(isExpanded ? null : entry.id)}
               >
                 <div className="flex items-start gap-3 flex-1">

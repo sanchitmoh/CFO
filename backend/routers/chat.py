@@ -39,6 +39,33 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+def _build_openai_fallback(exc: Exception) -> tuple[str, str]:
+    """Return a user-facing fallback and confidence based on OpenAI failure type."""
+    if isinstance(exc, openai.AuthenticationError):
+        return (
+            "The AI service is misconfigured right now. "
+            "The OpenAI API key configured on the backend is invalid, so chat cannot generate a live answer.",
+            "low",
+        )
+    if isinstance(exc, openai.RateLimitError):
+        return (
+            "The AI service is temporarily rate-limited. "
+            "Please wait a moment and try again.",
+            "low",
+        )
+    if isinstance(exc, openai.APIConnectionError):
+        return (
+            "The AI service is temporarily unreachable. "
+            "Please check the backend network connection and try again.",
+            "low",
+        )
+    return (
+        "I'm temporarily unable to connect to the AI service. "
+        "Please try again shortly.",
+        "low",
+    )
+
+
 # ── Helpers ────────────────────────────────────────────────────────
 
 
@@ -159,12 +186,22 @@ async def chat(
         db, user, session, req.message,
     )
 
-    # ── Call OpenAI (with custom tracing) ──────────────────────────
+    # ── Call OpenAI/OpenRouter (with custom tracing) ──────────────────────────
     try:
-        client = openai.AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+        # Support both OpenAI and OpenRouter API keys
+        base_url = "https://openrouter.ai/api/v1" if settings.OPENAI_API_KEY.startswith("sk-or-") else "https://api.openai.com/v1"
+        client = openai.AsyncOpenAI(
+            api_key=settings.OPENAI_API_KEY,
+            base_url=base_url
+        )
         async with openai_traced(model=settings.OPENAI_MODEL, stream=False) as span:
+            # For OpenRouter, prepend provider to model name if not already present
+            model_name = settings.OPENAI_MODEL
+            if base_url.startswith("https://openrouter") and "/" not in model_name:
+                model_name = f"openai/{model_name}"
+            
             completion = await client.chat.completions.create(
-                model=settings.OPENAI_MODEL,
+                model=model_name,
                 messages=messages,
                 temperature=0.7,
                 max_tokens=800,
@@ -177,13 +214,9 @@ async def chat(
                 span.set_attribute("ai.tokens.completion", completion.usage.completion_tokens)
                 span.set_attribute("ai.tokens.total", completion.usage.total_tokens)
 
-    except Exception:
-        reply = (
-            "I'm temporarily unable to connect to the AI service. "
-            "Based on your data: your monthly burn rate is notable — "
-            "check your top expense categories for optimization opportunities."
-        )
-        confidence = "low"
+    except Exception as exc:
+        logger.exception("OpenAI chat completion failed: %s", exc)
+        reply, confidence = _build_openai_fallback(exc)
 
     # ── Save messages ─────────────────────────────────────────────
     db.add(ChatMessage(
@@ -264,6 +297,7 @@ async def chat_stream(
 
     async def event_generator():
         """Yield JSON-framed SSE events as OpenAI returns tokens."""
+        nonlocal confidence
         full_reply = []
 
         # ── Meta event: session info + confidence at stream start ─
@@ -281,11 +315,21 @@ async def chat_stream(
         yield f"data: {meta}\n\n"
 
         try:
-            client = openai.AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+            # Support both OpenAI and OpenRouter API keys
+            base_url = "https://openrouter.ai/api/v1" if settings.OPENAI_API_KEY.startswith("sk-or-") else "https://api.openai.com/v1"
+            client = openai.AsyncOpenAI(
+                api_key=settings.OPENAI_API_KEY,
+                base_url=base_url
+            )
 
             async with openai_traced(model=settings.OPENAI_MODEL, stream=True):
+                # For OpenRouter, prepend provider to model name if not already present
+                model_name = settings.OPENAI_MODEL
+                if base_url.startswith("https://openrouter") and "/" not in model_name:
+                    model_name = f"openai/{model_name}"
+                
                 stream = await client.chat.completions.create(
-                    model=settings.OPENAI_MODEL,
+                    model=model_name,
                     messages=messages,
                     temperature=0.7,
                     max_tokens=800,
@@ -301,11 +345,9 @@ async def chat_stream(
                         })
                         yield f"data: {token_evt}\n\n"
 
-        except Exception:
-            fallback = (
-                "I'm temporarily unable to connect to the AI service. "
-                "Check your top expense categories for optimization opportunities."
-            )
+        except Exception as exc:
+            logger.exception("OpenAI streaming chat failed: %s", exc)
+            fallback, confidence = _build_openai_fallback(exc)
             full_reply.append(fallback)
             err_evt = json.dumps({"type": "token", "content": fallback})
             yield f"data: {err_evt}\n\n"

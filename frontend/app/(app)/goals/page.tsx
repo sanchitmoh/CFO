@@ -161,7 +161,7 @@ export default function GoalsPage() {
         </div>
       )}
       {/* Header */}
-      <div className="flex items-start justify-between animate-fade-up">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between animate-fade-up">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: "var(--text)" }}>
             Financial Goals
@@ -172,7 +172,7 @@ export default function GoalsPage() {
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="btn-primary flex items-center gap-2"
+          className="btn-primary flex w-full items-center justify-center gap-2 sm:w-auto"
         >
           <Plus size={15} />
           New Goal
@@ -180,7 +180,7 @@ export default function GoalsPage() {
       </div>
 
       {/* Summary stats */}
-      <div className="grid grid-cols-3 gap-4 animate-fade-up delay-1">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 animate-fade-up delay-1">
         {[
           { label: "Active", value: activeCount, color: "var(--accent)" },
           { label: "Completed", value: completedCount, color: "var(--info)" },
@@ -461,8 +461,8 @@ export default function GoalsPage() {
             <div className="sm:col-span-2 text-xs" style={{ color: "var(--text-muted)" }}>
               Leave the current value at zero for revenue goals if you want them to auto-track from current-month income.
             </div>
-            <div className="sm:col-span-2 flex gap-3 mt-1">
-              <button type="submit" className="btn-primary flex items-center gap-2">
+            <div className="sm:col-span-2 mt-1 flex flex-col gap-3 sm:flex-row">
+              <button type="submit" className="btn-primary flex items-center justify-center gap-2">
                 <CheckCircle size={14} />
                 Create Goal
               </button>

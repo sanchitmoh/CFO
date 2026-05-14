@@ -71,18 +71,32 @@ async def submit_for_approval(
     db: AsyncSession = Depends(get_rls_db),
 ):
     """Submit a transaction for approval. Auto-matches the best policy."""
-    from models import Transaction
+    from models import Transaction, TransactionType
     from sqlalchemy import select, and_
     txn = (await db.execute(select(Transaction).where(
         and_(Transaction.id == transaction_id, Transaction.workspace_id == user.workspace_id)
     ))).scalar_one_or_none()
     if not txn:
         raise HTTPException(status_code=404, detail="Transaction not found")
+    if txn.type != TransactionType.expense:
+        raise HTTPException(status_code=400, detail="Only expense transactions can be submitted for approval")
     policy = await approval_service.find_matching_policy(db, user.workspace_id, float(txn.amount), txn.category)
     if not policy:
         raise HTTPException(status_code=400, detail="No matching approval policy found for this transaction amount/category")
-    approval = await approval_service.submit_for_approval(db, user.workspace_id, transaction_id, user.id, policy.id)
+    try:
+        approval = await approval_service.submit_for_approval(db, user.workspace_id, transaction_id, user, policy)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     await db.commit()
+    await log_action(
+        db,
+        user,
+        "approval.submit",
+        "expense_approval",
+        approval.id,
+        new_value={"policy_id": str(policy.id), "status": approval.status.value},
+    )
+    approval = await approval_service.get_approval(db, user.workspace_id, approval.id)
     return ExpenseApprovalOut.model_validate(approval)
 
 
@@ -96,9 +110,13 @@ async def approve(
     approval = await approval_service.get_approval(db, user.workspace_id, approval_id)
     if not approval:
         raise HTTPException(status_code=404, detail="Approval not found")
-    approval = await approval_service.approve_expense(db, approval, user.id, data.notes)
+    try:
+        approval = await approval_service.approve_expense(db, approval, user.id, data.notes)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     await db.commit()
     await log_action(db, user, "approval.approve", "expense_approval", approval.id)
+    approval = await approval_service.get_approval(db, user.workspace_id, approval.id)
     return ExpenseApprovalOut.model_validate(approval)
 
 
@@ -112,7 +130,11 @@ async def reject(
     approval = await approval_service.get_approval(db, user.workspace_id, approval_id)
     if not approval:
         raise HTTPException(status_code=404, detail="Approval not found")
-    approval = await approval_service.reject_expense(db, approval, user.id, data.rejection_reason)
+    try:
+        approval = await approval_service.reject_expense(db, approval, user.id, data.rejection_reason)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     await db.commit()
     await log_action(db, user, "approval.reject", "expense_approval", approval.id)
+    approval = await approval_service.get_approval(db, user.workspace_id, approval.id)
     return ExpenseApprovalOut.model_validate(approval)

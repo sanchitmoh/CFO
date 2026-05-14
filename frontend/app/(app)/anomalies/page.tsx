@@ -110,14 +110,14 @@ export default function AnomaliesPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {error && (
-        <div className="glass p-4 flex items-center gap-3 animate-fade-up" style={{ borderColor: "var(--danger)44", background: "var(--danger-soft)" }}>
+        <div className="glass p-4 flex flex-wrap items-center gap-3 animate-fade-up" style={{ borderColor: "var(--danger)44", background: "var(--danger-soft)" }}>
           <AlertTriangle size={18} style={{ color: "var(--danger)", flexShrink: 0 }} />
           <p className="text-sm" style={{ color: "var(--danger)" }}>{error}</p>
-          <button onClick={loadAnomalies} className="ml-auto text-xs font-medium px-3 py-1.5 rounded-lg" style={{ background: "var(--danger)", color: "#fff" }}>Retry</button>
+          <button onClick={loadAnomalies} className="text-xs font-medium px-3 py-1.5 rounded-lg sm:ml-auto" style={{ background: "var(--danger)", color: "#fff" }}>Retry</button>
         </div>
       )}
       {/* Header */}
-      <div className="flex items-start justify-between animate-fade-up">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between animate-fade-up">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: "var(--text)" }}>
             Anomaly Detection
@@ -129,7 +129,7 @@ export default function AnomaliesPage() {
         <button
           onClick={runScan}
           disabled={scanning}
-          className="btn-primary flex items-center gap-2"
+          className="btn-primary flex w-full items-center justify-center gap-2 sm:w-auto"
         >
           <RefreshCw size={15} className={scanning ? "animate-spin" : ""} />
           {scanning ? "Scanning…" : "Run Scan"}
@@ -137,7 +137,7 @@ export default function AnomaliesPage() {
       </div>
 
       {scanSummary && (
-        <div className="glass p-4 flex items-center justify-between gap-3 animate-fade-up delay-1">
+        <div className="glass p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between animate-fade-up delay-1">
           <div>
             <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
               Latest scan summary
@@ -151,7 +151,7 @@ export default function AnomaliesPage() {
       )}
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-3 gap-4 animate-fade-up delay-1">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 animate-fade-up delay-1">
         {[
           { label: "Flagged", count: counts.flagged, color: "var(--danger)", bg: "var(--danger-soft)", icon: ShieldAlert },
           { label: "Reviewed", count: counts.reviewed, color: "var(--warning)", bg: "var(--warning-soft)", icon: Eye },
@@ -189,7 +189,7 @@ export default function AnomaliesPage() {
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex gap-2 animate-fade-up delay-2">
+      <div className="flex flex-wrap gap-2 animate-fade-up delay-2">
         {(["all", "flagged", "reviewed", "dismissed"] as StatusFilter[]).map((f) => (
           <button
             key={f}
@@ -229,7 +229,7 @@ export default function AnomaliesPage() {
               opacity: anomaly.status === "dismissed" ? 0.6 : 1,
             }}
           >
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               {/* Left */}
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-1">

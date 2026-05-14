@@ -192,10 +192,28 @@ async def lifespan(app: FastAPI):
         except Exception as exc:
             logger.warning("JWKS warm-up failed (%.1fs): %s", _t.monotonic() - t, exc)
 
+    async def _warmup_embeddings():
+        """Load the local embedding model off the chat request path."""
+        import time as _t
+        t = _t.monotonic()
+        try:
+            from services.embedding_service import warm_embedding_model
+            ready = await asyncio.to_thread(warm_embedding_model)
+            if ready:
+                logger.info("Embedding warm-up complete (%.1fs)", _t.monotonic() - t)
+            else:
+                logger.info(
+                    "Embedding warm-up skipped (model unavailable locally) (%.1fs)",
+                    _t.monotonic() - t,
+                )
+        except Exception as exc:
+            logger.warning("Embedding warm-up failed (%.1fs): %s", _t.monotonic() - t, exc)
+
     # Run all warm-ups concurrently — total time = slowest single one
     logger.info("Starting connection warm-up (DB + Redis + JWKS)...")
     await asyncio.gather(_warmup_db(), _warmup_redis(), _warmup_jwks())
     logger.info("Connection warm-up complete")
+    asyncio.create_task(_warmup_embeddings())
 
     # EXT-002: Schedule periodic alert evaluation across all workspaces.
     # Lazy import to avoid circular dependencies at module load time.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
 import {
@@ -109,6 +109,22 @@ const orbitCards = [
     detail: "with audit context",
   },
 ];
+
+function WorkspaceEntryLink({
+  className,
+  children,
+}: {
+  className: string;
+  children: ReactNode;
+}) {
+  return (
+    // Use a document navigation here so Clerk middleware can complete
+    // its dev-mode handshake or redirect flow before entering protected routes.
+    <a href="/dashboard" className={className}>
+      {children}
+    </a>
+  );
+}
 
 export function HomeLanding() {
   const { isSignedIn } = useAuth();
@@ -327,9 +343,9 @@ export function HomeLanding() {
               </Link>
               </>
             ) : (
-              <Link href="/dashboard" className={styles.primaryButton}>
+              <WorkspaceEntryLink className={styles.primaryButton}>
                 Open dashboard
-              </Link>
+              </WorkspaceEntryLink>
             )}
           </div>
         </nav>
@@ -363,10 +379,10 @@ export function HomeLanding() {
                 </Link>
                 </>
               ) : (
-                <Link href="/dashboard" className={styles.primaryButton}>
+                <WorkspaceEntryLink className={styles.primaryButton}>
                   Continue to workspace
                   <ArrowRight size={16} />
-                </Link>
+                </WorkspaceEntryLink>
               )}
             </div>
 
@@ -542,10 +558,10 @@ export function HomeLanding() {
                 </Link>
                 </>
               ) : (
-                <Link href="/dashboard" className={styles.primaryButton}>
+                <WorkspaceEntryLink className={styles.primaryButton}>
                   Open dashboard
                   <ArrowRight size={16} />
-                </Link>
+                </WorkspaceEntryLink>
               )}
             </div>
           </div>

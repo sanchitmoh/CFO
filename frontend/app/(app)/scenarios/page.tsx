@@ -151,7 +151,7 @@ export default function ScenariosPage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center justify-between animate-fade-up">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between animate-fade-up">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: "var(--text)" }}>
             Scenario Planning
@@ -160,7 +160,7 @@ export default function ScenariosPage() {
             What-if analysis, compounding projections, and Monte Carlo simulations
           </p>
         </div>
-        <button onClick={() => setShowForm(!showForm)} className="btn-primary flex items-center gap-2">
+        <button onClick={() => setShowForm(!showForm)} className="btn-primary flex w-full items-center justify-center gap-2 sm:w-auto">
           {showForm ? <X size={16} /> : <Plus size={16} />}
           {showForm ? "Cancel" : "New Scenario"}
         </button>
@@ -168,7 +168,7 @@ export default function ScenariosPage() {
 
       {showForm && (
         <div className="glass p-6 animate-fade-up">
-          <div className="flex items-center justify-between gap-3 mb-4">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h3 className="text-sm font-semibold" style={{ color: "var(--text)" }}>
                 Create Scenario
@@ -191,8 +191,8 @@ export default function ScenariosPage() {
             <input name="exp_growth" type="number" step="0.1" placeholder="Expense Growth %" required />
             <input name="oti" type="number" step="1" placeholder="One-time Income (optional)" />
             <input name="ote" type="number" step="1" placeholder="One-time Expense (optional)" />
-            <div className="sm:col-span-2 flex justify-end">
-              <button type="submit" className="btn-primary">
+            <div className="sm:col-span-2 flex justify-stretch sm:justify-end">
+              <button type="submit" className="btn-primary w-full sm:w-auto">
                 Create
               </button>
             </div>
@@ -200,7 +200,7 @@ export default function ScenariosPage() {
         </div>
       )}
 
-      <div className="flex gap-2 animate-fade-up delay-1">
+      <div className="flex flex-wrap gap-2 animate-fade-up delay-1">
         {(["list", "montecarlo"] as const).map((currentTab) => (
           <button
             key={currentTab}
@@ -511,7 +511,7 @@ export default function ScenariosPage() {
                 <p className="text-xs uppercase tracking-wider mb-3" style={{ color: "var(--text-dim)" }}>
                   Simulation Inputs {selectedScenario ? `for ${selectedScenario.name}` : "(historical baseline)"}
                 </p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   {[
                     { label: "Median Income / mo", value: fmt(mcResult.baseline_monthly_income ?? 0), color: "var(--success)" },
                     { label: "Median Expense / mo", value: fmt(mcResult.baseline_monthly_expense ?? 0), color: "var(--danger)" },

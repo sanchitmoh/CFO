@@ -139,12 +139,14 @@ export default function InvoiceForm({ onSuccess, onCancel }: { onSuccess: () => 
         client_email: clientEmail || undefined,
         issue_date: issueDate,
         due_date: dueDate,
-        line_items: lineItems.map(l => ({
+        items: lineItems.map(l => ({
           description: l.description,
           quantity: l.quantity,
           unit_price: l.unit_price,
+          amount: Number((l.quantity * l.unit_price * (1 - l.discount_pct / 100)).toFixed(2)),
         })),
         tax_rate: taxRate / 100,
+        currency_code: currency,
         notes: [
           clientPhone ? `Phone: ${clientPhone}` : "",
           clientAddress ? `Address: ${clientAddress}` : "",

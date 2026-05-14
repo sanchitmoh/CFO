@@ -187,12 +187,12 @@ export default function TaxPage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center justify-between animate-fade-up">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between animate-fade-up">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: "var(--text)" }}>Tax Management</h1>
           <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Quarterly estimates, deductions & live calculators</p>
         </div>
-        <button onClick={() => setShowGen(!showGen)} className="btn-primary flex items-center gap-2">
+        <button onClick={() => setShowGen(!showGen)} className="btn-primary flex w-full items-center justify-center gap-2 sm:w-auto">
           {showGen ? <X size={16}/> : <Plus size={16}/>} {showGen ? "Cancel" : "Generate Estimate"}
         </button>
       </div>
@@ -263,7 +263,7 @@ export default function TaxPage() {
 
           {/* ─── Categories Tab ─── */}
           {tab === "categories" && (
-            <div className="glass overflow-x-auto">
+            <div className="glass overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
               <table className="w-full text-sm">
                 <thead><tr style={{ borderBottom:"1px solid var(--border)" }}>
                   <th className="text-left p-4 text-xs uppercase" style={{ color:"var(--text-dim)" }}>Category</th>
@@ -292,9 +292,9 @@ export default function TaxPage() {
               <div className="glass p-4 flex flex-wrap items-center gap-3">
                 <Filter size={16} style={{ color:"var(--text-dim)" }}/>
                 {/* Country dropdown */}
-                <div className="relative">
+                <div className="relative w-full sm:w-auto">
                   <select value={jurCountry} onChange={e => setJurCountry(e.target.value)}
-                    className="appearance-none pl-3 pr-8 py-2 rounded-lg text-sm font-medium cursor-pointer"
+                    className="w-full appearance-none pl-3 pr-8 py-2 rounded-lg text-sm font-medium cursor-pointer sm:min-w-[180px]"
                     style={{ background:"var(--surface)", color:"var(--text)", border:"1px solid var(--border)", outline:"none" }}>
                     <option value="all">All Countries</option>
                     {jurisdictions.map(j => <option key={j.id} value={j.code}>{j.code === "IN" ? "🇮🇳" : "🇺🇸"} {j.name}</option>)}
@@ -302,9 +302,9 @@ export default function TaxPage() {
                   <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color:"var(--text-dim)" }}/>
                 </div>
                 {/* Section dropdown */}
-                <div className="relative">
+                <div className="relative w-full sm:w-auto">
                   <select value={jurSection} onChange={e => setJurSection(e.target.value as JurSection)}
-                    className="appearance-none pl-3 pr-8 py-2 rounded-lg text-sm font-medium cursor-pointer"
+                    className="w-full appearance-none pl-3 pr-8 py-2 rounded-lg text-sm font-medium cursor-pointer sm:min-w-[220px]"
                     style={{ background:"var(--surface)", color:"var(--text)", border:"1px solid var(--border)", outline:"none" }}>
                     {(Object.entries(sectionLabels) as [JurSection, string][]).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                   </select>
@@ -329,7 +329,7 @@ export default function TaxPage() {
                 return (
                 <div key={j.id} className="glass p-0 overflow-hidden">
                   {/* Header */}
-                  <div className="flex items-center justify-between p-5" style={{ borderBottom:"1px solid var(--border)" }}>
+                  <div className="flex flex-col gap-3 p-5 sm:flex-row sm:items-start sm:justify-between" style={{ borderBottom:"1px solid var(--border)" }}>
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">{isIN ? "🇮🇳" : "🇺🇸"}</span>
                       <div>
@@ -524,7 +524,7 @@ export default function TaxPage() {
                     {show("tds") && isIN && d.tds_rates && (
                       <div className="p-5 md:col-span-2" style={{ borderTop:"1px solid var(--border)" }}>
                         <h4 className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color:"var(--accent)" }}>TDS Rates</h4>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
+                        <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2 lg:grid-cols-3">
                           {Object.entries(d.tds_rates).map(([k, v]) => (
                             <div key={k} className="p-2 rounded" style={{ background:"var(--surface)" }}>
                               <span className="font-bold block" style={{ color:"var(--text)" }}>{k.replace(/_/g," ")}</span>
@@ -692,7 +692,7 @@ export default function TaxPage() {
                 </form>
               </div>
 
-              <div className="grid gap-3 md:grid-cols-3">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                 <div className="rounded-2xl p-4" style={{ background:"var(--surface)", border:"1px solid var(--border)" }}>
                   <p className="text-sm font-semibold" style={{ color:"var(--text)" }}>Pure calculation path</p>
                   <p className="mt-2 text-sm leading-6" style={{ color:"var(--text-muted)" }}>

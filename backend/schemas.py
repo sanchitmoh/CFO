@@ -5,7 +5,7 @@ All request/response models aligned with frontend types.ts contracts.
 import uuid
 from datetime import datetime, date
 from typing import Optional, List, Literal
-from pydantic import BaseModel, EmailStr, Field, field_validator, constr, computed_field
+from pydantic import AliasChoices, BaseModel, EmailStr, Field, computed_field, constr, field_validator, model_validator
 from decimal import Decimal
 
 
@@ -521,6 +521,70 @@ class HealthScoreResponse(BaseModel):
     computed_at: datetime
 
 
+class InvestorMetric(BaseModel):
+    id: str
+    label: str
+    value: str
+    delta: str
+    positive: bool
+    note: str
+
+
+class InvestorTrendPoint(BaseModel):
+    month: str
+    period: str
+    revenue: float
+    expenses: float
+    net: float
+
+
+class InvestorKPI(BaseModel):
+    label: str
+    value: str
+    trend: str
+    change: str
+
+
+class InvestorExpenseMixItem(BaseModel):
+    category: str
+    amount: float
+    share_pct: float
+
+
+class InvestorCompanySnapshot(BaseModel):
+    name: str
+    industry: str
+    currency: str
+
+
+class InvestorDataQuality(BaseModel):
+    as_of: datetime
+    window_start: datetime
+    window_end: datetime
+    stale_days: int
+    observed_months: int
+    historical: bool
+    note: str
+
+
+class InvestorSummaryResponse(BaseModel):
+    company: InvestorCompanySnapshot
+    data_quality: InvestorDataQuality
+    health_score: float
+    health_label: str
+    health_grade: str
+    health_stage: str
+    narrative: str
+    metrics: list[InvestorMetric]
+    revenue_trend: list[InvestorTrendPoint]
+    kpis: list[InvestorKPI]
+    expense_mix: list[InvestorExpenseMixItem]
+    highlights: list[str]
+    risks: list[str]
+    recommendations: list[str]
+    health_components: list[ScoreComponent]
+
+
 # ═══════════════════════════════════════════════════════════════════
 # REPORTS
 # ═══════════════════════════════════════════════════════════════════
@@ -862,17 +926,31 @@ class EffectiveHourlyRateResponse(BaseModel):
 # PHASE 2 — INVOICE MANAGEMENT
 # ═══════════════════════════════════════════════════════════════════
 
+def _normalize_invoice_tax_rate(value: Optional[float]) -> Optional[float]:
+    if value in (None, ""):
+        return None
+    rate = float(value)
+    return round(rate / 100, 4) if abs(rate) > 1 else rate
+
 class InvoiceLineItem(BaseModel):
     description: str
     quantity: float = 1.0
     unit_price: float
-    amount: float
+    amount: Optional[float] = None
+
+    @model_validator(mode="after")
+    def populate_amount(self):
+        if self.amount is None:
+            self.amount = round(self.quantity * self.unit_price, 2)
+        return self
 
 class InvoiceCreate(BaseModel):
     client_name: str
     client_email: Optional[EmailStr] = None
     client_address: Optional[str] = None
-    items: list[InvoiceLineItem]
+    items: list[InvoiceLineItem] = Field(
+        validation_alias=AliasChoices("items", "line_items")
+    )
     tax_rate: float = 0.0
     currency_code: str = "INR"
     issue_date: str  # YYYY-MM-DD
@@ -880,16 +958,30 @@ class InvoiceCreate(BaseModel):
     notes: Optional[str] = None
     recurring_config: Optional[dict] = None
 
+    @field_validator("tax_rate", mode="before")
+    @classmethod
+    def normalize_tax_rate(cls, value):
+        normalized = _normalize_invoice_tax_rate(value)
+        return normalized if normalized is not None else 0.0
+
 class InvoiceUpdate(BaseModel):
     client_name: Optional[str] = None
     client_email: Optional[EmailStr] = None
     client_address: Optional[str] = None
-    items: Optional[list[InvoiceLineItem]] = None
+    items: Optional[list[InvoiceLineItem]] = Field(
+        default=None,
+        validation_alias=AliasChoices("items", "line_items"),
+    )
     tax_rate: Optional[float] = None
     issue_date: Optional[str] = None
     due_date: Optional[str] = None
     notes: Optional[str] = None
     status: Optional[str] = None
+
+    @field_validator("tax_rate", mode="before")
+    @classmethod
+    def normalize_tax_rate(cls, value):
+        return _normalize_invoice_tax_rate(value)
 
 class InvoiceOut(BaseModel):
     id: uuid.UUID
@@ -898,15 +990,18 @@ class InvoiceOut(BaseModel):
     client_email: Optional[str] = None
     client_address: Optional[str] = None
     items_json: Optional[list] = None
+    line_items: list[InvoiceLineItem] = Field(default_factory=list)
     subtotal: float
     tax_rate: float
     tax_amount: float
     total: float
     amount_paid: float
+    amount_due: float = 0.0
     currency_code: str
     status: str
     issue_date: datetime
     due_date: datetime
+    days_overdue: int = 0
     paid_date: Optional[datetime] = None
     notes: Optional[str] = None
     created_at: datetime
@@ -930,10 +1025,15 @@ class InvoicePaymentOut(BaseModel):
     model_config = {"from_attributes": True}
 
 class AgingBucket(BaseModel):
-    period: str  # "current" | "1-30" | "31-60" | "61-90" | "90+"
+    bucket: str = Field(validation_alias=AliasChoices("bucket", "period"))
     count: int
     total: float
-    invoices: list[InvoiceOut] = []
+    invoices: list[InvoiceOut] = Field(default_factory=list)
+
+    @computed_field
+    @property
+    def period(self) -> str:
+        return self.bucket
 
 class AgingReport(BaseModel):
     total_outstanding: float
@@ -948,9 +1048,27 @@ class ApprovalPolicyCreate(BaseModel):
     name: str
     min_amount: float = 0
     max_amount: Optional[float] = None
-    required_approvers: int = 1
+    required_approvers: int = Field(default=1, ge=1)
     auto_approve_roles: Optional[list[str]] = None
     categories: Optional[list[str]] = None
+
+    @field_validator("auto_approve_roles", "categories", mode="before")
+    @classmethod
+    def normalize_optional_lists(cls, value):
+        if value is None:
+            return None
+        cleaned: list[str] = []
+        for item in value:
+            text = str(item).strip()
+            if text:
+                cleaned.append(text)
+        return cleaned or None
+
+    @model_validator(mode="after")
+    def validate_amount_range(self):
+        if self.max_amount is not None and self.max_amount < self.min_amount:
+            raise ValueError("max_amount must be greater than or equal to min_amount")
+        return self
 
 class ApprovalPolicyOut(BaseModel):
     id: uuid.UUID
@@ -958,10 +1076,16 @@ class ApprovalPolicyOut(BaseModel):
     min_amount: float
     max_amount: Optional[float] = None
     required_approvers: int
-    auto_approve_roles: Optional[list] = None
-    categories: Optional[list] = None
+    auto_approve_roles: list[str] = Field(default_factory=list)
+    categories: list[str] = Field(default_factory=list)
     is_active: bool
     created_at: datetime
+
+    @field_validator("auto_approve_roles", "categories", mode="before")
+    @classmethod
+    def default_empty_lists(cls, value):
+        return list(value or [])
+
     model_config = {"from_attributes": True}
 
 class ApprovalDecisionRequest(BaseModel):
@@ -972,6 +1096,7 @@ class ExpenseApprovalOut(BaseModel):
     id: uuid.UUID
     transaction_id: uuid.UUID
     policy_id: uuid.UUID
+    policy_name: Optional[str] = None
     requested_by: uuid.UUID
     requester_name: Optional[str] = None
     status: str
@@ -982,6 +1107,7 @@ class ExpenseApprovalOut(BaseModel):
     notes: Optional[str] = None
     amount: Optional[float] = None
     description: Optional[str] = None
+    category: Optional[str] = None
     created_at: datetime
     model_config = {"from_attributes": True}
 

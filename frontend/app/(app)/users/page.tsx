@@ -151,10 +151,10 @@ export default function UsersPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {error && (
-        <div className="glass p-4 flex items-center gap-3 animate-fade-up" style={{ borderColor: "var(--danger)44", background: "var(--danger-soft)" }}>
+        <div className="glass p-4 flex flex-wrap items-center gap-3 animate-fade-up" style={{ borderColor: "var(--danger)44", background: "var(--danger-soft)" }}>
           <AlertTriangle size={18} style={{ color: "var(--danger)", flexShrink: 0 }} />
           <p className="text-sm" style={{ color: "var(--danger)" }}>{error}</p>
-          <button onClick={loadTeam} className="ml-auto text-xs font-medium px-3 py-1.5 rounded-lg" style={{ background: "var(--danger)", color: "#fff" }}>Retry</button>
+          <button onClick={loadTeam} className="text-xs font-medium px-3 py-1.5 rounded-lg sm:ml-auto" style={{ background: "var(--danger)", color: "#fff" }}>Retry</button>
         </div>
       )}
       {/* Header */}
@@ -169,7 +169,7 @@ export default function UsersPage() {
         </div>
         <button
           onClick={() => setShowInvite(true)}
-          className="btn-primary flex items-center gap-2"
+          className="btn-primary flex w-full items-center justify-center gap-2 sm:w-auto"
         >
           <Plus size={15} />
           Invite User
@@ -246,8 +246,8 @@ export default function UsersPage() {
           </span>
         </div>
 
-        <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
-          <table className="w-full text-sm" style={{ minWidth: 600 }}>
+        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0" style={{ WebkitOverflowScrolling: "touch" }}>
+          <table className="w-full text-sm" style={{ minWidth: 560 }}>
             <thead>
               <tr
                 className="text-xs uppercase tracking-wider text-left"
@@ -398,7 +398,7 @@ export default function UsersPage() {
               <span className="text-sm font-medium">Invitation sent to {inviteForm.email}!</span>
             </div>
           ) : (
-            <form onSubmit={handleInvite} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <form onSubmit={handleInvite} className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               <div>
                 <label className="block text-xs font-medium mb-2 uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
                   Full Name
@@ -439,8 +439,8 @@ export default function UsersPage() {
                   ))}
                 </select>
               </div>
-              <div className="sm:col-span-3 flex gap-3 mt-1">
-                <button type="submit" className="btn-primary flex items-center gap-2">
+              <div className="mt-1 flex flex-col gap-3 md:col-span-2 xl:col-span-3 sm:flex-row">
+                <button type="submit" className="btn-primary flex items-center justify-center gap-2">
                   <Mail size={14} />
                   Send Invitation
                 </button>

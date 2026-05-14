@@ -3,7 +3,9 @@ AI CFO — Email Service
 Supports multiple email providers: SendGrid, AWS SES, SMTP
 """
 import logging
-from typing import List
+from datetime import datetime, timezone
+from html import escape
+from typing import Any, List
 
 from config import settings
 
@@ -14,6 +16,17 @@ def _app_url(path: str) -> str:
     base = settings.APP_BASE_URL.rstrip("/")
     suffix = path if path.startswith("/") else f"/{path}"
     return f"{base}{suffix}"
+
+
+def _format_date(value: datetime | None) -> str:
+    if value is None:
+        return "TBD"
+    current = value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+    return current.strftime("%d %b %Y")
+
+
+def _format_currency(value: float, currency_code: str) -> str:
+    return f"{currency_code} {value:,.2f}"
 
 
 class EmailService:
@@ -174,7 +187,156 @@ class EmailService:
         
         logger.info(f"SMTP email sent: to={to_addresses}")
         return True
-    
+
+    async def send_invoice_email(
+        self,
+        invoice: Any,
+        to_address: str | None = None,
+    ) -> bool:
+        """Send a formatted invoice email to the invoice recipient."""
+        recipient = to_address or getattr(invoice, "client_email", None)
+        if not recipient:
+            logger.warning("Invoice email skipped because no recipient email is set")
+            return False
+
+        invoice_number = str(getattr(invoice, "invoice_number", "Invoice"))
+        client_name = escape(str(getattr(invoice, "client_name", "Client")))
+        currency_code = str(getattr(invoice, "currency_code", "INR"))
+        subtotal = float(getattr(invoice, "subtotal", 0) or 0)
+        tax_amount = float(getattr(invoice, "tax_amount", 0) or 0)
+        total = float(getattr(invoice, "total", 0) or 0)
+        amount_due = float(getattr(invoice, "amount_due", total) or 0)
+        tax_rate = float(getattr(invoice, "tax_rate", 0) or 0) * 100
+        issue_date = _format_date(getattr(invoice, "issue_date", None))
+        due_date = _format_date(getattr(invoice, "due_date", None))
+        notes_raw = str(getattr(invoice, "notes", "") or "").strip()
+        notes_html = escape(notes_raw).replace("\n", "<br/>") if notes_raw else ""
+        notes_text = notes_raw if notes_raw else "No additional notes."
+
+        line_items = list(getattr(invoice, "line_items", None) or getattr(invoice, "items_json", None) or [])
+        rows = []
+        text_lines = []
+        for item in line_items:
+            description = escape(str(item.get("description", "Line item")))
+            quantity = float(item.get("quantity", 0) or 0)
+            unit_price = float(item.get("unit_price", 0) or 0)
+            amount = float(item.get("amount", quantity * unit_price) or 0)
+            rows.append(
+                f"""
+                <tr>
+                    <td style="padding: 12px 0; color: #E8E4DE; border-bottom: 1px solid #232323;">{description}</td>
+                    <td style="padding: 12px 0; color: #9A948A; text-align: center; border-bottom: 1px solid #232323;">{quantity:g}</td>
+                    <td style="padding: 12px 0; color: #9A948A; text-align: right; border-bottom: 1px solid #232323;">{_format_currency(unit_price, currency_code)}</td>
+                    <td style="padding: 12px 0; color: #E8E4DE; text-align: right; border-bottom: 1px solid #232323;">{_format_currency(amount, currency_code)}</td>
+                </tr>
+                """
+            )
+            text_lines.append(f"- {description}: {quantity:g} × {_format_currency(unit_price, currency_code)} = {_format_currency(amount, currency_code)}")
+
+        line_items_html = "".join(rows) or """
+            <tr>
+                <td colspan="4" style="padding: 12px 0; color: #9A948A; border-bottom: 1px solid #232323;">No line items were attached.</td>
+            </tr>
+        """
+        line_items_text = "\n".join(text_lines) if text_lines else "- No line items were attached."
+
+        subject = f"Invoice {invoice_number} from {settings.EMAIL_FROM_NAME}"
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <body style="margin:0; background:#080808; color:#E8E4DE; font-family:Arial, sans-serif;">
+            <div style="max-width:680px; margin:0 auto; padding:32px 20px;">
+                <div style="border:1px solid #232323; border-radius:20px; overflow:hidden; background:#111111;">
+                    <div style="padding:28px 32px; background:linear-gradient(135deg, #000000 0%, #17120A 100%); border-bottom:1px solid #232323;">
+                        <div style="font-size:12px; letter-spacing:0.18em; text-transform:uppercase; color:#C9A962;">AI CFO Platform</div>
+                        <h1 style="margin:12px 0 6px; font-size:30px; line-height:1.1;">Invoice {escape(invoice_number)}</h1>
+                        <p style="margin:0; color:#9A948A; font-size:15px;">Issued for {client_name}. Payment due by {due_date}.</p>
+                    </div>
+
+                    <div style="padding:28px 32px;">
+                        <div style="display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:12px; margin-bottom:24px;">
+                            <div style="padding:14px 16px; border:1px solid #232323; border-radius:14px; background:#0D0D0D;">
+                                <div style="font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:#9A948A;">Issue Date</div>
+                                <div style="margin-top:6px; font-size:18px; color:#E8E4DE;">{issue_date}</div>
+                            </div>
+                            <div style="padding:14px 16px; border:1px solid #232323; border-radius:14px; background:#0D0D0D;">
+                                <div style="font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:#9A948A;">Total</div>
+                                <div style="margin-top:6px; font-size:18px; color:#E8E4DE;">{_format_currency(total, currency_code)}</div>
+                            </div>
+                            <div style="padding:14px 16px; border:1px solid #232323; border-radius:14px; background:#0D0D0D;">
+                                <div style="font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:#9A948A;">Amount Due</div>
+                                <div style="margin-top:6px; font-size:18px; color:#C9A962;">{_format_currency(amount_due, currency_code)}</div>
+                            </div>
+                        </div>
+
+                        <table style="width:100%; border-collapse:collapse; margin-bottom:24px;">
+                            <thead>
+                                <tr>
+                                    <th style="padding:0 0 10px; text-align:left; font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:#9A948A;">Description</th>
+                                    <th style="padding:0 0 10px; text-align:center; font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:#9A948A;">Qty</th>
+                                    <th style="padding:0 0 10px; text-align:right; font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:#9A948A;">Unit</th>
+                                    <th style="padding:0 0 10px; text-align:right; font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:#9A948A;">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>{line_items_html}</tbody>
+                        </table>
+
+                        <div style="border:1px solid #232323; border-radius:16px; background:#0D0D0D; padding:18px 20px; margin-bottom:24px;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:10px; color:#9A948A;">
+                                <span>Subtotal</span>
+                                <span>{_format_currency(subtotal, currency_code)}</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; margin-bottom:10px; color:#9A948A;">
+                                <span>Tax ({tax_rate:.2f}%)</span>
+                                <span>{_format_currency(tax_amount, currency_code)}</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; padding-top:12px; border-top:1px solid #232323; font-size:18px; color:#E8E4DE;">
+                                <strong>Total due</strong>
+                                <strong>{_format_currency(amount_due, currency_code)}</strong>
+                            </div>
+                        </div>
+
+                        <div style="padding:18px 20px; border-radius:16px; background:#0A0A0A; border:1px solid #232323;">
+                            <div style="font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:#C9A962; margin-bottom:10px;">Notes & Terms</div>
+                            <div style="color:#CFC8BF; line-height:1.7;">{notes_html or "No additional notes."}</div>
+                        </div>
+
+                        <div style="margin-top:24px;">
+                            <a href="{_app_url('/invoices')}" style="display:inline-block; padding:12px 18px; border-radius:999px; background:#C9A962; color:#0B0907; text-decoration:none; font-weight:bold;">Open invoices workspace</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        text_content = f"""
+Invoice {invoice_number}
+
+Client: {getattr(invoice, "client_name", "Client")}
+Issue date: {issue_date}
+Due date: {due_date}
+Subtotal: {_format_currency(subtotal, currency_code)}
+Tax ({tax_rate:.2f}%): {_format_currency(tax_amount, currency_code)}
+Total due: {_format_currency(amount_due, currency_code)}
+
+Line items:
+{line_items_text}
+
+Notes:
+{notes_text}
+
+Open invoices workspace: {_app_url('/invoices')}
+        """.strip()
+
+        return await self.send_email(
+            to_addresses=[recipient],
+            subject=subject,
+            html_content=html_content,
+            text_content=text_content,
+        )
+
     async def send_alert_email(
         self,
         to_addresses: List[str],

@@ -15,6 +15,7 @@ from schemas import (
 )
 from services import invoice_service
 from services.audit_service import log_action
+from services.email_service import email_service
 from cache import invalidate_workspace_cache
 
 router = APIRouter()
@@ -104,8 +105,22 @@ async def send_invoice(
     inv = await invoice_service.get_invoice(db, user.workspace_id, invoice_id)
     if not inv:
         raise HTTPException(status_code=404, detail="Invoice not found")
+    if not inv.client_email:
+        raise HTTPException(status_code=400, detail="Invoice must have a client email before it can be sent")
+    email_sent = await email_service.send_invoice_email(inv)
+    if not email_sent:
+        raise HTTPException(status_code=502, detail="Invoice email delivery failed. Check provider credentials.")
     inv = await invoice_service.send_invoice(db, inv)
     await db.commit()
+    await invalidate_workspace_cache(str(user.workspace_id))
+    await log_action(
+        db,
+        user,
+        "invoice.send",
+        "invoice",
+        inv.id,
+        new_value={"number": inv.invoice_number, "recipient": inv.client_email},
+    )
     return InvoiceOut.model_validate(inv)
 
 

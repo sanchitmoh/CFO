@@ -233,7 +233,7 @@ export default function ForecastingPage() {
 
       {/* ── Main Chart ─────────────────────────────────────────── */}
       <div className="glass p-6 animate-fade-up delay-3">
-        <div className="flex items-center justify-between mb-6">
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h2 className="text-sm font-semibold" style={{ color: "var(--text)" }}>
               Cash Flow Projection
@@ -243,7 +243,7 @@ export default function ForecastingPage() {
               <span style={{ color: scenarioConfig.color }}>{scenarioConfig.label} scenario</span>
             </p>
           </div>
-          <div className="flex gap-1" style={{ background: "var(--card)", borderRadius: 8, padding: 2, border: "1px solid var(--border)" }}>
+          <div className="flex w-full gap-1 overflow-x-auto sm:w-auto" style={{ background: "var(--card)", borderRadius: 8, padding: 2, border: "1px solid var(--border)" }}>
             {(["chart", "table"] as const).map(t => (
               <button key={t} onClick={() => setActiveTab(t)}
                 style={{
@@ -266,8 +266,9 @@ export default function ForecastingPage() {
             <p className="text-sm" style={{ color: "var(--text-dim)" }}>No forecast data. Add transactions first.</p>
           </div>
         ) : activeTab === "chart" ? (
-          <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
-          <ResponsiveContainer width="100%" height={320} minWidth={500}>
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0" style={{ WebkitOverflowScrolling: "touch" }}>
+          <div style={{ minWidth: 320, height: 320 }}>
+          <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={chartData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="fcIncG" x1="0" y1="0" x2="0" y2="1">
@@ -316,10 +317,11 @@ export default function ForecastingPage() {
             </ComposedChart>
           </ResponsiveContainer>
           </div>
+          </div>
         ) : (
           /* ── Table View ───────────────────────────────────────── */
-          <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
-            <table className="w-full text-sm" style={{ minWidth: 640 }}>
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0" style={{ WebkitOverflowScrolling: "touch" }}>
+            <table className="w-full text-sm" style={{ minWidth: 560 }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--border)" }}>
                   {["Period","Income","Expenses","Net","Cumulative","Confidence","Range"].map(h => (

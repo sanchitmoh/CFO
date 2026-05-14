@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 # ── Lazy-loaded model singleton ───────────────────────────────────
 _model = None
+_model_unavailable = False
 
 
 def _get_model():
@@ -30,15 +31,17 @@ def _get_model():
 
     Uses all-MiniLM-L6-v2 by default (384 dims, ~80MB, fast on CPU).
     """
-    global _model
+    global _model, _model_unavailable
     if _model is not None:
         return _model
+    if _model_unavailable:
+        return None
 
     try:
         from sentence_transformers import SentenceTransformer
         model_name = settings.EMBEDDING_MODEL
-        logger.info("Loading embedding model: %s", model_name)
-        _model = SentenceTransformer(model_name)
+        logger.info("Loading embedding model from local cache: %s", model_name)
+        _model = SentenceTransformer(model_name, local_files_only=True)
         logger.info("Embedding model loaded successfully")
         return _model
     except ImportError:
@@ -46,23 +49,40 @@ def _get_model():
             "sentence-transformers not installed. "
             "Install with: pip install sentence-transformers"
         )
-        raise
+        _model_unavailable = True
+        return None
     except Exception as exc:
-        logger.error("Failed to load embedding model: %s", exc)
-        raise
+        _model_unavailable = True
+        logger.warning(
+            "Embedding model is not cached locally, disabling semantic search "
+            "for this process: %s",
+            exc,
+        )
+        return None
+
+
+def warm_embedding_model() -> bool:
+    """Best-effort warm-up so requests do not pay model load time."""
+    return _get_model() is not None
 
 
 # ═══════════════════════════════════════════════════════════════════
 # Core embedding function
 # ═══════════════════════════════════════════════════════════════════
 
-def generate_embedding(text_input: str) -> list[float]:
+def generate_embedding(
+    text_input: str,
+    *,
+    allow_model_load: bool = True,
+) -> list[float]:
     """Generate a 384-dim embedding for the given text.
 
     Uses sentence-transformers all-MiniLM-L6-v2 — completely free,
     no API calls, runs locally in ~10ms per text.
     """
-    model = _get_model()
+    model = _get_model() if allow_model_load else _model
+    if model is None:
+        raise RuntimeError("Embedding model unavailable")
     embedding = model.encode(text_input, normalize_embeddings=True)
     return embedding.tolist()
 
@@ -183,17 +203,17 @@ async def get_relevant_transactions(
     and a similarity score.
     """
     try:
-        query_embedding = generate_embedding(query)
+        query_embedding = generate_embedding(query, allow_model_load=False)
         vec_str = "[" + ",".join(str(f) for f in query_embedding) + "]"
 
         result = await db.execute(
             text(
                 "SELECT id, description, amount, category, type, date, vendor, "
-                "1 - (description_vec <=> :vec::vector) AS similarity "
+                "1 - (description_vec <=> CAST(:vec AS vector)) AS similarity "
                 "FROM transactions "
                 "WHERE workspace_id = :ws_id "
                 "AND description_vec IS NOT NULL "
-                "ORDER BY description_vec <=> :vec::vector "
+                "ORDER BY description_vec <=> CAST(:vec AS vector) "
                 "LIMIT :top_k"
             ),
             {"vec": vec_str, "ws_id": str(workspace_id), "top_k": top_k},

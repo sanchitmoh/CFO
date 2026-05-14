@@ -155,7 +155,9 @@ export default function DashboardPage() {
           <h3 className="text-sm font-semibold mb-1" style={{ color: "var(--text)" }}>Cash Flow Trend</h3>
           <p className="text-xs mb-4" style={{ color: "var(--text-dim)" }}>{cashFlowData.length} months with activity</p>
           {cashFlowData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={220} minWidth={300}>
+            <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0" style={{ WebkitOverflowScrolling: "touch" }}>
+            <div style={{ minWidth: 280, height: 220 }}>
+            <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={cashFlowData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="incomeGrad" x1="0" y1="0" x2="0" y2="1">
@@ -182,6 +184,8 @@ export default function DashboardPage() {
                 <ReferenceLine y={0} stroke="rgba(255,255,255,0.05)" strokeDasharray="3 3" />
               </ComposedChart>
             </ResponsiveContainer>
+            </div>
+            </div>
           ) : (
             <div className="flex items-center justify-center" style={{ height: 240, color: "var(--text-dim)" }}>
               <p className="text-sm">Add transactions to see cash flow trends</p>
@@ -196,7 +200,9 @@ export default function DashboardPage() {
           <h3 className="text-sm font-semibold mb-4" style={{ color: "var(--text)" }}>Expense Breakdown</h3>
           {categoryData.length > 0 ? (
             <>
-              <ResponsiveContainer width="100%" height={160} minWidth={200}>
+              <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0" style={{ WebkitOverflowScrolling: "touch" }}>
+              <div style={{ minWidth: 220, height: 160 }}>
+              <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie data={categoryData} cx="50%" cy="50%" innerRadius={45} outerRadius={70} paddingAngle={3} dataKey="value">
                     {categoryData.map((_, i) => (
@@ -209,6 +215,8 @@ export default function DashboardPage() {
                   />
                 </PieChart>
               </ResponsiveContainer>
+              </div>
+              </div>
               <div className="mt-2 space-y-1.5">
                 {categoryData.slice(0, 5).map((c, i) => (
                   <div key={c.name} className="flex items-center justify-between text-xs">

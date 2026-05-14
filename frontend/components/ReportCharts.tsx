@@ -403,7 +403,7 @@ export function LineChart({
       <svg
         viewBox={`0 0 ${width} ${height}`}
         className="w-full"
-        style={{ minWidth: 380, maxHeight: height + 20 }}
+        style={{ minWidth: 320, maxHeight: height + 20 }}
         onMouseLeave={() => setHoveredIdx(null)}
       >
         {/* Grid */}

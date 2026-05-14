@@ -37,12 +37,12 @@ export default function BudgetsPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between animate-fade-up">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between animate-fade-up">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: "var(--text)" }}>Budgets</h1>
           <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Track spending limits and financial objectives</p>
         </div>
-        <button onClick={() => setShowForm(!showForm)} className="btn-primary flex items-center gap-2">
+        <button onClick={() => setShowForm(!showForm)} className="btn-primary flex w-full items-center justify-center gap-2 sm:w-auto">
           {showForm ? <X size={16} /> : <Plus size={16} />}
           {showForm ? "Cancel" : "New Budget"}
         </button>
@@ -53,7 +53,7 @@ export default function BudgetsPage() {
       {/* Overall progress */}
       {!loading && budgets.length > 0 && (
         <div className="glass p-5 animate-fade-up delay-1">
-          <div className="flex items-center justify-between mb-2">
+          <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Overall Budget Utilization</span>
             <span className="text-sm font-bold" style={{ color: overallPct > 90 ? "var(--danger)" : overallPct > 75 ? "var(--warning)" : "var(--accent)" }}>
               {fmt(totalSpent)} / {fmt(totalBudget)} ({overallPct.toFixed(0)}%)
@@ -145,7 +145,7 @@ function CreateBudgetForm({ onSuccess }: { onSuccess: () => void }) {
   return (
     <div className="glass p-6 animate-fade-up">
       <h3 className="text-sm font-semibold mb-4" style={{ color: "var(--text)" }}>New Budget</h3>
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <input name="category" placeholder="Category (e.g. Marketing)" required />
         <input name="limit_amount" type="number" step="0.01" min="0" placeholder="Budget Limit" required />
         <input name="month" type="month" defaultValue={new Date().toISOString().slice(0, 7)} required />
@@ -153,7 +153,7 @@ function CreateBudgetForm({ onSuccess }: { onSuccess: () => void }) {
           {submitting ? "Creating…" : "Create Budget"}
         </button>
         {error && (
-          <div className="sm:col-span-4 text-xs px-3 py-2 rounded-lg" style={{ background: "var(--danger-soft)", color: "var(--danger)" }}>{error}</div>
+          <div className="text-xs px-3 py-2 rounded-lg md:col-span-2 xl:col-span-4" style={{ background: "var(--danger-soft)", color: "var(--danger)" }}>{error}</div>
         )}
       </form>
     </div>
