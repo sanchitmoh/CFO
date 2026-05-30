@@ -36,6 +36,10 @@ def _get_model():
         return _model
     if _model_unavailable:
         return None
+    if not settings.ENABLE_LOCAL_EMBEDDINGS:
+        _model_unavailable = True
+        logger.info("Local embeddings disabled; set ENABLE_LOCAL_EMBEDDINGS=true to enable semantic search")
+        return None
 
     try:
         from sentence_transformers import SentenceTransformer
@@ -63,6 +67,8 @@ def _get_model():
 
 def warm_embedding_model() -> bool:
     """Best-effort warm-up so requests do not pay model load time."""
+    if not settings.WARM_LOCAL_EMBEDDINGS:
+        return False
     return _get_model() is not None
 
 

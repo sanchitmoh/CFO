@@ -43,7 +43,8 @@ plaid-python>=22.0.0
 
 # pgvector semantic search (ADVANCE-005)
 pgvector>=0.2.4
-sentence-transformers>=2.2.0
+# Optional local semantic search. Keep disabled on 512MB Render instances.
+# sentence-transformers>=2.2.0
 
 # File storage (FILE-001)
 aiofiles>=24.1.0

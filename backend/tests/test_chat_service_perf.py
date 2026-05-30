@@ -70,12 +70,34 @@ def test_embedding_model_loads_from_local_cache_only(monkeypatch):
     )
     monkeypatch.setattr(embedding_service, "_model", None)
     monkeypatch.setattr(embedding_service, "_model_unavailable", False)
+    monkeypatch.setattr(embedding_service.settings, "ENABLE_LOCAL_EMBEDDINGS", True)
 
     model = embedding_service._get_model()
 
     assert model is not None
     assert calls["model_name"] == embedding_service.settings.EMBEDDING_MODEL
     assert calls["kwargs"]["local_files_only"] is True
+
+
+def test_embedding_model_disabled_by_default_does_not_import_transformers(monkeypatch):
+    monkeypatch.delitem(sys.modules, "sentence_transformers", raising=False)
+    monkeypatch.setattr(embedding_service, "_model", None)
+    monkeypatch.setattr(embedding_service, "_model_unavailable", False)
+    monkeypatch.setattr(embedding_service.settings, "ENABLE_LOCAL_EMBEDDINGS", False)
+
+    assert embedding_service._get_model() is None
+    assert "sentence_transformers" not in sys.modules
+
+
+def test_embedding_warmup_is_opt_in(monkeypatch):
+    monkeypatch.setattr(embedding_service.settings, "WARM_LOCAL_EMBEDDINGS", False)
+    monkeypatch.setattr(
+        embedding_service,
+        "_get_model",
+        lambda: (_ for _ in ()).throw(AssertionError("_get_model should not be called")),
+    )
+
+    assert embedding_service.warm_embedding_model() is False
 
 
 @pytest.mark.anyio
@@ -86,6 +108,7 @@ async def test_semantic_search_skips_model_load_on_request_path(monkeypatch):
 
     monkeypatch.setattr(embedding_service, "_model", None)
     monkeypatch.setattr(embedding_service, "_model_unavailable", False)
+    monkeypatch.setattr(embedding_service.settings, "ENABLE_LOCAL_EMBEDDINGS", False)
 
     rows = await embedding_service.get_relevant_transactions(
         GuardDb(),

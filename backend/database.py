@@ -15,8 +15,8 @@ from config import settings
 engine = create_async_engine(
     settings.database_url_for_asyncpg,
     echo=settings.DEBUG,
-    pool_size=5,
-    max_overflow=10,
+    pool_size=settings.DB_POOL_SIZE,
+    max_overflow=settings.DB_MAX_OVERFLOW,
     pool_pre_ping=True,
     connect_args=settings.database_connect_args,
 )
@@ -119,5 +119,3 @@ def get_rls_session(user):
                 ...
     """
     return get_db_with_rls(str(user.workspace_id))
-
-

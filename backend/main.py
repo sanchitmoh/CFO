@@ -213,7 +213,10 @@ async def lifespan(app: FastAPI):
     logger.info("Starting connection warm-up (DB + Redis + JWKS)...")
     await asyncio.gather(_warmup_db(), _warmup_redis(), _warmup_jwks())
     logger.info("Connection warm-up complete")
-    asyncio.create_task(_warmup_embeddings())
+    if settings.ENABLE_LOCAL_EMBEDDINGS and settings.WARM_LOCAL_EMBEDDINGS:
+        asyncio.create_task(_warmup_embeddings())
+    else:
+        logger.info("Embedding warm-up disabled")
 
     # EXT-002: Schedule periodic alert evaluation across all workspaces.
     # Lazy import to avoid circular dependencies at module load time.

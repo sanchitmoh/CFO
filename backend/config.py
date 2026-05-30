@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     # ── Database ──
     # L-003: Generic local default — override via .env for Neon / hosted Postgres
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/aicfo"
+    DB_POOL_SIZE: int = 2
+    DB_MAX_OVERFLOW: int = 1
 
     # ── Redis ──
     # L-003: Generic local default — override via .env for Upstash / hosted Redis
@@ -56,6 +58,8 @@ class Settings(BaseSettings):
     # ── Embeddings (ADVANCE-005) ──
     EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"  # free, local, 384 dims
     EMBEDDING_DIMENSIONS: int = 384
+    ENABLE_LOCAL_EMBEDDINGS: bool = False
+    WARM_LOCAL_EMBEDDINGS: bool = False
 
     # ── File Uploads (FILE-001) ──
     UPLOAD_DIR: str = "./uploads"        # local storage root
