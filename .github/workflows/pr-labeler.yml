@@ -1,0 +1,207 @@
+name: PR Labeler
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  label-pr:
+    name: Auto Label PR
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Auto-label based on files changed
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            
+            // Get files changed
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number
+            });
+            
+            const labels = new Set();
+            
+            // Analyze files and add appropriate labels
+            files.forEach(file => {
+              const path = file.filename;
+              
+              // Backend changes
+              if (path.startsWith('backend/')) {
+                labels.add('backend');
+                
+                if (path.includes('/tests/')) {
+                  labels.add('tests');
+                }
+                if (path.includes('/routers/')) {
+                  labels.add('api');
+                }
+                if (path.includes('/models.py') || path.includes('/schemas.py')) {
+                  labels.add('database');
+                }
+                if (path.includes('/services/')) {
+                  labels.add('services');
+                }
+                if (path.includes('alembic/versions/')) {
+                  labels.add('migration');
+                }
+              }
+              
+              // Frontend changes
+              if (path.startsWith('frontend/')) {
+                labels.add('frontend');
+                
+                if (path.includes('/components/')) {
+                  labels.add('ui');
+                }
+                if (path.includes('/app/')) {
+                  labels.add('pages');
+                }
+                if (path.includes('.css') || path.includes('.scss')) {
+                  labels.add('styling');
+                }
+              }
+              
+              // Documentation
+              if (path.startsWith('docs/') || path.endsWith('.md')) {
+                labels.add('documentation');
+              }
+              
+              // Configuration
+              if (path.includes('config') || path.includes('.yml') || path.includes('.yaml') || path.includes('.json')) {
+                labels.add('configuration');
+              }
+              
+              // CI/CD
+              if (path.includes('.github/workflows/')) {
+                labels.add('ci-cd');
+              }
+              
+              // Dependencies
+              if (path.includes('requirements.txt') || path.includes('package.json') || path.includes('package-lock.json')) {
+                labels.add('dependencies');
+              }
+            });
+            
+            // Size labels
+            const additions = files.reduce((sum, file) => sum + file.additions, 0);
+            const deletions = files.reduce((sum, file) => sum + file.deletions, 0);
+            const totalChanges = additions + deletions;
+            
+            if (totalChanges < 10) {
+              labels.add('size: XS');
+            } else if (totalChanges < 50) {
+              labels.add('size: S');
+            } else if (totalChanges < 200) {
+              labels.add('size: M');
+            } else if (totalChanges < 500) {
+              labels.add('size: L');
+            } else {
+              labels.add('size: XL');
+            }
+            
+            // PR type from title
+            const title = pr.title.toLowerCase();
+            if (title.startsWith('feat:') || title.startsWith('feature:')) {
+              labels.add('enhancement');
+            } else if (title.startsWith('fix:')) {
+              labels.add('bug');
+            } else if (title.startsWith('docs:')) {
+              labels.add('documentation');
+            } else if (title.startsWith('refactor:')) {
+              labels.add('refactoring');
+            } else if (title.startsWith('test:')) {
+              labels.add('tests');
+            } else if (title.startsWith('chore:')) {
+              labels.add('chore');
+            } else if (title.startsWith('perf:')) {
+              labels.add('performance');
+            }
+            
+            // Apply labels
+            if (labels.size > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                labels: Array.from(labels)
+              });
+              
+              console.log(`Added labels: ${Array.from(labels).join(', ')}`);
+            }
+      
+      - name: Check for breaking changes
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const body = pr.body || '';
+            const title = pr.title || '';
+            
+            // Check for breaking change indicators
+            const hasBreakingChange = 
+              title.includes('BREAKING CHANGE') ||
+              title.includes('!:') ||
+              body.includes('BREAKING CHANGE') ||
+              body.includes('⚠️ Breaking');
+            
+            if (hasBreakingChange) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                labels: ['breaking-change']
+              });
+              
+              // Add warning comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body: '⚠️ **Warning**: This PR contains breaking changes. Please review carefully before merging.'
+              });
+            }
+      
+      - name: Assign reviewers
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            
+            // Skip if author is a bot or if reviewers already assigned
+            if (pr.user.type === 'Bot' || pr.requested_reviewers.length > 0) {
+              return;
+            }
+            
+            // Get repository collaborators
+            const { data: collaborators } = await github.rest.repos.listCollaborators({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+            
+            // Filter out the PR author and bots
+            const potentialReviewers = collaborators
+              .filter(user => user.login !== pr.user.login && user.type !== 'Bot')
+              .map(user => user.login);
+            
+            // Assign up to 2 random reviewers
+            if (potentialReviewers.length > 0) {
+              const reviewersToAssign = potentialReviewers
+                .sort(() => Math.random() - 0.5)
+                .slice(0, Math.min(2, potentialReviewers.length));
+              
+              await github.rest.pulls.requestReviewers({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                reviewers: reviewersToAssign
+              });
+              
+              console.log(`Assigned reviewers: ${reviewersToAssign.join(', ')}`);
+            }
