@@ -157,6 +157,9 @@ async def lifespan(app: FastAPI):
     # Redis (Upstash) and Clerk JWKS also add 3s each on cold start.
     # By warming all three concurrently on startup, the first user
     # request doesn't eat 40+ seconds of latency.
+    from services.email_service import email_service
+    email_service.log_configuration_warnings()
+
     async def _warmup_db():
         """Wake Neon Postgres and establish the connection pool."""
         import time as _t

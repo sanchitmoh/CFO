@@ -76,6 +76,7 @@ class Settings(BaseSettings):
     SMTP_USERNAME: str | None = None
     SMTP_PASSWORD: str | None = None
     SMTP_USE_TLS: bool = True
+    SMTP_TIMEOUT_SECONDS: float = 10.0
     EMAIL_FROM_ADDRESS: str = "noreply@example.com"
     EMAIL_FROM_NAME: str = "AI CFO Platform"
 
