@@ -1,0 +1,188 @@
+name: Code Quality
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+jobs:
+  code-review:
+    name: Automated Code Review
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Run CodeQL Analysis
+        uses: github/codeql-action/init@v3
+        with:
+          languages: python, javascript
+      
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+      
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+      
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=sanchitmoh_CFO
+            -Dsonar.organization=sanchitmoh
+        continue-on-error: true
+
+  complexity-check:
+    name: Check Code Complexity
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      
+      - name: Install radon
+        run: pip install radon
+      
+      - name: Check cyclomatic complexity
+        working-directory: ./backend
+        run: |
+          echo "## Cyclomatic Complexity Report" > complexity_report.md
+          echo "" >> complexity_report.md
+          radon cc . -a -s >> complexity_report.md || true
+          cat complexity_report.md
+      
+      - name: Check maintainability index
+        working-directory: ./backend
+        run: |
+          echo "" >> complexity_report.md
+          echo "## Maintainability Index" >> complexity_report.md
+          echo "" >> complexity_report.md
+          radon mi . -s >> complexity_report.md || true
+          cat complexity_report.md
+      
+      - name: Comment PR with complexity report
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('./backend/complexity_report.md', 'utf8');
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: `## 📊 Code Complexity Analysis\n\n${report}`
+            });
+
+  dependency-check:
+    name: Check Dependencies
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Run Dependabot
+        uses: github/dependabot-action@v2
+        continue-on-error: true
+      
+      - name: Check Python dependencies
+        working-directory: ./backend
+        run: |
+          pip install safety pip-audit
+          pip-audit --requirement requirements.txt || true
+      
+      - name: Check npm dependencies
+        working-directory: ./frontend
+        run: |
+          npm audit --audit-level=moderate || true
+
+  test-coverage:
+    name: Test Coverage Report
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
+      
+      - name: Install dependencies
+        working-directory: ./backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+      
+      - name: Create test .env
+        working-directory: ./backend
+        run: |
+          cat > .env << EOF
+          DEBUG=True
+          DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/test_db
+          CLERK_SECRET_KEY=test_key
+          EOF
+      
+      - name: Run tests with coverage
+        working-directory: ./backend
+        run: |
+          pytest tests/ -v --cov=. --cov-report=html --cov-report=term-missing
+      
+      - name: Generate coverage badge
+        uses: tj-actions/coverage-badge-py@v2
+        with:
+          output: backend/coverage.svg
+      
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: backend/htmlcov/
+      
+      - name: Comment PR with coverage
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            // Read coverage summary from pytest output
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: `## 📊 Test Coverage Report\n\nCoverage report has been generated and uploaded as an artifact.`
+            });

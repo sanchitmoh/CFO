@@ -1,0 +1,173 @@
+name: Auto Merge
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  pull_request_review:
+    types: [submitted]
+  check_suite:
+    types: [completed]
+
+jobs:
+  auto-merge:
+    name: Auto Merge PR
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'pull_request_review' && github.event.review.state == 'approved') ||
+      (github.event_name == 'check_suite' && github.event.check_suite.conclusion == 'success')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Get PR details
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              // If triggered by check_suite, get PR from head_sha
+              const prs = await github.rest.pulls.list({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'open',
+                head: `${context.repo.owner}:${context.payload.check_suite.head_branch}`
+              });
+              if (prs.data.length === 0) {
+                console.log('No open PR found for this branch');
+                return { should_merge: false };
+              }
+              return {
+                number: prs.data[0].number,
+                draft: prs.data[0].draft,
+                labels: prs.data[0].labels.map(l => l.name),
+                should_merge: true
+              };
+            }
+            return {
+              number: pr.number,
+              draft: pr.draft,
+              labels: pr.labels.map(l => l.name),
+              should_merge: true
+            };
+      
+      - name: Check auto-merge conditions
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prData = ${{ steps.pr.outputs.result }};
+            
+            if (!prData.should_merge) {
+              console.log('Skipping: No PR found');
+              return { can_merge: false };
+            }
+            
+            // Don't merge draft PRs
+            if (prData.draft) {
+              console.log('Skipping: PR is in draft state');
+              return { can_merge: false };
+            }
+            
+            // Don't merge if has 'do-not-merge' label
+            if (prData.labels.includes('do-not-merge')) {
+              console.log('Skipping: PR has do-not-merge label');
+              return { can_merge: false };
+            }
+            
+            // Get PR details
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prData.number
+            });
+            
+            // Check if all checks passed
+            const { data: checks } = await github.rest.checks.listForRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: pr.head.sha
+            });
+            
+            const allChecksPassed = checks.check_runs.every(
+              check => check.conclusion === 'success' || check.conclusion === 'neutral' || check.conclusion === 'skipped'
+            );
+            
+            if (!allChecksPassed) {
+              console.log('Skipping: Not all checks passed');
+              return { can_merge: false, pr_number: prData.number };
+            }
+            
+            // Check if has required approvals (at least 1)
+            const { data: reviews } = await github.rest.pulls.listReviews({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prData.number
+            });
+            
+            const approvals = reviews.filter(review => review.state === 'APPROVED').length;
+            const hasAutoMergeLabel = prData.labels.includes('auto-merge');
+            
+            // Auto-merge if:
+            // 1. Has 'auto-merge' label, OR
+            // 2. Has at least 1 approval AND all checks pass
+            const canMerge = hasAutoMergeLabel || approvals >= 1;
+            
+            if (!canMerge) {
+              console.log(`Skipping: Needs approval or auto-merge label (approvals: ${approvals})`);
+            }
+            
+            return {
+              can_merge: canMerge,
+              pr_number: prData.number,
+              approvals: approvals
+            };
+      
+      - name: Enable auto-merge
+        if: fromJSON(steps.check.outputs.result).can_merge
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const checkData = ${{ steps.check.outputs.result }};
+            
+            try {
+              // Enable auto-merge with squash merge
+              await github.rest.pulls.enableAutoMerge({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: checkData.pr_number,
+                merge_method: 'squash'
+              });
+              
+              console.log(`✅ Auto-merge enabled for PR #${checkData.pr_number}`);
+              
+              // Add comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: checkData.pr_number,
+                body: `🤖 Auto-merge enabled! This PR will be automatically merged when all checks pass.\n\n✅ Approvals: ${checkData.approvals}\n✅ All checks passed`
+              });
+            } catch (error) {
+              if (error.message.includes('not in a state that enables auto-merge')) {
+                console.log('PR cannot be auto-merged (may already be merged or closed)');
+              } else {
+                throw error;
+              }
+            }
+      
+      - name: Add labels
+        if: fromJSON(steps.check.outputs.result).can_merge
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const checkData = ${{ steps.check.outputs.result }};
+            
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: checkData.pr_number,
+              labels: ['ready-to-merge']
+            });

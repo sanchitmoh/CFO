@@ -583,7 +583,7 @@ export default function SettingsPage() {
           <div className="flex-1">
             <p className="text-sm font-semibold" style={{ color: "var(--warning)" }}>Slack Alerts Feature In Progress</p>
             <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-              Slack notification functionality is partially implemented. Email alerts are fully operational. Slack integration is currently being finalized.
+              Slack notification functionality is partially implemented. Slack integration is currently being finalized.
             </p>
           </div>
         </div>
@@ -738,6 +738,17 @@ export default function SettingsPage() {
                   }))
                 }
               />
+            </div>
+
+            {/* Temporary Deployment Issue Warning */}
+            <div className="mt-4 rounded-2xl p-3 flex items-start gap-2.5" style={{ background: "var(--warning-soft)", border: "1px solid var(--warning)44" }}>
+              <AlertCircle size={16} style={{ color: "var(--warning)", flexShrink: 0, marginTop: 1 }} />
+              <div>
+                <p className="text-xs font-semibold" style={{ color: "var(--warning)" }}>Temporarily Unavailable</p>
+                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                  Email alerts are currently disabled due to deployment configuration issues. We're working to resolve this. In-app alerts remain fully functional.
+                </p>
+              </div>
             </div>
 
             <div className="mt-4">
