@@ -31,7 +31,6 @@ Thumbs.db
 
 # Misc
 *.docx
-skills-lock.json
 
 # Agent / AI configs (not project code)
 CLAUDE.md
@@ -49,8 +48,10 @@ cursorrules
 .windsurfrules
 frontendskills.md
 implementation_plan.md
+compliance.json
 compliance_changes.json
-.kiro
+skills-lock.json
+.kiro/
 
 # Obsidian vault
 CFO/

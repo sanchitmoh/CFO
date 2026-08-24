@@ -577,6 +577,17 @@ export default function SettingsPage() {
       </div>
 
       <section className="glass p-5 md:p-6">
+        {/* Feature Status Banner */}
+        <div className="mb-5 rounded-2xl p-4 flex flex-wrap items-center gap-3" style={{ borderColor: "var(--warning)44", background: "var(--warning-soft)" }}>
+          <AlertCircle size={18} style={{ color: "var(--warning)", flexShrink: 0 }} />
+          <div className="flex-1">
+            <p className="text-sm font-semibold" style={{ color: "var(--warning)" }}>Slack Alerts Feature In Progress</p>
+            <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+              Slack notification functionality is partially implemented. Email alerts are fully operational. Slack integration is currently being finalized.
+            </p>
+          </div>
+        </div>
+
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           <div className="flex items-start gap-3">
             <div

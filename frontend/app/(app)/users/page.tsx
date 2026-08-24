@@ -150,6 +150,17 @@ export default function UsersPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
+      {/* Feature Status Banner */}
+      <div className="glass p-4 flex flex-wrap items-center gap-3 animate-fade-up" style={{ borderColor: "var(--warning)44", background: "var(--warning-soft)" }}>
+        <AlertTriangle size={18} style={{ color: "var(--warning)", flexShrink: 0 }} />
+        <div className="flex-1">
+          <p className="text-sm font-semibold" style={{ color: "var(--warning)" }}>Feature In Progress</p>
+          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+            Team & Roles functionality is partially implemented. Some features may not be fully operational yet.
+          </p>
+        </div>
+      </div>
+
       {error && (
         <div className="glass p-4 flex flex-wrap items-center gap-3 animate-fade-up" style={{ borderColor: "var(--danger)44", background: "var(--danger-soft)" }}>
           <AlertTriangle size={18} style={{ color: "var(--danger)", flexShrink: 0 }} />

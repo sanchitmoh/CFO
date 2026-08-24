@@ -3,6 +3,7 @@ AI CFO — Email Service
 Supports multiple email providers: SendGrid, AWS SES, SMTP
 """
 import logging
+import os
 from datetime import datetime, timezone
 from html import escape
 from typing import Any, List
@@ -10,6 +11,7 @@ from typing import Any, List
 from config import settings
 
 logger = logging.getLogger(__name__)
+_configuration_warning_logged = False
 
 
 def _app_url(path: str) -> str:
@@ -31,6 +33,34 @@ def _format_currency(value: float, currency_code: str) -> str:
 
 class EmailService:
     """Unified email service supporting multiple providers."""
+
+    def log_configuration_warnings(self) -> None:
+        """Log actionable email configuration warnings once per process."""
+        global _configuration_warning_logged
+        if _configuration_warning_logged:
+            return
+        _configuration_warning_logged = True
+
+        provider = settings.EMAIL_PROVIDER.lower()
+        if provider == "sendgrid" and not settings.SENDGRID_API_KEY:
+            logger.warning("EMAIL_PROVIDER=sendgrid but SENDGRID_API_KEY is not configured")
+            return
+        if provider == "aws_ses" and (
+            not settings.AWS_ACCESS_KEY_ID or not settings.AWS_SECRET_ACCESS_KEY
+        ):
+            logger.warning("EMAIL_PROVIDER=aws_ses but AWS credentials are not configured")
+            return
+        if provider == "smtp":
+            if not settings.SMTP_HOST or not settings.SMTP_USERNAME or not settings.SMTP_PASSWORD:
+                logger.warning("EMAIL_PROVIDER=smtp but SMTP credentials are incomplete")
+                return
+            if os.getenv("RENDER") and settings.SMTP_HOST == "smtp.gmail.com":
+                logger.warning(
+                    "Render deployment is configured to use Gmail SMTP. "
+                    "If email delivery times out, switch to EMAIL_PROVIDER=sendgrid or aws_ses."
+                )
+            return
+        logger.warning("Unknown EMAIL_PROVIDER configured: %s", settings.EMAIL_PROVIDER)
     
     async def send_email(
         self,
@@ -56,11 +86,12 @@ class EmailService:
             return False
         
         try:
-            if settings.EMAIL_PROVIDER == "sendgrid":
+            provider = settings.EMAIL_PROVIDER.lower()
+            if provider == "sendgrid":
                 return await self._send_sendgrid(to_addresses, subject, html_content, text_content)
-            elif settings.EMAIL_PROVIDER == "aws_ses":
+            elif provider == "aws_ses":
                 return await self._send_aws_ses(to_addresses, subject, html_content, text_content)
-            elif settings.EMAIL_PROVIDER == "smtp":
+            elif provider == "smtp":
                 return await self._send_smtp(to_addresses, subject, html_content, text_content)
             else:
                 logger.error(f"Unknown email provider: {settings.EMAIL_PROVIDER}")
@@ -176,14 +207,29 @@ class EmailService:
         
         # Use start_tls=True for STARTTLS (port 587)
         # Use tls=True for direct TLS (port 465)
-        await aiosmtplib.send(
-            message,
-            hostname=settings.SMTP_HOST,
-            port=settings.SMTP_PORT,
-            username=settings.SMTP_USERNAME,
-            password=settings.SMTP_PASSWORD,
-            start_tls=settings.SMTP_USE_TLS,  # Changed from use_tls to start_tls
-        )
+        use_tls = settings.SMTP_USE_TLS and settings.SMTP_PORT == 465
+        start_tls = settings.SMTP_USE_TLS and not use_tls
+        try:
+            await aiosmtplib.send(
+                message,
+                hostname=settings.SMTP_HOST,
+                port=settings.SMTP_PORT,
+                username=settings.SMTP_USERNAME,
+                password=settings.SMTP_PASSWORD,
+                start_tls=start_tls,
+                use_tls=use_tls,
+                timeout=settings.SMTP_TIMEOUT_SECONDS,
+            )
+        except aiosmtplib.errors.SMTPConnectTimeoutError:
+            logger.error(
+                "Timed out connecting to SMTP server %s:%s after %.1fs. "
+                "If this is running on Render, use EMAIL_PROVIDER=sendgrid or aws_ses; "
+                "outbound Gmail SMTP can time out on hosted/free infrastructure.",
+                settings.SMTP_HOST,
+                settings.SMTP_PORT,
+                settings.SMTP_TIMEOUT_SECONDS,
+            )
+            return False
         
         logger.info(f"SMTP email sent: to={to_addresses}")
         return True
