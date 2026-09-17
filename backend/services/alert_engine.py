@@ -162,10 +162,10 @@ async def _compute_cash_balance(db: AsyncSession, workspace_id) -> float:
     income = 0.0
     expenses = 0.0
     for txn_type, amount in totals:
-        if txn_type == TransactionType.income:
-            income = float(amount or 0)
-        else:
-            expenses = float(amount or 0)
+        if txn_type in (TransactionType.income, TransactionType.credit):
+            income += float(amount or 0)
+        elif txn_type in (TransactionType.expense, TransactionType.debit):
+            expenses += float(amount or 0)
 
     return round(income - expenses, 2)
 
@@ -253,7 +253,7 @@ async def run_alert_engine(db: AsyncSession, workspace_id) -> int:
             .where(
                 and_(
                     Transaction.workspace_id == workspace_id,
-                    Transaction.type == TransactionType.income,
+                    Transaction.type.in_([TransactionType.income, TransactionType.credit]),
                     Transaction.date >= current_month_start - relativedelta(months=3),
                 )
             )
@@ -288,7 +288,7 @@ async def run_alert_engine(db: AsyncSession, workspace_id) -> int:
             .where(
                 and_(
                     Transaction.workspace_id == workspace_id,
-                    Transaction.type == TransactionType.expense,
+                    Transaction.type.in_([TransactionType.expense, TransactionType.debit]),
                     Transaction.date >= now - relativedelta(months=6),
                 )
             )
@@ -309,7 +309,7 @@ async def run_alert_engine(db: AsyncSession, workspace_id) -> int:
             .where(
                 and_(
                     Transaction.workspace_id == workspace_id,
-                    Transaction.type == TransactionType.expense,
+                    Transaction.type.in_([TransactionType.expense, TransactionType.debit]),
                     Transaction.amount >= alert_config.high_expense_threshold,
                     Transaction.date >= now - relativedelta(days=45),
                 )

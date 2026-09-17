@@ -19,9 +19,9 @@ def _extract_totals(rows) -> tuple[float, float]:
     income = 0.0
     expense = 0.0
     for row in rows:
-        if row[0] == TransactionType.income:
+        if row[0] in (TransactionType.income, TransactionType.credit):
             income = float(row[1] or 0)
-        else:
+        elif row[0] in (TransactionType.expense, TransactionType.debit):
             expense = float(row[1] or 0)
     return income, expense
 

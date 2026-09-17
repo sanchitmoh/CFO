@@ -36,7 +36,7 @@ export interface Transaction {
   amount_original?: number;
   exchange_rate?: number;
   category: string;
-  type: "income" | "expense";
+  type: "income" | "expense" | "credit" | "debit" | "transfer" | "refund";
   account: string;
   vendor?: string;
   is_anomaly: boolean;
@@ -61,7 +61,7 @@ export interface TransactionCreate {
   description: string;
   amount: number;
   category: string;
-  type: "income" | "expense";
+  type: "income" | "expense" | "credit" | "debit" | "transfer" | "refund";
   account?: string;
   vendor?: string;
   notes?: string;

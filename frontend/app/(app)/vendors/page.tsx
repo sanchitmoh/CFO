@@ -148,7 +148,7 @@ export default function VendorsPage() {
                         <td className="p-4" style={{ color: "var(--text-muted)" }}>{new Date(t.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</td>
                         <td className="p-4 font-medium" style={{ color: "var(--text)" }}>{t.description || "—"}</td>
                         <td className="p-4"><span className="badge" style={{ background: "var(--surface-hover)", color: "var(--text-dim)", fontSize: 10 }}>{t.category || "—"}</span></td>
-                        <td className="p-4 text-right font-bold" style={{ color: t.type === "income" ? "var(--success)" : "var(--accent)" }}>{fmt(t.amount)}</td>
+                        <td className="p-4 text-right font-bold" style={{ color: ["income", "credit", "refund"].includes(t.type) ? "var(--success)" : "var(--accent)" }}>{fmt(t.amount)}</td>
                       </tr>
                     ))}
                   </tbody>

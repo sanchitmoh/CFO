@@ -77,7 +77,7 @@ async def investor_summary(
         select(func.sum(Transaction.amount)).where(
             and_(
                 Transaction.workspace_id == user.workspace_id,
-                Transaction.type == TransactionType.expense,
+                Transaction.type.in_([TransactionType.expense, TransactionType.debit]),
                 Transaction.date >= window_start,
                 func.lower(Transaction.category).in_(_COGS_CATEGORY_ALIASES),
             )

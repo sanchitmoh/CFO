@@ -261,8 +261,8 @@ export default function DashboardPage() {
                         <span className="badge badge-info">{tx.category}</span>
                       </td>
                       <td className="py-3 text-right font-medium">
-                        <span className="flex items-center justify-end gap-1" style={{ color: tx.type === "income" ? "var(--income)" : "var(--expense)" }}>
-                          {tx.type === "income" ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                        <span className="flex items-center justify-end gap-1" style={{ color: ["income", "credit", "refund"].includes(tx.type) ? "var(--income)" : "var(--expense)" }}>
+                          {["income", "credit", "refund"].includes(tx.type) ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
                           {fmt(tx.amount)}
                         </span>
                       </td>

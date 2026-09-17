@@ -1,6 +1,6 @@
 """
 AI CFO — Email Service
-Supports multiple email providers: SendGrid, AWS SES, SMTP
+Supports multiple email providers: Resend, SendGrid, AWS SES, SMTP
 """
 import logging
 import os
@@ -42,6 +42,10 @@ class EmailService:
         _configuration_warning_logged = True
 
         provider = settings.EMAIL_PROVIDER.lower()
+        if provider == "resend":
+            if not settings.RESEND_API_KEY:
+                logger.warning("EMAIL_PROVIDER=resend but RESEND_API_KEY is not configured")
+            return
         if provider == "sendgrid" and not settings.SENDGRID_API_KEY:
             logger.warning("EMAIL_PROVIDER=sendgrid but SENDGRID_API_KEY is not configured")
             return
@@ -57,7 +61,7 @@ class EmailService:
             if os.getenv("RENDER") and settings.SMTP_HOST == "smtp.gmail.com":
                 logger.warning(
                     "Render deployment is configured to use Gmail SMTP. "
-                    "If email delivery times out, switch to EMAIL_PROVIDER=sendgrid or aws_ses."
+                    "If email delivery times out, switch to EMAIL_PROVIDER=resend or sendgrid."
                 )
             return
         logger.warning("Unknown EMAIL_PROVIDER configured: %s", settings.EMAIL_PROVIDER)
@@ -87,7 +91,9 @@ class EmailService:
         
         try:
             provider = settings.EMAIL_PROVIDER.lower()
-            if provider == "sendgrid":
+            if provider == "resend":
+                return await self._send_resend(to_addresses, subject, html_content, text_content)
+            elif provider == "sendgrid":
                 return await self._send_sendgrid(to_addresses, subject, html_content, text_content)
             elif provider == "aws_ses":
                 return await self._send_aws_ses(to_addresses, subject, html_content, text_content)
@@ -99,6 +105,56 @@ class EmailService:
         except Exception as e:
             logger.error(f"Failed to send email: {e}", exc_info=True)
             return False
+    
+    async def _send_resend(
+        self,
+        to_addresses: List[str],
+        subject: str,
+        html_content: str,
+        text_content: str | None,
+    ) -> bool:
+        """Send email via Resend API."""
+        try:
+            import httpx
+        except ImportError:
+            logger.error("httpx not installed. Run: pip install httpx")
+            return False
+        
+        if not settings.RESEND_API_KEY:
+            logger.error("RESEND_API_KEY not configured")
+            return False
+        
+        # Resend API endpoint
+        url = "https://api.resend.com/emails"
+        headers = {
+            "Authorization": f"Bearer {settings.RESEND_API_KEY}",
+            "Content-Type": "application/json",
+        }
+        
+        payload = {
+            "from": f"{settings.EMAIL_FROM_NAME} <{settings.EMAIL_FROM_ADDRESS}>",
+            "to": to_addresses,
+            "subject": subject,
+            "html": html_content,
+        }
+        
+        # Add text version if provided
+        if text_content:
+            payload["text"] = text_content
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, json=payload, headers=headers, timeout=30.0)
+            
+            if response.status_code == 200:
+                result = response.json()
+                logger.info(f"Resend email sent successfully: id={result.get('id')}, to={to_addresses}")
+                return True
+            else:
+                logger.error(
+                    f"Resend API error: status={response.status_code}, "
+                    f"response={response.text}, to={to_addresses}"
+                )
+                return False
     
     async def _send_sendgrid(
         self,

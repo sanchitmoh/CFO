@@ -251,7 +251,7 @@ class TransactionCreate(BaseModel):
     amount_original: Optional[float] = None
     exchange_rate: Optional[float] = None
     category: constr(min_length=1, max_length=100) = Field(..., description="Transaction category")  # type: ignore
-    type: str = Field(..., pattern="^(income|expense)$", description="Transaction type")
+    type: str = Field(..., pattern="^(income|expense|credit|debit|transfer|refund)$", description="Transaction type")
     account: constr(max_length=100) = Field("Main Account", description="Account name")  # type: ignore
     vendor: Optional[constr(max_length=200)] = None  # type: ignore
     notes: Optional[constr(max_length=2000)] = None  # type: ignore
