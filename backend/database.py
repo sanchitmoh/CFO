@@ -35,6 +35,10 @@ async def get_db():
         yield session
 
 
+# Compatibility alias
+get_db_session = get_db
+
+
 async def get_db_with_rls(workspace_id: str):
     """Yield a DB session with app.workspace_id set for PostgreSQL RLS.
 

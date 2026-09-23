@@ -535,6 +535,10 @@ async def run_sensitivity(db: AsyncSession, ws_id: uuid.UUID, scen_id: uuid.UUID
     return SensitivityResponse(variable_name=req.variable_name, data_points=data_points)
 
 
+# Compatibility alias
+run_sensitivity_analysis = run_sensitivity
+
+
 # ── Monte Carlo ───────────────────────────────────────────────────
 
 async def run_monte_carlo(db: AsyncSession, ws_id: uuid.UUID, req: MonteCarloRequest) -> MonteCarloResponse:
