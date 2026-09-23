@@ -43,17 +43,20 @@ def upgrade() -> None:
     affected by RLS (superusers bypass RLS by default in PostgreSQL).
     """
     for table in CRITICAL_TABLES:
-        # Enable RLS on the table
-        op.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY;")
-
-        # Create the workspace isolation policy
-        # USING clause restricts SELECT/UPDATE/DELETE
-        # WITH CHECK clause restricts INSERT/UPDATE
         op.execute(f"""
-            CREATE POLICY workspace_isolation_{table}
-            ON {table}
-            USING (workspace_id = current_setting('app.workspace_id', true)::UUID)
-            WITH CHECK (workspace_id = current_setting('app.workspace_id', true)::UUID);
+            DO $$ BEGIN
+                IF EXISTS (
+                    SELECT 1 FROM information_schema.tables 
+                    WHERE table_schema = 'public' AND table_name = '{table}'
+                ) THEN
+                    ALTER TABLE {table} ENABLE ROW LEVEL SECURITY;
+                    DROP POLICY IF EXISTS workspace_isolation_{table} ON {table};
+                    CREATE POLICY workspace_isolation_{table}
+                    ON {table}
+                    USING (workspace_id = current_setting('app.workspace_id', true)::UUID)
+                    WITH CHECK (workspace_id = current_setting('app.workspace_id', true)::UUID);
+                END IF;
+            END $$;
         """)
 
     # NOTE: We use current_setting('app.workspace_id', true) with the
@@ -65,5 +68,14 @@ def upgrade() -> None:
 def downgrade() -> None:
     """Disable RLS and drop policies."""
     for table in reversed(CRITICAL_TABLES):
-        op.execute(f"DROP POLICY IF EXISTS workspace_isolation_{table} ON {table};")
-        op.execute(f"ALTER TABLE {table} DISABLE ROW LEVEL SECURITY;")
+        op.execute(f"""
+            DO $$ BEGIN
+                IF EXISTS (
+                    SELECT 1 FROM information_schema.tables 
+                    WHERE table_schema = 'public' AND table_name = '{table}'
+                ) THEN
+                    DROP POLICY IF EXISTS workspace_isolation_{table} ON {table};
+                    ALTER TABLE {table} DISABLE ROW LEVEL SECURITY;
+                END IF;
+            END $$;
+        """)

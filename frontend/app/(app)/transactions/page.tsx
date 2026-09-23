@@ -45,7 +45,7 @@ export default function TransactionsPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState("");
-  const [filterType, setFilterType] = useState<"" | "income" | "expense">("");
+  const [filterType, setFilterType] = useState<string>("");
   const [policies, setPolicies] = useState<ApprovalPolicy[]>([]);
   const [approvalByTransactionId, setApprovalByTransactionId] = useState<Record<string, ExpenseApproval>>({});
   const [approvalMessage, setApprovalMessage] = useState<string | null>(null);
@@ -233,15 +233,19 @@ export default function TransactionsPage() {
         <select 
           value={filterType} 
           onChange={(event) => {
-            setFilterType(event.target.value as "" | "income" | "expense");
+            setFilterType(event.target.value);
             setCurrentPage(1);
           }}
           className="w-full sm:w-auto" 
           style={{ minWidth: 140 }}
         >
           <option value="">All types</option>
-          <option value="income">Income</option>
           <option value="expense">Expense</option>
+          <option value="income">Income</option>
+          <option value="debit">Debit</option>
+          <option value="credit">Credit</option>
+          <option value="transfer">Transfer</option>
+          <option value="refund">Refund</option>
         </select>
         <select 
           value={perPage} 
@@ -300,16 +304,16 @@ export default function TransactionsPage() {
                       <td className="px-5 py-3.5 font-medium" style={{ color: "var(--text)" }}>{transaction.description}</td>
                       <td className="px-5 py-3.5"><span className="badge badge-info">{transaction.category}</span></td>
                       <td className="px-5 py-3.5">
-                        <span className={`badge ${transaction.type === "income" ? "badge-income" : "badge-expense"}`}>{transaction.type}</span>
+                        <span className={`badge ${["income", "credit", "refund"].includes(transaction.type) ? "badge-income" : "badge-expense"}`}>{transaction.type}</span>
                       </td>
                       <td className="px-5 py-3.5 text-right font-medium">
-                        <span className="flex items-center justify-end gap-1" style={{ color: transaction.type === "income" ? "var(--income)" : "var(--expense)" }}>
-                          {transaction.type === "income" ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                        <span className="flex items-center justify-end gap-1" style={{ color: ["income", "credit", "refund"].includes(transaction.type) ? "var(--income)" : "var(--expense)" }}>
+                          {["income", "credit", "refund"].includes(transaction.type) ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
                           {fmt(transaction.amount)}
                         </span>
                       </td>
                       <td className="px-5 py-3.5">
-                        {transaction.type === "income" ? (
+                        {["income", "credit", "refund"].includes(transaction.type) ? (
                           <span className="text-xs" style={{ color: "var(--text-dim)" }}>No approval needed</span>
                         ) : approval && approvalTone ? (
                           <div className="space-y-1">
@@ -441,7 +445,7 @@ function AddTransactionForm({ onSuccess }: { onSuccess: () => void }) {
       const token = await getToken();
       await api.createTransaction({
         amount: parseFloat(formData.get("amount") as string),
-        type: formData.get("type") as "income" | "expense",
+        type: formData.get("type") as TransactionOut["type"],
         category: formData.get("category") as string,
         description: formData.get("description") as string,
         date: formData.get("date") as string,
@@ -463,6 +467,10 @@ function AddTransactionForm({ onSuccess }: { onSuccess: () => void }) {
         <select name="type" required>
           <option value="expense">Expense</option>
           <option value="income">Income</option>
+          <option value="debit">Debit</option>
+          <option value="credit">Credit</option>
+          <option value="transfer">Transfer</option>
+          <option value="refund">Refund</option>
         </select>
         <input name="category" placeholder="Category" required />
         <input name="date" type="date" required defaultValue={new Date().toISOString().slice(0, 10)} />

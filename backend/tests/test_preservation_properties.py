@@ -10,12 +10,13 @@ These tests MUST PASS on unfixed code to establish baseline behavior to preserve
 """
 
 import pytest
+hypothesis = pytest.importorskip("hypothesis")
+from hypothesis import given, strategies as st, settings
 import asyncio
 import os
 import sys
 from datetime import datetime, timezone
 from unittest.mock import patch, MagicMock, AsyncMock
-from hypothesis import given, strategies as st, settings
 import uuid
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession

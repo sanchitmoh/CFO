@@ -10,10 +10,11 @@ The test encodes the expected compliant behavior and will validate the fix when 
 """
 
 import pytest
+hypothesis = pytest.importorskip("hypothesis")
+from hypothesis import given, strategies as st, settings
 import asyncio
 from datetime import datetime, timezone
 from unittest.mock import patch, MagicMock
-from hypothesis import given, strategies as st, settings
 import io
 import os
 import sys

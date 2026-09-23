@@ -244,8 +244,8 @@ export function CashFlowTab({
                         </span>
                       )}
                   </div>
-                  <span className="font-mono" style={{ color: transaction.type === "income" ? "var(--success)" : "var(--danger)" }}>
-                    {transaction.type === "income" ? "+" : "-"}
+                  <span className="font-mono" style={{ color: ["income", "credit", "refund"].includes(transaction.type) ? "var(--success)" : "var(--danger)" }}>
+                    {["income", "credit", "refund"].includes(transaction.type) ? "+" : "-"}
                     {formatMoney(transaction.amount, reportCurrency)}
                   </span>
                 </div>

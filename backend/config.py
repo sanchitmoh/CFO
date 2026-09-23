@@ -66,7 +66,8 @@ class Settings(BaseSettings):
     MAX_UPLOAD_SIZE_MB: int = 10         # max file size in MB
 
     # ── Email Configuration ──
-    EMAIL_PROVIDER: str = "smtp"  # sendgrid | aws_ses | smtp
+    EMAIL_PROVIDER: str = "smtp"  # resend | sendgrid | aws_ses | smtp
+    RESEND_API_KEY: str | None = None
     SENDGRID_API_KEY: str | None = None
     AWS_ACCESS_KEY_ID: str | None = None
     AWS_SECRET_ACCESS_KEY: str | None = None

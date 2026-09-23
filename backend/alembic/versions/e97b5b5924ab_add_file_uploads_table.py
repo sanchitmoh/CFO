@@ -49,7 +49,22 @@ def upgrade() -> None:
     op.execute("CREATE INDEX IF NOT EXISTS idx_file_upload_ws_hash ON file_uploads (workspace_id, content_hash);")
     op.execute("CREATE INDEX IF NOT EXISTS idx_file_upload_ws_created ON file_uploads (workspace_id, created_at);")
 
+    op.execute("ALTER TABLE file_uploads ENABLE ROW LEVEL SECURITY;")
+    op.execute("""
+        DO $$ BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_policies WHERE tablename = 'file_uploads' AND policyname = 'workspace_isolation_file_uploads'
+            ) THEN
+                CREATE POLICY workspace_isolation_file_uploads
+                ON file_uploads
+                USING (workspace_id = current_setting('app.workspace_id', true)::UUID)
+                WITH CHECK (workspace_id = current_setting('app.workspace_id', true)::UUID);
+            END IF;
+        END $$;
+    """)
+
 
 def downgrade() -> None:
+    op.execute("DROP POLICY IF EXISTS workspace_isolation_file_uploads ON file_uploads;")
     op.execute("DROP TABLE IF EXISTS file_uploads;")
     op.execute("DROP TYPE IF EXISTS fileuploadstatus;")

@@ -105,7 +105,7 @@ async def get_budget_snapshots(
         .where(
             and_(
                 Transaction.workspace_id == workspace_id,
-                Transaction.type == TransactionType.expense,
+                Transaction.type.in_([TransactionType.expense, TransactionType.debit]),
                 Transaction.date >= month_start,
                 Transaction.date < month_end,
             )

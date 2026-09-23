@@ -65,10 +65,10 @@ async def _get_report_data(
     expenses = 0.0
     txn_count = 0
     for txn_type, amount, count in totals:
-        if txn_type == TransactionType.income:
-            income = float(amount or 0)
-        else:
-            expenses = float(amount or 0)
+        if txn_type in (TransactionType.income, TransactionType.credit):
+            income += float(amount or 0)
+        elif txn_type in (TransactionType.expense, TransactionType.debit):
+            expenses += float(amount or 0)
         txn_count += int(count or 0)
 
     categories = await db.execute(
@@ -80,7 +80,7 @@ async def _get_report_data(
         .where(
             and_(
                 Transaction.workspace_id == workspace_id,
-                Transaction.type == TransactionType.expense,
+                Transaction.type.in_([TransactionType.expense, TransactionType.debit]),
                 Transaction.date >= start_dt,
                 Transaction.date <= end_dt,
             )
@@ -107,7 +107,7 @@ async def _get_report_data(
         .where(
             and_(
                 Transaction.workspace_id == workspace_id,
-                Transaction.type == TransactionType.expense,
+                Transaction.type.in_([TransactionType.expense, TransactionType.debit]),
                 Transaction.vendor.isnot(None),
                 Transaction.date >= start_dt,
                 Transaction.date <= end_dt,

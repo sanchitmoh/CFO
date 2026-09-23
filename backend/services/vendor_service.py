@@ -120,7 +120,7 @@ async def get_vendor_spend_map(
                 Transaction.workspace_id == workspace_id,
                 Transaction.vendor.isnot(None),
                 Transaction.vendor != "",
-                Transaction.type == TransactionType.expense,
+                Transaction.type.in_([TransactionType.expense, TransactionType.debit]),
             )
         ).group_by(func.lower(Transaction.vendor))
     )
@@ -296,7 +296,7 @@ async def vendor_spend_analysis(
         .where(
             and_(
                 Transaction.workspace_id == workspace_id,
-                Transaction.type == TransactionType.expense,
+                Transaction.type.in_([TransactionType.expense, TransactionType.debit]),
                 Transaction.vendor.isnot(None),
                 Transaction.vendor != "",
             )
@@ -333,7 +333,7 @@ async def vendor_monthly_trend(
         .where(
             and_(
                 Transaction.workspace_id == workspace_id,
-                Transaction.type == TransactionType.expense,
+                Transaction.type.in_([TransactionType.expense, TransactionType.debit]),
                 Transaction.vendor.isnot(None),
                 Transaction.vendor != "",
             )

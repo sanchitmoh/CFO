@@ -74,9 +74,9 @@ async def get_benchmarks(
     income = 0.0
     expenses = 0.0
     for row in totals:
-        if row[0] == TransactionType.income:
+        if row[0] in (TransactionType.income, TransactionType.credit):
             income = float(row[1] or 0)
-        else:
+        elif row[0] in (TransactionType.expense, TransactionType.debit):
             expenses = float(row[1] or 0)
 
     # LOW-005: Compute workspace metrics

@@ -40,6 +40,11 @@ class UserRole(str, enum.Enum):
 class TransactionType(str, enum.Enum):
     income = "income"
     expense = "expense"
+    credit = "credit"
+    debit = "debit"
+    transfer = "transfer"
+    refund = "refund"
+
 
 
 class AlertSeverity(str, enum.Enum):

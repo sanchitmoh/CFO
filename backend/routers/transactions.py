@@ -186,9 +186,38 @@ MAX_CSV_BYTES = 5 * 1024 * 1024   # 5 MB
 MAX_CSV_ROWS = 5_000
 CHUNK_SIZE = 64 * 1024            # 64 KB read chunks
 ALLOWED_MIME_TYPES = {"text/csv", "application/octet-stream", "text/plain"}
-REQUIRED_COLUMNS = {"date", "amount", "type"}
-VALID_TYPES = {"income", "expense"}
+REQUIRED_COLUMNS = {"date", "amount"}
+VALID_TYPES = {"income", "expense", "credit", "debit", "transfer", "refund"}
 BATCH_SIZE = 500
+
+TYPE_SYNONYMS: dict[str, str] = {
+    "income": "income",
+    "expense": "expense",
+    "credit": "credit",
+    "debit": "debit",
+    "transfer": "transfer",
+    "refund": "refund",
+    "cr": "credit",
+    "dr": "debit",
+    "cr.": "credit",
+    "dr.": "debit",
+    "c": "credit",
+    "d": "debit",
+    "deposit": "credit",
+    "deposits": "credit",
+    "withdrawal": "debit",
+    "withdrawals": "debit",
+    "payment": "expense",
+    "payout": "expense",
+    "charge": "debit",
+    "purchase": "expense",
+    "fee": "expense",
+    "sale": "income",
+    "sales": "income",
+    "revenue": "income",
+    "inflow": "income",
+    "outflow": "expense",
+}
 
 # ── Intelligent column mapping ────────────────────────────────────
 # Maps common column name variations to our standard fields.
@@ -198,41 +227,53 @@ COLUMN_MAPPINGS: dict[str, list[str]] = {
     "date": [
         "date", "transaction date", "trans date", "posted date",
         "posting date", "dt", "transaction_date", "txn date",
-        "trade date", "payment date", "invoice date",
+        "trade date", "payment date", "invoice date", "effective date",
+        "value date", "booking date",
     ],
     "amount": [
         "amount", "amount_inr", "amount_usd", "amount_eur", "amount_gbp",
         "transaction amount", "transaction_amount", "value", "total",
         "net amount", "gross amount", "sum", "price", "cost",
-        "debit", "credit",
+        "spent", "received", "payment amount", "txn amount",
+        "debit", "credit", "withdrawal", "deposit",
     ],
     "type": [
         "type", "transaction type", "trans type", "category type",
-        "debit/credit", "dr/cr", "txn type",
+        "debit/credit", "dr/cr", "txn type", "payment type", "trans_type",
+        "entry type", "action", "dc", "direction",
     ],
     "description": [
         "description", "desc", "memo", "note", "notes", "details",
         "transaction description", "narration", "remarks", "particulars",
+        "name", "transaction details", "title", "statement description",
     ],
     "category": [
         "category", "cat", "expense category", "income category",
         "classification", "subcategory", "sub_category", "gl code",
+        "category name", "expense type", "transaction category", "group",
+        "tag", "department", "cost center", "type of expense", "account category",
     ],
     "account": [
         "account", "account name", "bank account", "acct",
-        "account_name", "ledger",
+        "account_name", "ledger", "account number", "account #",
     ],
     "vendor": [
         "vendor", "merchant", "payee", "supplier", "customer",
         "counterparty", "counter_party", "company", "party name",
-        "beneficiary",
+        "beneficiary", "vendor name", "merchant name", "payee name",
+        "party", "store", "receiver", "sender", "biller", "biller name",
+        "recipient", "recipient name",
     ],
 }
 
-# Prefixes used in the fuzzy fallback pass (e.g. "amount_inr" starts with "amount")
+# Prefixes used in the fuzzy fallback pass
 _FIELD_PREFIXES: dict[str, list[str]] = {
-    "amount": ["amount", "amt", "total", "value"],
-    "date":   ["date", "dt"],
+    "amount": ["amount", "amt", "total", "value", "debit", "credit"],
+    "date":   ["date", "dt", "trans_date", "txn_date"],
+    "category": ["cat", "category", "class", "gl"],
+    "vendor": ["vendor", "merch", "payee", "supplier", "party", "beneficiary", "recipient"],
+    "description": ["desc", "narr", "detail", "memo", "remark"],
+    "type": ["type", "dr_cr", "txn_type"],
 }
 
 
@@ -338,6 +379,13 @@ async def preview_csv(
     missing_required = []
     for req_col in REQUIRED_COLUMNS:
         if not suggested_mapping.get(req_col):
+            if req_col == "amount":
+                has_debit_credit = any(
+                    h.lower().replace(" ", "_") in ("debit", "credit", "withdrawal", "deposit", "dr", "cr")
+                    for h in headers
+                )
+                if has_debit_credit:
+                    continue
             missing_required.append(req_col)
     
     return {
@@ -477,6 +525,14 @@ async def upload_csv(
     missing = []
     for req_col in REQUIRED_COLUMNS:
         if not mapping.get(req_col) or mapping[req_col] not in headers:
+            # Special case: separate debit/credit columns satisfy amount
+            if req_col == "amount":
+                has_debit_credit = any(
+                    h.lower().replace(" ", "_") in ("debit", "credit", "withdrawal", "deposit", "dr", "cr")
+                    for h in headers
+                )
+                if has_debit_credit:
+                    continue
             missing.append(req_col)
     
     if missing:
@@ -504,6 +560,16 @@ async def upload_csv(
     base_currency = ws.currency if ws else "USD"
     exchange_rates_cache = {}
 
+    import re
+
+    DATE_FORMATS = [
+        "%Y-%m-%d", "%m/%d/%Y", "%d/%m/%Y", "%Y/%m/%d",
+        "%m-%d-%Y", "%d-%m-%Y", "%d-%b-%Y", "%d-%B-%Y",
+        "%d %b %Y", "%d %B %Y", "%b %d, %Y", "%B %d, %Y",
+        "%Y-%m-%d %H:%M:%S", "%Y/%m/%d %H:%M:%S",
+        "%m/%d/%Y %H:%M:%S", "%d/%m/%Y %H:%M:%S",
+    ]
+
     for i, row in enumerate(reader):
         row_num = i + 2  # 1-indexed, +1 for header
 
@@ -527,26 +593,72 @@ async def upload_csv(
                 mapped_row[standard_field] = ""
 
         # Validate date
-        raw_date = mapped_row.get("date", "")
-        try:
-            parsed_date = datetime.strptime(raw_date, "%Y-%m-%d")
-        except ValueError:
-            # Try other common date formats
-            for fmt in ["%m/%d/%Y", "%d/%m/%Y", "%Y/%m/%d", "%m-%d-%Y", "%d-%m-%Y"]:
+        raw_date = mapped_row.get("date", "").strip()
+        parsed_date = None
+        clean_date_str = raw_date.split("T")[0].split(" ")[0].strip() if ("T" in raw_date or " " in raw_date) else raw_date
+        for fmt in DATE_FORMATS:
+            try:
+                parsed_date = datetime.strptime(raw_date, fmt)
+                break
+            except ValueError:
+                pass
+            if clean_date_str != raw_date:
                 try:
-                    parsed_date = datetime.strptime(raw_date, fmt)
+                    parsed_date = datetime.strptime(clean_date_str, fmt)
                     break
                 except ValueError:
-                    continue
-            else:
-                errors.append({"row": row_num, "error": f"Invalid date '{raw_date}'. Expected YYYY-MM-DD or MM/DD/YYYY."})
-                continue
+                    pass
+
+        if not parsed_date:
+            errors.append({"row": row_num, "error": f"Invalid date '{raw_date}'. Expected YYYY-MM-DD, MM/DD/YYYY, or DD-Mon-YYYY."})
+            continue
+
+        # Check for dual-column debit / credit in CSV
+        debit_col = None
+        credit_col = None
+        for col_name in row_normalized.keys():
+            clow = col_name.lower().replace(" ", "_")
+            if clow in ("debit", "debit_amount", "withdrawal", "withdrawals", "dr", "money_out", "spent"):
+                debit_col = col_name
+            elif clow in ("credit", "credit_amount", "deposit", "deposits", "cr", "money_in", "received"):
+                credit_col = col_name
+
+        raw_amount = mapped_row.get("amount", "")
+        inferred_type = None
+
+        if debit_col and credit_col:
+            raw_deb = row_normalized.get(debit_col, "").strip()
+            raw_crd = row_normalized.get(credit_col, "").strip()
+            val_deb = 0.0
+            val_crd = 0.0
+            if raw_deb:
+                try:
+                    cdeb = re.sub(r"[^\d\.-]", "", raw_deb)
+                    val_deb = abs(float(cdeb)) if cdeb else 0.0
+                except ValueError:
+                    val_deb = 0.0
+            if raw_crd:
+                try:
+                    ccrd = re.sub(r"[^\d\.-]", "", raw_crd)
+                    val_crd = abs(float(ccrd)) if ccrd else 0.0
+                except ValueError:
+                    val_crd = 0.0
+
+            if val_deb > 0 and val_crd == 0:
+                raw_amount = raw_deb
+                inferred_type = "debit"
+            elif val_crd > 0 and val_deb == 0:
+                raw_amount = raw_crd
+                inferred_type = "credit"
+            elif val_deb > 0:
+                raw_amount = raw_deb
+                inferred_type = "debit"
+            elif val_crd > 0:
+                raw_amount = raw_crd
+                inferred_type = "credit"
 
         # Validate amount
-        raw_amount = mapped_row.get("amount", "")
         currency_code = base_currency
-        
-        # Infer currency from the header mapped to "amount"
         amount_header = mapping.get("amount", "")
         if amount_header:
             upper_header = amount_header.upper()
@@ -555,33 +667,89 @@ async def upload_csv(
                     currency_code = iso
                     break
 
+        clean_amount = str(raw_amount).replace(",", "").strip()
+        is_negative = False
+
+        # Accounting parenthesis notation: (100.00) => negative
+        if clean_amount.startswith("(") and clean_amount.endswith(")"):
+            is_negative = True
+            clean_amount = clean_amount[1:-1].strip()
+
+        # Leading or trailing minus
+        if clean_amount.startswith("-"):
+            is_negative = True
+            clean_amount = clean_amount[1:].strip()
+        elif clean_amount.endswith("-"):
+            is_negative = True
+            clean_amount = clean_amount[:-1].strip()
+        elif clean_amount.startswith("+"):
+            clean_amount = clean_amount[1:].strip()
+
+        # Currency symbols
+        if "€" in clean_amount: currency_code = "EUR"
+        elif "£" in clean_amount: currency_code = "GBP"
+        elif "₹" in clean_amount: currency_code = "INR"
+        elif "¥" in clean_amount: currency_code = "JPY"
+        elif "$" in clean_amount and currency_code not in ["CAD", "AUD", "SGD", "USD"]: 
+            currency_code = "USD"
+
+        clean_num_str = re.sub(r"[^\d\.]", "", clean_amount)
+
         try:
-            # Remove currency symbols and commas
-            clean_amount = raw_amount.replace(",", "").strip()
-            if "€" in clean_amount: currency_code = "EUR"
-            elif "£" in clean_amount: currency_code = "GBP"
-            elif "₹" in clean_amount: currency_code = "INR"
-            elif "¥" in clean_amount: currency_code = "JPY"
-            elif "$" in clean_amount and currency_code not in ["CAD", "AUD", "SGD", "USD"]: 
-                currency_code = "USD"
-                
-            clean_amount = clean_amount.replace("$", "").replace("£", "").replace("€", "").replace("₹", "").replace("¥", "").strip()
-            amount_val = float(clean_amount)
-            if amount_val <= 0:
-                raise ValueError("must be positive")
+            amount_val = float(clean_num_str) if clean_num_str else 0.0
+            if amount_val == 0:
+                errors.append({"row": row_num, "error": f"Invalid or zero amount '{raw_amount}'."})
+                continue
+            amount_val = abs(amount_val)
         except ValueError:
-            errors.append({"row": row_num, "error": f"Invalid amount '{raw_amount}'. Must be a positive number."})
+            errors.append({"row": row_num, "error": f"Invalid amount '{raw_amount}'. Must be numeric."})
             continue
 
-        # Validate type
-        raw_type = mapped_row.get("type", "").lower()
-        # Auto-detect type if not provided or invalid
-        if raw_type not in VALID_TYPES:
-            # Try to infer from amount or other indicators
-            if raw_amount.startswith("-") or "debit" in raw_type or "expense" in raw_type:
-                raw_type = "expense"
+        # Validate & resolve type
+        raw_type = mapped_row.get("type", "").lower().strip()
+        final_type = None
+
+        if raw_type in TYPE_SYNONYMS:
+            final_type = TYPE_SYNONYMS[raw_type]
+        elif raw_type in VALID_TYPES:
+            final_type = raw_type
+        elif raw_type:
+            for syn_k, syn_v in TYPE_SYNONYMS.items():
+                if syn_k in raw_type:
+                    final_type = syn_v
+                    break
+
+        if not final_type and inferred_type:
+            final_type = inferred_type
+
+        if not final_type:
+            if is_negative:
+                final_type = "expense"
             else:
-                raw_type = "income"  # Default to income if unclear
+                desc_lower = (mapped_row.get("description") or "").lower()
+                cat_lower = (mapped_row.get("category") or "").lower()
+                file_lower = (file.filename or "").lower()
+                if "expense" in file_lower or "debit" in file_lower:
+                    final_type = "expense"
+                elif any(w in desc_lower or w in cat_lower for w in ["salary", "deposit", "dividend", "interest earned"]):
+                    final_type = "income"
+                elif any(w in desc_lower or w in cat_lower for w in ["fee", "tax", "payroll", "purchase", "subscription", "office"]):
+                    final_type = "expense"
+                else:
+                    final_type = "income"
+
+        # Vendor and Category extraction
+        vendor_val = mapped_row.get("vendor") or None
+        if vendor_val:
+            vendor_val = vendor_val.strip() or None
+
+        category_val = mapped_row.get("category")
+        if not category_val or not category_val.strip():
+            category_val = "Uncategorized"
+        category_clean = normalize_category_label(category_val)
+
+        desc_val = mapped_row.get("description") or "CSV Import"
+        desc_val = desc_val.strip() or "CSV Import"
 
         # Convert amount to base currency
         amount_original = amount_val
@@ -600,15 +768,15 @@ async def upload_csv(
             workspace_id=user.workspace_id,
             user_id=user.id,
             date=parsed_date,
-            description=mapped_row.get("description") or "CSV Import",
+            description=desc_val,
             amount=abs(amount_base),  # Always store as positive base currency
             currency_code=currency_code,
             amount_original=abs(amount_original),
             exchange_rate=exchange_rate,
-            category=normalize_category_label(mapped_row.get("category") or "Uncategorized"),
-            type=TransactionType(raw_type),
+            category=category_clean,
+            type=TransactionType(final_type),
             account=mapped_row.get("account") or "Main Account",
-            vendor=mapped_row.get("vendor") or None,
+            vendor=vendor_val,
             source="csv",
         )
         batch.append(txn)

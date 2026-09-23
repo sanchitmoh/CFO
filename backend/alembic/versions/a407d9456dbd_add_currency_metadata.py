@@ -66,7 +66,7 @@ def upgrade() -> None:
     op.add_column('transactions', sa.Column('currency_code', sa.String(length=3), server_default='USD', nullable=False))
     op.add_column('transactions', sa.Column('amount_original', sa.Numeric(precision=14, scale=2), nullable=True))
     op.add_column('transactions', sa.Column('exchange_rate', sa.Numeric(precision=14, scale=6), nullable=True))
-    op.drop_index(op.f('idx_txn_description_vec'), table_name='transactions', postgresql_ops={'description_vec': 'vector_cosine_ops'}, postgresql_with={'lists': '50'}, postgresql_using='ivfflat')
+    op.execute("DROP INDEX IF EXISTS idx_txn_description_vec;")
     op.alter_column('user_consents', 'created_at',
                existing_type=postgresql.TIMESTAMP(timezone=True),
                nullable=False,

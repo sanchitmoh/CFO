@@ -149,7 +149,7 @@ async def get_dashboard_summary(
             .where(
                 and_(
                     Transaction.workspace_id == ws_id,
-                    Transaction.type == TransactionType.expense,
+                    Transaction.type.in_([TransactionType.expense, TransactionType.debit]),
                     Transaction.date >= cutoff,
                 )
             )
@@ -205,10 +205,10 @@ async def get_dashboard_summary(
     totals_rows = totals_result.fetchall()
     logger.info("Dashboard totals raw rows: %s", totals_rows)
     for row in totals_rows:
-        if row[0] == TransactionType.income:
-            total_income = float(row[1] or 0)
-        else:
-            total_expenses = float(row[1] or 0)
+        if row[0] in (TransactionType.income, TransactionType.credit):
+            total_income += float(row[1] or 0)
+        elif row[0] in (TransactionType.expense, TransactionType.debit):
+            total_expenses += float(row[1] or 0)
         txn_count += int(row[2] or 0)
 
     logger.info(
@@ -233,10 +233,10 @@ async def get_dashboard_summary(
         # Relative offset: how many months after the cutoff month
         idx = (y - cutoff_year) * 12 + (m - cutoff_month)
         if 0 <= idx <= months:
-            if row[2] == TransactionType.income:
-                monthly_income[idx] = float(row[3] or 0)
-            else:
-                monthly_expenses[idx] = float(row[3] or 0)
+            if row[2] in (TransactionType.income, TransactionType.credit):
+                monthly_income[idx] += float(row[3] or 0)
+            elif row[2] in (TransactionType.expense, TransactionType.debit):
+                monthly_expenses[idx] += float(row[3] or 0)
 
     top_categories = [
         CategoryAmount(category=r[0], amount=float(r[1]))
