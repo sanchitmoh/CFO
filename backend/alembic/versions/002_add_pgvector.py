@@ -21,26 +21,26 @@ depends_on = None
 def upgrade() -> None:
     """Enable pgvector and add embedding column to transactions."""
     # Enable the vector extension (Neon supports this natively)
-    op.execute("CREATE EXTENSION IF NOT EXISTS vector;")
-
-    # Add the embedding column (384 dims for all-MiniLM-L6-v2)
-    op.execute(
-        "ALTER TABLE transactions ADD COLUMN IF NOT EXISTS "
-        "description_vec vector(384);"
-    )
-
-    # Create IVFFlat index for fast cosine similarity search
-    # Note: IVFFlat requires at least (lists * 39) rows to build.
-    # With lists=50, need ~1950 rows. Falls back to sequential scan otherwise.
-    op.execute(
-        "CREATE INDEX IF NOT EXISTS idx_txn_description_vec "
-        "ON transactions USING ivfflat (description_vec vector_cosine_ops) "
-        "WITH (lists = 50);"
-    )
+    op.execute("""
+        DO $$ BEGIN
+            CREATE EXTENSION IF NOT EXISTS vector;
+            ALTER TABLE transactions ADD COLUMN IF NOT EXISTS description_vec vector(384);
+            CREATE INDEX IF NOT EXISTS idx_txn_description_vec
+            ON transactions USING ivfflat (description_vec vector_cosine_ops)
+            WITH (lists = 50);
+        EXCEPTION WHEN undefined_file OR feature_not_supported THEN
+            RAISE NOTICE 'pgvector extension not installed on this PostgreSQL instance, skipping';
+        END $$;
+    """)
 
 
 def downgrade() -> None:
     """Remove embedding column and extension."""
-    op.execute("DROP INDEX IF EXISTS idx_txn_description_vec;")
-    op.execute("ALTER TABLE transactions DROP COLUMN IF EXISTS description_vec;")
-    # Don't drop the vector extension — other tables might use it
+    op.execute("""
+        DO $$ BEGIN
+            DROP INDEX IF EXISTS idx_txn_description_vec;
+            ALTER TABLE transactions DROP COLUMN IF EXISTS description_vec;
+        EXCEPTION WHEN undefined_column OR undefined_table OR feature_not_supported THEN
+            NULL;
+        END $$;
+    """)

@@ -47,4 +47,5 @@ async def test():
             print(f"  {name:30s} | spent={ts:.2f} | txns={tc}")
 
 
-asyncio.run(test())
+if __name__ == "__main__":
+    asyncio.run(test())
