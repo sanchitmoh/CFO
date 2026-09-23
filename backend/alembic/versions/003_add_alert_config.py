@@ -13,11 +13,17 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.add_column(
-        "workspaces",
-        sa.Column("alert_config", JSONB, nullable=True),
-    )
+    op.execute("""
+        DO $$ BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns 
+                WHERE table_schema = 'public' AND table_name = 'workspaces' AND column_name = 'alert_config'
+            ) THEN
+                ALTER TABLE workspaces ADD COLUMN alert_config JSONB;
+            END IF;
+        END $$;
+    """)
 
 
 def downgrade() -> None:
-    op.drop_column("workspaces", "alert_config")
+    op.execute("ALTER TABLE workspaces DROP COLUMN IF EXISTS alert_config;")
